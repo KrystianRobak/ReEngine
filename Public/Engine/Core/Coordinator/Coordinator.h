@@ -5,8 +5,11 @@
 #include "EventManager.h"
 #include "SystemManager.h"
 #include "../Public/Engine/Core/Types.h"
+#include "../Public/Engine/Core/AnimationTypes.h"
 #include "../Public/Engine/Components/Camera.h"
 #include <memory>
+
+#include "Engine/Systems/Animation/AnimationSequence.h"
 
 
 class Coordinator
@@ -18,6 +21,9 @@ private:
 	std::unique_ptr<SystemManager> mSystemManager;
 
 	Camera MainCamera;
+
+	AnimationSequencer mReSequencer;
+	ReSequencer Sequencer;
 
 	static std::shared_ptr<Coordinator> instance;
 
@@ -32,9 +38,7 @@ public:
 		return instance;
 	}
 
-	Coordinator()
-	{
-
+	Coordinator(): mReSequencer(&Sequencer) {
 	}
 
 	void Init()
@@ -188,4 +192,7 @@ public:
 		return &MainCamera;
 	}
 
+	AnimationSequencer* GetScene() {
+		return &mReSequencer;
+	}
 };

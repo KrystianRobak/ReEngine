@@ -154,7 +154,11 @@ enum class InputButtons {
     DEL = 127 // Delete
 };
 
-
+enum MenuType
+{
+	BaseMenu,
+	AnimationMenu
+};
 
 // Events
 using EventType = std::string;

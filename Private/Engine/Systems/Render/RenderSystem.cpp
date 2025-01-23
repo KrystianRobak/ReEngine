@@ -156,13 +156,10 @@ void RenderSystem::SetupModelAndMesh(std::shared_ptr<Coordinator>& coordinator, 
 
 	auto const& transform = coordinator->GetComponent<Transform>(entity);
 
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, transform.position);
-	model = glm::rotate(model, 20.f, transform.rotation);
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), transform.position) *
+				  glm::mat4_cast(transform.rotation) *
+				  glm::scale(glm::mat4(1.0f), transform.scale);
 
-	glm::mat4 scaleMat = glm::scale(glm::mat4(1.0f), transform.scale);
-
-	model = model * scaleMat;
 
 	ChangeShader.SetMat4("Model", model);
 

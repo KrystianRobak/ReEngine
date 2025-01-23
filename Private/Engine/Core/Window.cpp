@@ -18,7 +18,12 @@ bool Window::Init(int width, int height, const std::string& title)
     itemsSelectionPanel = std::make_unique<ItemsSelectionPanel>();
     addingPanel = std::make_unique<AddingPanel>();
     controlPanel = std::make_unique<ControlPanel>();
-   
+    animationPanel = std::make_unique<AnimationPanel>();
+    keyframeEditor = std::make_unique<KeyframeEditorPanel>();
+
+    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+    coordinator->AddEventListener(METHOD_LISTENER_ONE_PARAM(Events::Application::MENU_CHANGED, Window::on_mode_Changed));
+
     return IsRunning;
 }
 
@@ -27,6 +32,11 @@ Window::~Window()
     UICtx->end();
 
     RenderCtx->end();
+}
+
+void Window::on_mode_Changed(Event& event) {
+    MenuType key = static_cast<MenuType>(event.GetParam<int>("MenuType"));
+    this->CurrentMode = key;
 }
 
 void Window::on_resize(int width, int height)
@@ -52,19 +62,37 @@ void Window::Render()
 
     application->Render();
 
-    application->Update();
+    if (application->IsRunning()) {
+        application->Update();
+    }
+
 
     controlPanel->Render();
 
-    sceneView->Render();
-
-    propertyPanel->Render();
-
     itemsSelectionPanel->Render();
 
-    fileBrowser->Render();
+    switch(CurrentMode) {
+        case MenuType::BaseMenu:
 
-    addingPanel->Render();
+            propertyPanel->Render();
+
+            fileBrowser->Render();
+            addingPanel->Render();
+
+            break;
+
+        case MenuType::AnimationMenu:
+
+            animationPanel->Render();
+            keyframeEditor->Render();
+
+        break;
+    }
+    sceneView->Render();
+
+
+
+
 
     UICtx->post_render();
 

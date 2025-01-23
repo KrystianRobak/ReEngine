@@ -19,6 +19,7 @@ void ItemsSelectionPanel::Render()
             {
                 coordinator->SetSelectedEntity(entity);
             }
+
         }
         for (int entity = 11; entity <= coordinator->GetEntitiesAmount()+10; entity++)
         {

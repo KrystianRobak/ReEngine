@@ -1,18 +1,21 @@
 #pragma once
-#include "IWindow.h"
 #include <memory>
-#include "../Public/Engine/Core/Context/UIContext.h"
-#include "../Public/Engine/Core/Context/OpenGlContext.h"
-#include <string>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "IWindow.h"
 
-#include "../Public/Engine/Systems/UI/Panels/PropertyPanel.h"
-#include "../Public/Engine/Systems/UI/Panels/SceneView.h"
-#include "../Public/Engine/Systems/UI/Panels/FileBrowser.h"
-#include "../Public/Engine/Systems/UI/Panels/ItemsSelectionPanel.h"
-#include "../Public/Engine/Systems/UI/Panels/AddingPanel.h"
-#include "../Public/Engine/Systems/UI/Panels/ControlPanel.h"
+#include <string>
+
+#include "Application.h"
+#include "Engine/Systems/UI/Panels/AnimationPanel.h"
+#include "Engine/Systems/UI/Panels/KeyframeEditorPanel.h"
+#include "Public/Engine/Core/Context/OpenGlContext.h"
+#include "Public/Engine/Core/Context/UIContext.h"
+
+#include "Public/Engine/Systems/UI/Panels/AddingPanel.h"
+#include "Public/Engine/Systems/UI/Panels/ControlPanel.h"
+#include "Public/Engine/Systems/UI/Panels/FileBrowser.h"
+#include "Public/Engine/Systems/UI/Panels/ItemsSelectionPanel.h"
+#include "Public/Engine/Systems/UI/Panels/PropertyPanel.h"
+#include "Public/Engine/Systems/UI/Panels/SceneView.h"
 
 
 class Window : public IWindow
@@ -37,6 +40,8 @@ public:
     {
         this->window = (GLFWwindow*)window;
     }
+
+    void on_mode_Changed(Event& event);
 
     void on_resize(int width, int height);
 
@@ -66,7 +71,12 @@ private:
 
     std::unique_ptr<ControlPanel> controlPanel;
 
+    std::unique_ptr<AnimationPanel> animationPanel;
+
+    std::unique_ptr<KeyframeEditorPanel> keyframeEditor;
+
     bool IsRunning;
-    
+
+    MenuType CurrentMode = MenuType::BaseMenu;
 };
 

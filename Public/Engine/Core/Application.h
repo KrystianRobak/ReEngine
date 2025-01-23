@@ -11,6 +11,7 @@
 #include "../Components/Thrust.h"
 #include "../Components/LightSource.h"
 #include "../Components/StaticMesh.h"
+#include "../Components/Animated.h"
 
 #include "../Public/Engine/Core/Coordinator/Coordinator.h"
 
@@ -18,6 +19,7 @@
 #include "../Public/Engine/Systems/Physics/PhysicsSystem.h"
 #include "../Public/Engine/Systems/Input/PlayerControlSystem.h"
 #include "../Public/Engine/Systems/Render/RenderSystem.h"
+#include "../Public/Engine/Systems/Animation/AnimationSystem.h"
 
 #include "WindowManager.h"
 #include <chrono>
@@ -35,6 +37,8 @@ public:
 
 	void ToggleApplication()
 	{
+		coordinator->GetSystem<AnimationSystem>()->CurrentFrame = 0;
+		coordinator->GetSystem<AnimationSystem>()->LastFrame = 0;
 		this->running = !this->running;
 	}
 

@@ -12,11 +12,10 @@ int main()
 	windowManager.Init(SCR_WIDTH, SCR_WIDTH, "REngine");
 
 	while(true) {
-
 		windowManager.Render();
 	}
 
 	windowManager.~Window();
 
-return 0;
+	return 0;
 }

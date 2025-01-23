@@ -19,7 +19,7 @@ public:
 		assert(mSystems.find(typeName) == mSystems.end() && "Registering system more than once.");
 
 		auto system = std::make_shared<T>();
-		mSystems.insert({ typeName, system });
+		mSystems.emplace(typeName, system);
 		return system;
 	}
 

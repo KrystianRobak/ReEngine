@@ -20,6 +20,7 @@ void Application::Init()
 	coordinator->RegisterComponent<Collision>();
 	coordinator->RegisterComponent<StaticMesh>();
 	coordinator->RegisterComponent<LightSource>();
+	coordinator->RegisterComponent<Animated>();
 
 	auto physicsSystem = coordinator->RegisterSystem<PhysicsSystem>();
 	{
@@ -73,6 +74,15 @@ void Application::Init()
 
 	uiSystem->Init();
 
+	auto animationSystem = coordinator->RegisterSystem<AnimationSystem>();
+	{
+		Signature signature;
+		signature.set(coordinator->GetComponentType<Animated>());
+		coordinator->SetSystemSignature<AnimationSystem>(signature);
+	}
+
+	animationSystem->Init();
+
 	running = false;
 }
 
@@ -81,6 +91,7 @@ void Application::Update()
 	auto playerControlSystem = coordinator->GetSystem<PlayerControlSystem>();
 	auto cameraControlSystem = coordinator->GetSystem<CameraControlSystem>();
 	auto physicsSystem = coordinator->GetSystem<PhysicsSystem>();
+	auto animationSystem = coordinator->GetSystem<AnimationSystem>();
 
 	const float targetFrameDuration = 1.0f / 1000.0f; // Targeting 165 FPS
 	static float frameTimeAccumulator = 0.0f;
@@ -93,6 +104,7 @@ void Application::Update()
 	playerControlSystem->Update(dt);
 	cameraControlSystem->Update(dt);
 	physicsSystem->Update(dt);
+	animationSystem->Update(dt);
 
 	// Measure frame end time
 	auto frameEndTime = std::chrono::high_resolution_clock::now();

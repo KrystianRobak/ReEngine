@@ -1,5 +1,7 @@
 #include "../Public/Engine/Systems/Render/Shader.h"
 
+#include <algorithm>
+
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {
     mFragmentPath = fragmentPath;

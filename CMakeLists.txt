@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
+set(CMAKE_TOOLCHAIN_FILE "C:/Users/ragberr/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+
 # Project name and language
 project(untitled LANGUAGES CXX)
 
@@ -8,17 +10,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+
 # Define configurations
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Available build configurations" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Release" CACHE STRING "Available build configurations" FORCE)
 
-# Find required packages using CMake's built-in modules
-find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
-find_package(assimp REQUIRED)
-find_package(X11 REQUIRED)
-find_package(Threads REQUIRED)
-
-# Add include directories
 include_directories(
         ${CMAKE_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/imgui
@@ -28,7 +23,8 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/Libs
 )
 
-# Source files
+
+# Source files including imgui sources
 set(SOURCES
         Private/Engine/Systems/UI/Panels/AddingPanel.cpp
         Private/Engine/Core/Application.cpp
@@ -73,9 +69,13 @@ set(SOURCES
         Private/Engine/Components/Collision/Octree.cpp
         Private/Engine/Core/Reflection/ReflectionTest.cpp
         Private/Engine/Core/Reflection/ReflectionRegistry.cpp
+        Private/Engine/Systems/Animation/AnimationSystem.cpp
+        Private/Engine/Systems/UI/Panels/AnimationPanel.cpp
+        Private/Engine/Systems/Animation/AnimationSequence.cpp
+        Private/Engine/Systems/UI/Panels/KeyframeEditorPanel.cpp
 )
 
-# Header files
+# Header files including imgui headers
 set(HEADERS
         Public/Engine/Systems/UI/Panels/AddingPanel.h
         Public/Engine/Core/Application.h
@@ -134,36 +134,37 @@ set(HEADERS
         Public/Engine/Core/Reflection/ReflectionMacro.h
         Public/Engine/Core/Reflection/ReflectionTest.h
         Public/Engine/Core/Reflection/ReflectionRegistry.h
+        Public/Engine/Systems/UI/Panels/AnimationPanel.h
+        Public/Engine/Systems/Animation/AnimationSystem.h
+        Public/Engine/Core/AnimationTypes.h
+        Public/Engine/Components/Animated.h
+        Public/Engine/Systems/Animation/AnimationSequence.h
+        Public/Engine/Systems/UI/Panels/KeyframeEditorPanel.h
 )
 
 # Add executable
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-# Add preprocessor definitions for different configurations
-target_compile_definitions(${PROJECT_NAME} PRIVATE
-        $<$<CONFIG:Debug>:_DEBUG;GLEW_STATIC>
-        $<$<CONFIG:Release>:NDEBUG;GLEW_STATIC>
-)
+# Link libraries using vcpkg
+find_package(glfw3 CONFIG REQUIRED )
+find_package(glew CONFIG REQUIRED )
+find_package(assimp CONFIG REQUIRED )
+find_package(glm CONFIG REQUIRED)
+find_package(X11 REQUIRED)
+find_package(Threads REQUIRED)
 
-# Modern CMake library linking
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw
         GLEW::GLEW
-        OpenGL::GL
+        glm::glm
+        assimp::assimp
+        opengl32
         ${X11_LIBRARIES}
         Threads::Threads
-        ${ASSIMP_LIBRARIES}
-        ${CMAKE_DL_LIBS}
 )
 
 # Set output directories for different configurations
 set_target_properties(${PROJECT_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/Debug
         RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/Release
-)
-
-# Add include directories for external libraries
-target_include_directories(${PROJECT_NAME} PRIVATE
-        ${GLEW_INCLUDE_DIRS}
-        ${ASSIMP_INCLUDE_DIRS}
 )

@@ -4,6 +4,7 @@
 #include "../Public/Engine/Components/RigidBody.h"
 #include "../Public/Engine/Components/Collision.h"
 #include "../Public/Engine/Components/Player.h"
+#include "Engine/Components/Animated.h"
 #include "Engine/Components/LightSource.h"
 
 
@@ -15,6 +16,7 @@ inline std::vector<std::string> splitString(const std::string& str, char delimit
         tokens.push_back(token);
     }
     return tokens;
+
 }
 
 void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature) 
@@ -98,7 +100,17 @@ void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature)
                     });
             }
         }
+        if (!signature.test(coordinator->GetComponentType<Animated>()))
+        {
+            if (ImGui::Button("Animated"))
+            {
+                coordinator->AddComponent(
+                    entity,
+                    Animated{
 
+                    });
+            }
+        }
     }
 
     if (ImGui::CollapsingHeader("Remove component"))
@@ -152,6 +164,13 @@ void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature)
                 coordinator->RemoveComponent<Collision>(entity);
             }
         }
+        if (signature.test(coordinator->GetComponentType<Animated>()))
+        {
+            if (ImGui::Button("Animated"))
+            {
+                coordinator->RemoveComponent<Animated>(entity);
+            }
+        }
     }
 
 }
@@ -195,6 +214,11 @@ void PropertyPanel::Render()
     if (signature.test(coordinator->GetComponentType<LightSource>()))
     {
         coordinator->GetComponent<LightSource>(entity).GenerateGUIElements(entity);
+    }
+
+    if (signature.test(coordinator->GetComponentType<Animated>()))
+    {
+        coordinator->GetComponent<Animated>(entity);
     }
 
     ImGui::Text(label.c_str());
