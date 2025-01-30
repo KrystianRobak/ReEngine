@@ -34,6 +34,17 @@ public:
                     sequencer->sequencer->timeline_start,
                     sequencer->sequencer->timeline_end);
             }
+
+            const char* items[] = {
+                "Linear Interpolation",
+                "Cubic Interpolation",
+                "Quartic Interpolation",
+            };
+
+            if (ImGui::Combo("Select Menu", &selectedKeyframe->interpolation, items, 2))
+            {
+
+            }
             
             // Position editing
             ImGui::Text("Position");

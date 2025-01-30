@@ -9,7 +9,7 @@
 class AnimationSystem : public System {
 public:
     void Init();
-
+    void Reset();
     void Update(float dt);
 private:
     void SetEntityTransform(unsigned entity, glm::vec3 vec, glm::vec3 vec3);

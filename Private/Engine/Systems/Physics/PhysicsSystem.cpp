@@ -34,7 +34,7 @@ void PhysicsSystem::Update(float dt)
 
 		rigidBody.velocity += gravity.force * dt;
 
-		transform.position += rigidBody.velocity * dt;
+		transform.position += speed;
 
 
 

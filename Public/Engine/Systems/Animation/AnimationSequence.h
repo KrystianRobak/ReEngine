@@ -39,7 +39,6 @@ private:
     Animation& GetOrCreateAnimation(AnimationPath& track) {
         if (track.Animations.empty()) {
             Animation newAnim;
-            newAnim.interpolation = AnimationInterpolation::Linear; // Default interpolation
             track.Animations.push_back(newAnim);
         }
         return track.Animations[0]; // For now, we'll work with the first animation

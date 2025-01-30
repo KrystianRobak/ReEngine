@@ -19,15 +19,22 @@ void AnimationSystem::SetEntityTransform(unsigned entity, glm::vec3 Position, gl
     transform.rotation = glm::quat(glm::radians(Rotation));
 }
 
-void AnimationSystem::Step(float t) {
+void AnimationSystem::Step(float dt) {
     std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
     for (auto entity : mEntities) {
         auto& animated = coordinator->GetComponent<Animated>(entity);
 
-        // Skip if no animations or keyframes
+        // Skip if no animations
         if (animated.AnimPath.Animations.empty()) continue;
 
         auto& currentAnimation = animated.AnimPath.Animations[0];
+        animated.AnimPath.CurrentTime++; // Update animation time
+
+        // Check if we're within the animation's timeline
+        if (animated.AnimPath.CurrentTime < animated.AnimPath.BeginTime ||
+            animated.AnimPath.CurrentTime > animated.AnimPath.EndTime) {
+            continue;
+        }
 
         // Find the appropriate keyframes for interpolation
         auto keyframeIt = std::lower_bound(
@@ -37,9 +44,13 @@ void AnimationSystem::Step(float t) {
             [](const Keyframe& kf, int frame) { return kf.time < frame; }
         );
 
-        // If we're before the first keyframe or after the last, handle edge cases
-        if (keyframeIt == currentAnimation.keyframes.begin() ||
-            keyframeIt == currentAnimation.keyframes.end()) {
+        // Handle edge cases
+        if (keyframeIt == currentAnimation.keyframes.begin()) {
+            SetEntityTransform(entity, keyframeIt->position, keyframeIt->rotation);
+            continue;
+        }
+        if (keyframeIt == currentAnimation.keyframes.end()) {
+            SetEntityTransform(entity, std::prev(keyframeIt)->position, std::prev(keyframeIt)->rotation);
             continue;
         }
 
@@ -47,21 +58,21 @@ void AnimationSystem::Step(float t) {
         auto prevKeyframe = std::prev(keyframeIt);
         auto nextKeyframe = keyframeIt;
 
+        // Compute normalized time (t) for interpolation
+        float keyframeDelta = static_cast<float>(nextKeyframe->time - prevKeyframe->time);
+        float t = static_cast<float>(CurrentFrame - prevKeyframe->time) / keyframeDelta;
 
-        // Interpolate based on selected method
+        // Interpolate based on the method
         glm::vec3 interpolatedPosition, interpolatedRotation;
-        switch (currentAnimation.interpolation) {
+        switch (static_cast<AnimationInterpolation>(currentAnimation.CurrentKeyFrame.interpolation)) {
             case AnimationInterpolation::Linear:
                 interpolatedPosition = glm::mix(prevKeyframe->position, nextKeyframe->position, t);
                 interpolatedRotation = glm::mix(prevKeyframe->rotation, nextKeyframe->rotation, t);
                 break;
-
             case AnimationInterpolation::Cubic:
-                // Implement cubic interpolation (you might want to use glm's cubic interpolation)
                 interpolatedPosition = glm::mix(prevKeyframe->position, nextKeyframe->position, t * t * (3.0f - 2.0f * t));
                 interpolatedRotation = glm::mix(prevKeyframe->rotation, nextKeyframe->rotation, t * t * (3.0f - 2.0f * t));
                 break;
-
             case AnimationInterpolation::Quartic:
                 interpolatedPosition = glm::mix(prevKeyframe->position, nextKeyframe->position, t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f));
                 interpolatedRotation = glm::mix(prevKeyframe->rotation, nextKeyframe->rotation, t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f));
@@ -69,17 +80,25 @@ void AnimationSystem::Step(float t) {
         }
 
         // Update the entity's transform
-        // Note: You'll need to add a method to actually set the transform
         SetEntityTransform(entity, interpolatedPosition, interpolatedRotation);
 
-        // Update current keyframe
+        // Update current keyframe for tracking
         currentAnimation.CurrentKeyFrame = *nextKeyframe;
     }
-
-    // Increment frame counter
+    LastFrame = CurrentFrame;
     CurrentFrame++;
 }
 
 void AnimationSystem::Init() {
     std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+    coordinator->AddEventListener(METHOD_LISTENER_NO_PARAM(Events::Application::TOGGLE, AnimationSystem::Reset));
+}
+
+void AnimationSystem::Reset() {
+    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+
+    for (auto entity : mEntities) {
+        auto& animated = coordinator->GetComponent<Animated>(entity);
+        animated.AnimPath.CurrentTime = 0;
+    }
 }

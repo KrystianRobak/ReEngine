@@ -59,7 +59,7 @@ void AddingPanel::Render()
                 });
 
             auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
-            staticMesh.loadModel("model/char/char.obj");
+            staticMesh.loadModel("model/ball/ball.obj");
 
             auto& renderable = coordinator->GetComponent<Renderable>(entity);
 

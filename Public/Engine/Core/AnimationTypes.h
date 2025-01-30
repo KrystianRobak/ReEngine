@@ -11,19 +11,19 @@
 #include "Types.h"
 
 enum class AnimationInterpolation {
-    Linear,
-    Cubic,
-    Quartic,
+    Linear = 0,
+    Cubic = 1,
+    Quartic = 2,
 };
 
 struct Keyframe {
+    int interpolation;
     int time;
     glm::vec3 position;
     glm::vec3 rotation;
 };
 
 struct Animation {
-    AnimationInterpolation interpolation;
     Keyframe CurrentKeyFrame;
     std::vector<Keyframe> keyframes;
 };

@@ -155,7 +155,7 @@ void RenderSystem::SetupModelAndMesh(std::shared_ptr<Coordinator>& coordinator, 
 	auto signature = coordinator->GetEntitySignature(entity);
 
 	auto const& transform = coordinator->GetComponent<Transform>(entity);
-
+	std::cout << transform.position.x << " : " << transform.position.y << " : " << transform.position.z << std::endl;
 	glm::mat4 model = glm::translate(glm::mat4(1.0f), transform.position) *
 				  glm::mat4_cast(transform.rotation) *
 				  glm::scale(glm::mat4(1.0f), transform.scale);
