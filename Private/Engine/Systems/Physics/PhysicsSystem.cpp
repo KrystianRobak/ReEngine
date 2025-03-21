@@ -30,13 +30,11 @@ void PhysicsSystem::Update(float dt)
 
 		auto& rigidBody = coordinator->GetComponent<RigidBody>(entity);
 
-		glm::vec3 speed = rigidBody.velocity * dt;
+		glm::vec3 speed = rigidBody.velocity * dt * 20.f;
 
 		rigidBody.velocity += gravity.force * dt;
 
 		transform.position += speed;
-
-
 
 		auto signature = coordinator->GetEntitySignature(entity);
 		if (signature.test(coordinator->GetComponentType<Collision>()))

@@ -17,7 +17,7 @@ void CameraControlSystem::Init()
 
 void CameraControlSystem::Update(float dt)
 {
-	float speed = 2.25f;
+	float speed = 0.25f;
 
 	if (mButtons[static_cast<size_t>(InputButtons::W)])
 	{

@@ -24,19 +24,16 @@ void AnimationSystem::Step(float dt) {
     for (auto entity : mEntities) {
         auto& animated = coordinator->GetComponent<Animated>(entity);
 
-        // Skip if no animations
         if (animated.AnimPath.Animations.empty()) continue;
 
         auto& currentAnimation = animated.AnimPath.Animations[0];
-        animated.AnimPath.CurrentTime++; // Update animation time
+        animated.AnimPath.CurrentTime++;
 
-        // Check if we're within the animation's timeline
         if (animated.AnimPath.CurrentTime < animated.AnimPath.BeginTime ||
             animated.AnimPath.CurrentTime > animated.AnimPath.EndTime) {
             continue;
         }
 
-        // Find the appropriate keyframes for interpolation
         auto keyframeIt = std::lower_bound(
             currentAnimation.keyframes.begin(),
             currentAnimation.keyframes.end(),
@@ -44,7 +41,6 @@ void AnimationSystem::Step(float dt) {
             [](const Keyframe& kf, int frame) { return kf.time < frame; }
         );
 
-        // Handle edge cases
         if (keyframeIt == currentAnimation.keyframes.begin()) {
             SetEntityTransform(entity, keyframeIt->position, keyframeIt->rotation);
             continue;
@@ -54,15 +50,15 @@ void AnimationSystem::Step(float dt) {
             continue;
         }
 
-        // Get previous and next keyframes
+
         auto prevKeyframe = std::prev(keyframeIt);
         auto nextKeyframe = keyframeIt;
 
-        // Compute normalized time (t) for interpolation
+
         float keyframeDelta = static_cast<float>(nextKeyframe->time - prevKeyframe->time);
         float t = static_cast<float>(CurrentFrame - prevKeyframe->time) / keyframeDelta;
 
-        // Interpolate based on the method
+
         glm::vec3 interpolatedPosition, interpolatedRotation;
         switch (static_cast<AnimationInterpolation>(currentAnimation.CurrentKeyFrame.interpolation)) {
             case AnimationInterpolation::Linear:
@@ -79,10 +75,9 @@ void AnimationSystem::Step(float dt) {
                 break;
         }
 
-        // Update the entity's transform
         SetEntityTransform(entity, interpolatedPosition, interpolatedRotation);
 
-        // Update current keyframe for tracking
+
         currentAnimation.CurrentKeyFrame = *nextKeyframe;
     }
     LastFrame = CurrentFrame;
