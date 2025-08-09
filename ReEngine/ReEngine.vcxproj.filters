@@ -99,9 +99,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ReEngine.cpp">
-      <Filter>Source Files\Public</Filter>
-    </ClCompile>
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp">
       <Filter>Source Files\Private\Engine\Core</Filter>
     </ClCompile>

@@ -157,7 +157,14 @@ public:
 
     static void setupStaticBuffers();
 
-    void cleanup();
+    void cleanup() {
+        if (buffersInitialized) {
+            glDeleteVertexArrays(1, &staticVAO);
+            glDeleteBuffers(1, &staticVBO);
+            glDeleteBuffers(1, &staticEBO);
+            buffersInitialized = false;
+        }
+    }
 
 private:
     glm::vec3 minOffset;

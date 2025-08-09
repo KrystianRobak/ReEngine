@@ -102,7 +102,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions),ENGINE_DLL_EXPORTS;ENGINE_DLL_EXPORTS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_DLL_EXPORTS;ENGINE_DLL_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -138,7 +138,9 @@
     <ClCompile Include="ApplicationAPI.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision.cpp" />
-    <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp" />
+    <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Private\Engine\Components\Collision\Octree.cpp" />
     <ClCompile Include="Private\Engine\Components\Mesh.cpp" />
     <ClCompile Include="Private\Engine\Components\StaticMesh.cpp" />
@@ -163,7 +165,6 @@
     <ClCompile Include="Private\Engine\Systems\Render\Shader.cpp" />
     <ClCompile Include="Private\Engine\Systems\System.cpp" />
     <ClCompile Include="Private\Engine\Systems\UI\UiSystem.cpp" />
-    <ClCompile Include="ReEngine.cpp" />
     <ClCompile Include="Script.cpp" />
     <ClCompile Include="ScriptRegistry.cpp" />
   </ItemGroup>

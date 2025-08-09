@@ -3,7 +3,7 @@
 #include "stb/stb_image.h"
 #include "Engine/Components/Collision/AABB.h"
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
+inline unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
 {
     stbi_set_flip_vertically_on_load(true);
 

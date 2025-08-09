@@ -104,12 +104,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\ragberr\Desktop\Inżynierka\ReEngine\Libs\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\ragberr\Desktop\Inżynierka\ReEngine\Libs\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;$(SolutionDir)\Libs\Lib\ReEngine;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReEngine.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -165,6 +167,7 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\Libs\Include\stb\stb_image.h" />
     <ClInclude Include="Context\OpenGlContext.h" />
     <ClInclude Include="Context\OpenGlFrameBuffer.h" />
     <ClInclude Include="Context\RenderContext.h" />

@@ -1,10 +1,10 @@
-#include "Engine/Systems/UI/Panels/AddingPanel.h"
+#include "AddingPanel.h"
 #include "Engine/Components/Gravity.h"
 #include "Engine/Components/LightSource.h"
 #include "Engine/Components/Renderable.h"
 #include "Engine/Components/RigidBody.h"
-#include "Engine/Components/Collision.h"
-#include "Engine/Components/StaticMesh.h"
+//#include "Engine/Components/Collision.h"
+//#include "Engine/Components/StaticMesh.h"
 #include "Engine/Components/Transform.h"
 #include "Engine/Core/Coordinator/Coordinator.h"
 
@@ -30,16 +30,16 @@ void AddingPanel::Render()
                     .scale = glm::vec3(1, 1, 1)
                 });
 
-            coordinator->AddComponent(
+            /*coordinator->AddComponent(
                 entity,
                 StaticMesh{
 
-                });
+                });*/
 
-            coordinator->AddComponent(
+            /*coordinator->AddComponent(
                 entity,
                 Collision{
-                });
+                });*/
 
             coordinator->AddComponent(
                 entity,
@@ -58,8 +58,8 @@ void AddingPanel::Render()
                     .acceleration = glm::vec3(0.0f, 0.0f, 0.0f)
                 });
 
-            auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
-            staticMesh.loadModel("model/ball/ball.obj");
+            //auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
+            //staticMesh.loadModel("model/ball/ball.obj");
 
             auto& renderable = coordinator->GetComponent<Renderable>(entity);
 
@@ -88,11 +88,11 @@ void AddingPanel::Render()
                 });
 
 
-            coordinator->AddComponent(
+            /*coordinator->AddComponent(
                 entity,
                 StaticMesh()
 
-                );
+                );*/
 
             coordinator->AddComponent(
                 entity,
@@ -111,8 +111,8 @@ void AddingPanel::Render()
                     .acceleration = glm::vec3(0.0f, 0.0f, 0.0f)
                 });
 
-            auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
-            staticMesh.loadModel("model/cube/cube.obj");
+            //auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
+            //staticMesh.loadModel("model/cube/cube.obj");
             auto& renderable = coordinator->GetComponent<Renderable>(entity);
 
             std::random_device rd;
@@ -139,11 +139,11 @@ void AddingPanel::Render()
                     .scale = glm::vec3(1, 1, 1)
                 });
 
-            coordinator->AddComponent(
+            /*coordinator->AddComponent(
                 entity,
                 StaticMesh{
 
-                });
+                });*/
 
             coordinator->AddComponent(
                 entity,
@@ -167,8 +167,8 @@ void AddingPanel::Render()
                     .color = glm::vec4(40,40,40, 1)
                 });
 
-            auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
-            staticMesh.loadModel("model/ball/ball.obj");
+            //auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
+            //staticMesh.loadModel("model/ball/ball.obj");
         }
     }
            

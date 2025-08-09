@@ -2,8 +2,8 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-#include "Engine/Core/Window.h"
-#include "Engine/Systems/UI/Panels/SceneView.h"
+#include "Window.h"
+#include "SceneView.h"
 
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {

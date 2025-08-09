@@ -1,5 +1,6 @@
-#include "Engine/Systems/UI/Panels/FileBrowser.h"
-
+#include "FileBrowser.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
 
 static std::string getLastElementAfterSplit(const std::string str, char delimiter) {
     std::vector<std::string> tokens;

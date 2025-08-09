@@ -1,4 +1,4 @@
-#include "Engine/Core/Window.h"
+#include "Window.h"
 
 bool Window::Init(int width, int height, const std::string& title)
 {
@@ -55,11 +55,6 @@ void Window::on_close()
 
 void Window::Render()
 {
-
-    RenderCtx->pre_render();
-
-    UICtx->pre_render();
-
     application->Render();
 
     if (application->IsRunning()) {
@@ -67,35 +62,43 @@ void Window::Render()
     }
 
 
-    controlPanel->Render();
+    //controlPanel->Render();
 
-    itemsSelectionPanel->Render();
+    //itemsSelectionPanel->Render();
 
-    switch(CurrentMode) {
-        case MenuType::BaseMenu:
+    //switch(CurrentMode) {
+    //    case MenuType::BaseMenu:
 
-            propertyPanel->Render();
+    //        propertyPanel->Render();
 
-            fileBrowser->Render();
-            addingPanel->Render();
+    //        fileBrowser->Render();
+    //        addingPanel->Render();
 
-            break;
+    //        break;
 
-        case MenuType::AnimationMenu:
+    //    case MenuType::AnimationMenu:
 
-            animationPanel->Render();
-            keyframeEditor->Render();
+    //        animationPanel->Render();
+    //        keyframeEditor->Render();
 
-        break;
-    }
+    //    break;
+    //}
+    
+
+}
+
+void Window::PreRender()
+{
+    RenderCtx->pre_render();
+
+    UICtx->pre_render();
+}
+
+void Window::PostRender()
+{
     sceneView->Render();
-
-
-
-
 
     UICtx->post_render();
 
     RenderCtx->post_render();
-
 }

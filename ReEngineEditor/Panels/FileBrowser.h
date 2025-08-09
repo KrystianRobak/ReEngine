@@ -11,7 +11,7 @@ class FileBrowser : public UIComponent
 public:
 
     FileBrowser() {
-        FindFiles("C:/Users/ragberr/Desktop/ExampleProj", false);
+        FindFiles(".", false);
         std::string currentPath = "..";
         std::string iconPath = "icons/document.png";
         documentTextureID = LoadFileTexture(iconPath);

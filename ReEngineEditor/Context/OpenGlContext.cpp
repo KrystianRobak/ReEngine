@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 #include "Engine/Core/Coordinator/Coordinator.h"
-#include "Engine/Core/IWindow.h"
+#include "IWindow.h"
 
 static void on_window_size_callback(GLFWwindow* window, int width, int height)
 {

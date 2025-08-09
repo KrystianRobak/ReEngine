@@ -40,11 +40,3 @@ void AABB::setupStaticBuffers() {
     std::cout << "Initialized AABB static buffers" << std::endl;
 }
 
-void AABB::cleanup() {
-    if (buffersInitialized) {
-        glDeleteVertexArrays(1, &staticVAO);
-        glDeleteBuffers(1, &staticVBO);
-        glDeleteBuffers(1, &staticEBO);
-        buffersInitialized = false;
-    }
-}

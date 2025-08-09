@@ -63,8 +63,6 @@ public:
 		return GetSelectedEntityFunc();
 	}
 
-
-
 	void GetComponentTypes() {
 		GetComponentTypesFunc();
 	}

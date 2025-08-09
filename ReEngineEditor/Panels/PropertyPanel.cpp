@@ -1,8 +1,8 @@
-#include "Engine/Systems/UI/Panels/PropertyPanel.h"
+#include "PropertyPanel.h"
 #include "Engine/Components/Renderable.h"
 #include "Engine/Components/Gravity.h"
 #include "Engine/Components/RigidBody.h"
-#include "Engine/Components/Collision.h"
+//#include "Engine/Components/Collision.h"
 #include "Engine/Components/Player.h"
 #include "Engine/Components/Animated.h"
 #include "Engine/Components/LightSource.h"
@@ -89,7 +89,7 @@ void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature)
             }
         }
 
-        if (!signature.test(coordinator->GetComponentType<Collision>()))
+        /*if (!signature.test(coordinator->GetComponentType<Collision>()))
         {
             if (ImGui::Button("Collision"))
             {
@@ -99,8 +99,8 @@ void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature)
 
                     });
             }
-        }
-        if (!signature.test(coordinator->GetComponentType<StaticMesh>()))
+        }*/
+        /*if (!signature.test(coordinator->GetComponentType<StaticMesh>()))
         {
             if (ImGui::Button("StaticMesh"))
             {
@@ -110,7 +110,7 @@ void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature)
 
                     });
             }
-        }
+        }*/
         if (!signature.test(coordinator->GetComponentType<Animated>()))
         {
             if (ImGui::Button("Animated"))
@@ -161,20 +161,20 @@ void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature)
                 coordinator->RemoveComponent<RigidBody>(entity);
             }
         }
-        if (signature.test(coordinator->GetComponentType<StaticMesh>()))
+        /*if (signature.test(coordinator->GetComponentType<StaticMesh>()))
         {
             if (ImGui::Button("StaticMesh"))
             {
                 coordinator->RemoveComponent<StaticMesh>(entity);
             }
-        }
-        if (signature.test(coordinator->GetComponentType<Collision>()))
+        }*/
+        /*if (signature.test(coordinator->GetComponentType<Collision>()))
         {
             if (ImGui::Button("Collision"))
             {
                 coordinator->RemoveComponent<Collision>(entity);
             }
-        }
+        }*/
         if (signature.test(coordinator->GetComponentType<Animated>()))
         {
             if (ImGui::Button("Animated"))
@@ -211,37 +211,37 @@ void PropertyPanel::Render()
 
     if (signature.test(coordinator->GetComponentType<Transform>()))
     {
-        coordinator->GetComponent<Transform>(entity).GenerateGUIElements(entity);
+        //coordinator->GetComponent<Transform>(entity).GenerateGUIElements(entity);
     }
 
     if (signature.test(coordinator->GetComponentType<Renderable>()))
     {
-        coordinator->GetComponent<Renderable>(entity).GenerateGUIElements(entity);
+        //coordinator->GetComponent<Renderable>(entity).GenerateGUIElements(entity);
     }
 
     if (signature.test(coordinator->GetComponentType<Gravity>()))
     {
-        coordinator->GetComponent<Gravity>(entity).GenerateGUIElements(entity);
+       // coordinator->GetComponent<Gravity>(entity).GenerateGUIElements(entity);
     }
 
     if (signature.test(coordinator->GetComponentType<RigidBody>()))
     {
-        coordinator->GetComponent<RigidBody>(entity).GenerateGUIElements(entity);
+       // coordinator->GetComponent<RigidBody>(entity).GenerateGUIElements(entity);
     }
 
     if (signature.test(coordinator->GetComponentType<LightSource>()))
     {
-        coordinator->GetComponent<LightSource>(entity).GenerateGUIElements(entity);
+       // coordinator->GetComponent<LightSource>(entity).GenerateGUIElements(entity);
     }
     
     if (signature.test(coordinator->GetComponentType<Animated>()))
     {
-        coordinator->GetComponent<Animated>(entity);
+        //coordinator->GetComponent<Animated>(entity);
     }
 
     if (signature.test(coordinator->GetComponentType<BehaviourScript>()))
     {
-        coordinator->GetComponent<BehaviourScript>(entity).GenerateGUIElements(entity);
+        //coordinator->GetComponent<BehaviourScript>(entity).GenerateGUIElements(entity);
     }
 
     ImGui::Text(label.c_str());
@@ -257,8 +257,8 @@ void PropertyPanel::Render()
                 {
                     std::string name = parts[0];
                     std::string path = parts[1];
-                    auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
-                    staticMesh.loadModel(path);
+                    //auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
+                    //staticMesh.loadModel(path);
                 }
             }
         }

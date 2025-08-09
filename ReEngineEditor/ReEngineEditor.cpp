@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "CoordinatorWrapper.h"
+#include "Window.h"
 
 typedef void* (*CreateAppFunc)();
 typedef void (*DestroyAppFunc)(void*);
@@ -52,6 +53,9 @@ int main()
         return -1;
     }
 
+    Window window;
+    window.Init(300, 300, "Okno zycia");
+
     void* app = CreateApplication();
 
     if (app == nullptr) {
@@ -60,9 +64,12 @@ int main()
 
     Application_Init(app);
 
-    while (Application_IsRunning(app)) {
+    while (window.is_running())
+    {
+        window.PreRender();
         Application_Update(app);
         Application_Render(app);
+        window.PostRender();
     }
 
     DestroyApplication(app);

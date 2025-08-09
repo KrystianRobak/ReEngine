@@ -164,3 +164,10 @@ void Application::RenderEntitiesUI()
 {
 
 }
+
+void Application::CreateCoordinator()
+{
+	coordinator = Coordinator::GetCoordinator();
+
+	coordinator->Init();
+}

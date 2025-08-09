@@ -2,7 +2,7 @@
 // Created by ragberr on 21.01.2025.
 //
 
-#include "Engine/Systems/UI/Panels/AnimationPanel.h"
+#include "AnimationPanel.h"
 
 #include "imgui/imgui_internal.h"
 #include "Engine/Core/Coordinator/Coordinator.h"

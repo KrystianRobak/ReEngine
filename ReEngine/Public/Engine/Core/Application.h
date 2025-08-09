@@ -37,6 +37,8 @@ public:
 
 	void RenderEntitiesUI();
 
+	void CreateCoordinator();
+
 	void ToggleApplication()
 	{
 		coordinator->GetSystem<AnimationSystem>()->CurrentFrame = 0;

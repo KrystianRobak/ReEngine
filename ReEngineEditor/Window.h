@@ -4,18 +4,17 @@
 
 #include <string>
 
-#include "Application.h"
-#include "Engine/Systems/UI/Panels/AnimationPanel.h"
-#include "Engine/Systems/UI/Panels/KeyframeEditorPanel.h"
-#include "Engine/Core/Context/OpenGlContext.h"
-#include "Engine/Core/Context/UIContext.h"
+#include "Panels/AnimationPanel.h"
+#include "Panels/KeyframeEditorPanel.h"
+#include "Context/OpenGlContext.h"
+#include "Context/UIContext.h"
 
-#include "Engine/Systems/UI/Panels/AddingPanel.h"
-#include "Engine/Systems/UI/Panels/ControlPanel.h"
-#include "Engine/Systems/UI/Panels/FileBrowser.h"
-#include "Engine/Systems/UI/Panels/ItemsSelectionPanel.h"
-#include "Engine/Systems/UI/Panels/PropertyPanel.h"
-#include "Engine/Systems/UI/Panels/SceneView.h"
+#include "Panels/AddingPanel.h"
+#include "Panels/ControlPanel.h"
+#include "Panels/FileBrowser.h"
+#include "Panels/ItemsSelectionPanel.h"
+#include "Panels/PropertyPanel.h"
+#include "Panels/SceneView.h"
 
 
 class Window : public IWindow
@@ -32,7 +31,11 @@ public:
 
     bool Init(int width, int height, const std::string& title);
 
+    void PreRender();
+
     void Render();
+
+    void PostRender();
 
     void* get_native_window() { return window; };
 
@@ -47,7 +50,7 @@ public:
 
     void on_close();
 
-    bool is_running() { return IsRunning; }
+    bool is_running() { return true; }
 
 private:
 
