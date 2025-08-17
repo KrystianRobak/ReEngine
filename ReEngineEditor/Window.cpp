@@ -55,11 +55,6 @@ void Window::on_close()
 
 void Window::Render()
 {
-    application->Render();
-
-    if (application->IsRunning()) {
-        application->Update();
-    }
 
 
     //controlPanel->Render();

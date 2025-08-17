@@ -70,6 +70,14 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)\</IntDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -105,14 +113,17 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_DLL_EXPORTS;ENGINE_DLL_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;E:\Inżynierka\ReEngine\ReEngineReflectionCore;E:\Inżynierka\ReEngine\ReEngine\Public\Engine\Components;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;E:\Inżynierka\ReEngine\bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReflectionCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(MyIncludes)"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -123,7 +134,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions),ENGINE_DLL_EXPORTS;ENGINE_DLL_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;E:\Inżynierka\ReEngine\ReEngineReflectionCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,7 +144,13 @@
       <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(MyIncludes)"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
+<PropertyGroup>
+  <MyIncludes>@(ClCompile->'%(AdditionalIncludeDirectories)')</MyIncludes>
+</PropertyGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationAPI.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
@@ -152,8 +169,6 @@
     <ClCompile Include="Private\Engine\Core\Coordinator\Event.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\EventManager.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\SystemManager.cpp" />
-    <ClCompile Include="Private\Engine\Core\Reflection\ReflectionRegistry.cpp" />
-    <ClCompile Include="Private\Engine\Core\Reflection\ReflectionTest.cpp" />
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp" />
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp" />
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSystem.cpp" />
@@ -196,9 +211,6 @@
     <ClInclude Include="Public\Engine\Core\Coordinator\Event.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\EventManager.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\SystemManager.h" />
-    <ClInclude Include="Public\Engine\Core\Reflection\ReflectionMacro.h" />
-    <ClInclude Include="Public\Engine\Core\Reflection\ReflectionRegistry.h" />
-    <ClInclude Include="Public\Engine\Core\Reflection\ReflectionTest.h" />
     <ClInclude Include="Public\Engine\Core\Types.h" />
     <ClInclude Include="Public\Engine\Core\WindowManager.h" />
     <ClInclude Include="Public\Engine\Systems\Animation\AnimationSequence.h" />
@@ -214,6 +226,9 @@
     <ClInclude Include="ReEngineExport.h" />
     <ClInclude Include="Script.h" />
     <ClInclude Include="ScriptRegistry.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

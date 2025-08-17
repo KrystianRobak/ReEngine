@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{{ project_guid }}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>{{ project_name }}</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>{% if project_type == 'Plugin' %}DynamicLibrary{% else %}Application{% endif %}</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>{% if project_type == 'Plugin' %}DynamicLibrary{% else %}Application{% endif %}</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <Target Name="GenerateReflection" BeforeTargets="ClCompile">
+    <Message Text="Running reflection generation..." Importance="high" />
+    <Exec Command="python &quot;$(SolutionDir)\..\reflection_generator.py&quot; --config &quot;$(ProjectDir)reflection_config.json&quot;"
+          Condition="Exists('$(ProjectDir)reflection_config.json')" />
+  </Target>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)bin\Debug\</OutDir>
+    <IntDir>$(SolutionDir)intermediate\Debug\</IntDir>
+    <TargetName>$(ProjectName){% if project_type == 'Plugin' %}_d{% endif %}</TargetName>
+    <LocalDebuggerEnvironment>PATH={{ engine_path }}/bin/Debug;%PATH%</LocalDebuggerEnvironment>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)bin\Release\</OutDir>
+    <IntDir>$(SolutionDir)intermediate\Release\</IntDir>
+    <TargetName>$(ProjectName)</TargetName>
+    <LocalDebuggerEnvironment>PATH={{ engine_path }}/bin/Release;%PATH%</LocalDebuggerEnvironment>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>
+        $(ProjectDir)Generated;
+        $(ProjectDir)Source;
+        {{ engine_path }}/include;
+        C:\Users\ragberr\Desktop\ReEngine\Libs\Include;
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+        _DEBUG;
+        {% if project_type == 'Plugin' %}{{ project_name|upper }}_EXPORTS;{% else %}_CONSOLE;{% endif %}
+        ENGINE_DEBUG;
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>{% if project_type == 'Plugin' %}Windows{% else %}Console{% endif %}</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>
+        ReEngine.lib;
+        {% if project_type != 'Plugin' %}ReEditor.lib;{% endif %}
+        %(AdditionalDependencies)
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+        {{ engine_path }}/lib/Debug;
+        C:\Users\ragberr\Desktop\ReEngine\Libs\Lib;
+        %(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>
+        $(ProjectDir)Generated;
+        $(ProjectDir)Source;
+        {{ engine_path }}/include;
+        C:\Users\ragberr\Desktop\ReEngine\Libs\Include;
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>
+        NDEBUG;
+        {% if project_type == 'Plugin' %}{{ project_name|upper }}_EXPORTS;{% else %}_CONSOLE;{% endif %}
+        ENGINE_RELEASE;
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>{% if project_type == 'Plugin' %}Windows{% else %}Console{% endif %}</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>
+        ReEngine.lib;
+        {% if project_type != 'Plugin' %}ReEditor.lib;{% endif %}
+        %(AdditionalDependencies)
+      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+        {{ engine_path }}/lib/Release;
+        C:\Users\ragberr\Desktop\ReEngine\Libs\Lib;
+        %(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClCompile Include="Source\{{ project_name }}.cpp" />
+    {% if project_type == 'Game' %}
+    <ClCompile Include="Source\{{ project_name }}Application.cpp" />
+    {% elif project_type == 'Plugin' %}
+    <ClCompile Include="Source\{{ project_name }}Plugin.cpp" />
+    {% endif %}
+  </ItemGroup>
+
+  <ItemGroup>
+    {% if project_type == 'Game' %}
+    <ClInclude Include="Source\{{ project_name }}Application.h" />
+    {% elif project_type == 'Plugin' %}
+    <ClInclude Include="Source\{{ project_name }}Plugin.h" />
+    {% endif %}
+    <ClInclude Include="Generated\ReflectionData.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="reflection_config.json" />
+    <None Include="{{ project_name }}.json" />
+    <None Include="Build\Scripts\build.bat" />
+    <None Include="Build\Scripts\build.ps1" />
+  </ItemGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <Target Name="CleanGenerated" BeforeTargets="Clean">
+    <ItemGroup>
+      <GeneratedFiles Include="Generated\**\*" />
+    </ItemGroup>
+    <Delete Files="@(GeneratedFiles)" />
+  </Target>
+
+</Project>

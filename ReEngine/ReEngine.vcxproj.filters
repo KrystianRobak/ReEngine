@@ -34,9 +34,6 @@
     <Filter Include="Source Files\Public\Engine\Core\Coordinator">
       <UniqueIdentifier>{1119a317-da76-4cf8-889e-77d0fc4ebeb1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Public\Engine\Core\Reflection">
-      <UniqueIdentifier>{794a3ce1-dc0a-4cdb-96d0-35a1edd8a977}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Public\Engine\Components\Collision">
       <UniqueIdentifier>{9a8570b7-c3a2-4b88-948d-aca1a4e12c96}</UniqueIdentifier>
     </Filter>
@@ -70,9 +67,6 @@
     <Filter Include="Source Files\Private\Engine\Core\Coordinator">
       <UniqueIdentifier>{ca58c219-687c-41c3-b21d-66b4a4e23b57}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Private\Engine\Core\Reflection">
-      <UniqueIdentifier>{6791812a-1c6f-4b04-a039-f1d5e2fac139}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Private\Engine\Components\Collision">
       <UniqueIdentifier>{683f290f-0d77-49f6-b665-2e9ce20998f4}</UniqueIdentifier>
     </Filter>
@@ -104,12 +98,6 @@
     </ClCompile>
     <ClCompile Include="Private\Engine\Core\Application.cpp">
       <Filter>Source Files\Private\Engine\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Core\Reflection\ReflectionRegistry.cpp">
-      <Filter>Source Files\Private\Engine\Core\Reflection</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Core\Reflection\ReflectionTest.cpp">
-      <Filter>Source Files\Private\Engine\Core\Reflection</Filter>
     </ClCompile>
     <ClCompile Include="Private\Engine\Core\Coordinator\ComponentArray.cpp">
       <Filter>Source Files\Private\Engine\Core\Coordinator</Filter>
@@ -189,6 +177,9 @@
     <ClCompile Include="ApplicationAPI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Public\Engine\Core\AnimationTypes.h">
@@ -223,15 +214,6 @@
     </ClInclude>
     <ClInclude Include="Public\Engine\Core\Coordinator\SystemManager.h">
       <Filter>Source Files\Public\Engine\Core\Coordinator</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Core\Reflection\ReflectionMacro.h">
-      <Filter>Source Files\Public\Engine\Core\Reflection</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Core\Reflection\ReflectionRegistry.h">
-      <Filter>Source Files\Public\Engine\Core\Reflection</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Core\Reflection\ReflectionTest.h">
-      <Filter>Source Files\Public\Engine\Core\Reflection</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\Animated.h">
       <Filter>Source Files\Public\Engine\Components</Filter>

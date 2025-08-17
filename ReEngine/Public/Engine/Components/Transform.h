@@ -2,14 +2,15 @@
 
 #include "../ComponentBasic.h"
 
+REFLECT()
 struct Transform
 {
-	REFVARIABLE(x)
+	REFVARIABLE()
 	glm::vec3 position;
 	
-	REFVARIABLE(x)
+	REFVARIABLE()
 	glm::quat rotation;
 
-	REFVARIABLE(x)
+	REFVARIABLE()
 	glm::vec3 scale;
 };

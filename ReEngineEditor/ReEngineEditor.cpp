@@ -1,6 +1,9 @@
 #include <windows.h>
 #include <iostream>
 
+#include "ReflectionEngine.h"
+#include "ReflectionHelpers.h"
+
 #include "CoordinatorWrapper.h"
 #include "Window.h"
 
@@ -64,9 +67,18 @@ int main()
 
     Application_Init(app);
 
+    auto Classes = Reflection::Registry::Instance().GetAllClasses();
+
+    for (auto* cls : Classes)
+    {
+        InspectClass(cls);
+        std::cout << "\n";
+    }
+
     while (window.is_running())
     {
         window.PreRender();
+        window.Render();
         Application_Update(app);
         Application_Render(app);
         window.PostRender();
