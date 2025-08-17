@@ -95,10 +95,20 @@ namespace Reflection {
 
         // Register a class produced by generated code.
         void RegisterClass(ClassInfo&& info);
+        void RegisterComponent(ClassInfo&& info);
+        void RegisterSystem(ClassInfo&& info);
 
         // Query
         const ClassInfo* FindClass(const std::string& fullName) const; // expects Module.Name or just Name
         std::vector<const ClassInfo*> GetAllClasses() const;
+
+        // Query
+        const ClassInfo* FindComponent(const std::string& fullName) const; // expects Module.Name or just Name
+        std::vector<const ClassInfo*> GetAllComponents() const;
+
+        // Query
+        const ClassInfo* FindSystem(const std::string& fullName) const; // expects Module.Name or just Name
+        std::vector<const ClassInfo*> GetAllSystems() const;
 
         // Hook setter helper (generated code may export an implementation per-class
         // but we expose a convenience function centralised here too)
@@ -113,6 +123,9 @@ namespace Reflection {
                                     bool isReference = false);
     private:
         std::unordered_map<std::string, ClassInfo> classes_; // keyed by Module.Name and by Name (if unique)
+        std::unordered_map<std::string, ClassInfo> components_;
+        std::unordered_map<std::string, ClassInfo> systems_;
+
         std::unordered_map<std::string, TypeInfo> types_;
     };
 

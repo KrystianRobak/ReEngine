@@ -4,7 +4,7 @@
 #include "EntityManager.h"
 #include "EventManager.h"
 #include "SystemManager.h"
-#include "Engine/Core/Types.h"
+#include "ReTypes.h"
 #include "Engine/Core/AnimationTypes.h"
 #include "Engine/Components/Camera.h"
 #include <memory>
@@ -103,46 +103,42 @@ public:
 
 
 	// Component methods
-	template<typename T>
-	void RegisterComponent()
+	void RegisterComponent(const Reflection::ClassInfo* classInfo)
 	{
-		mComponentManager->RegisterComponent<T>();
+		mComponentManager->RegisterComponent(classInfo);
 	}
 
-	template<typename T>
-	void AddComponent(Entity entity, T component)
+	void AddComponent(Entity entity, const std::string& typeName, void* componentData)
 	{
-		mComponentManager->AddComponent<T>(entity, component);
+		mComponentManager->AddComponent(entity, typeName, componentData);
 
 		auto signature = mEntityManager->GetSignature(entity);
-		signature.set(mComponentManager->GetComponentType<T>(), true);
+		signature.set(mComponentManager->GetComponentType(typeName), true);
 		mEntityManager->SetSignature(entity, signature);
 
 		mSystemManager->EntitySignatureChanged(entity, signature);
 	}
 
-	template<typename T>
-	void RemoveComponent(Entity entity)
+	void RemoveComponent(Entity entity, const std::string& typeName)
 	{
-		mComponentManager->RemoveComponent<T>(entity);
+		mComponentManager->RemoveComponent(entity, typeName);
 
 		auto signature = mEntityManager->GetSignature(entity);
-		signature.set(mComponentManager->GetComponentType<T>(), false);
+		signature.set(mComponentManager->GetComponentType(typeName), false);
 		mEntityManager->SetSignature(entity, signature);
 
 		mSystemManager->EntitySignatureChanged(entity, signature);
 	}
 
-	template<typename T>
-	T& GetComponent(Entity entity)
+	// Returns a raw pointer, which the caller must cast
+	void* GetComponent(Entity entity, const std::string& typeName)
 	{
-		return mComponentManager->GetComponent<T>(entity);
+		return mComponentManager->GetComponent(entity, typeName);
 	}
 
-	template<typename T>
-	ComponentType GetComponentType()
+	ComponentType GetComponentType(const std::string& typeName)
 	{
-		return mComponentManager->GetComponentType<T>();
+		return mComponentManager->GetComponentType(typeName);
 	}
 
 	std::unordered_map<const char*, ComponentType> GetComponentsTypes()
@@ -152,23 +148,24 @@ public:
 
 
 	// System methods
-	template<typename T>
-	std::shared_ptr<T> RegisterSystem()
+	System* RegisterSystem(const Reflection::ClassInfo* classInfo)
 	{
-		return mSystemManager->RegisterSystem<T>();
-	}
-
-	template<typename T>
-	std::shared_ptr<T> GetSystem()
-	{
-		return mSystemManager->GetSystem<T>();
+		// Directly forwards the reflection data to the SystemManager.
+		return mSystemManager->RegisterSystem(classInfo);
 	}
 
 
-	template<typename T>
-	void SetSystemSignature(Signature signature)
+	System* GetSystem(const std::string& typeName)
 	{
-		mSystemManager->SetSignature<T>(signature);
+		// Asks the SystemManager for a system by its string name.
+		return mSystemManager->GetSystem(typeName);
+	}
+
+
+	void SetSystemSignature(const std::string& typeName, Signature signature)
+	{
+		// Tells the SystemManager to set the signature for the named system.
+		mSystemManager->SetSignature(typeName, signature);
 	}
 
 

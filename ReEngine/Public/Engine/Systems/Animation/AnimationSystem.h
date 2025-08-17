@@ -4,7 +4,7 @@
 
 #include "Engine/Components/Animated.h"
 #include "Engine/Core/Coordinator/Coordinator.h"
-#include "../System.h"
+#include "System/System.h"
 #include <memory>
 class AnimationSystem : public System {
 public:

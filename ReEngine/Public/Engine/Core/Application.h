@@ -41,8 +41,8 @@ public:
 
 	void ToggleApplication()
 	{
-		coordinator->GetSystem<AnimationSystem>()->CurrentFrame = 0;
-		coordinator->GetSystem<AnimationSystem>()->LastFrame = 0;
+		//coordinator->GetSystem<AnimationSystem>()->CurrentFrame = 0;
+		//coordinator->GetSystem<AnimationSystem>()->LastFrame = 0;
 		this->running = !this->running;
 	}
 

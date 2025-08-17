@@ -17,41 +17,41 @@ void PhysicsSystem::Init()
 
 void PhysicsSystem::Update(float dt)
 {
-	std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+	//std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
 
-	std::vector<AABB*> allBoundingBoxes;
+	//std::vector<AABB*> allBoundingBoxes;
 
-	for (auto entity : mEntities)
-	{
-		auto& transform = coordinator->GetComponent<Transform>(entity);
-		// Forces
-		auto const& gravity = coordinator->GetComponent<Gravity>(entity);
+	//for (auto entity : mEntities)
+	//{
+	//	auto& transform = coordinator->GetComponent<Transform>(entity);
+	//	// Forces
+	//	auto const& gravity = coordinator->GetComponent<Gravity>(entity);
 
-		auto& rigidBody = coordinator->GetComponent<RigidBody>(entity);
+	//	auto& rigidBody = coordinator->GetComponent<RigidBody>(entity);
 
-		glm::vec3 speed = rigidBody.velocity * dt;
+	//	glm::vec3 speed = rigidBody.velocity * dt;
 
-		rigidBody.velocity += gravity.force * dt;
+	//	rigidBody.velocity += gravity.force * dt;
 
-		transform.position += speed;
+	//	transform.position += speed;
 
-		auto signature = coordinator->GetEntitySignature(entity);
-		if (signature.test(coordinator->GetComponentType<Collision>()))
-		{
-			auto& collider = coordinator->GetComponent<Collision>(entity);
-			collider.boundingBox.SetIsColliding(false);
-			allBoundingBoxes.push_back(&collider.boundingBox);
-		}
-	}
-	// Step 2: Detect potential collisions
-	std::vector<std::pair<AABB*, AABB*>> collisions = checkCollisions(allBoundingBoxes);
+	//	auto signature = coordinator->GetEntitySignature(entity);
+	//	if (signature.test(coordinator->GetComponentType<Collision>()))
+	//	{
+	//		auto& collider = coordinator->GetComponent<Collision>(entity);
+	//		collider.boundingBox.SetIsColliding(false);
+	//		allBoundingBoxes.push_back(&collider.boundingBox);
+	//	}
+	//}
+	//// Step 2: Detect potential collisions
+	//std::vector<std::pair<AABB*, AABB*>> collisions = checkCollisions(allBoundingBoxes);
 
-	// Step 3: Handle detected collisions
-	for (const auto& [a, b] : collisions)
-	{
-		a->SetIsColliding(true);
-		b->SetIsColliding(true);
-		std::cout << "Collision detected between objects!\n";
-	}
+	//// Step 3: Handle detected collisions
+	//for (const auto& [a, b] : collisions)
+	//{
+	//	a->SetIsColliding(true);
+	//	b->SetIsColliding(true);
+	//	std::cout << "Collision detected between objects!\n";
+	//}
 }

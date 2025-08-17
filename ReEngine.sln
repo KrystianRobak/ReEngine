@@ -5,16 +5,20 @@ VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReEngine", "ReEngine\ReEngine.vcxproj", "{D78CF5F4-3D34-4B42-9E51-EA7E3471A0C0}"
 	ProjectSection(ProjectDependencies) = postProject
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6} = {B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}
 		{E596A4EE-63AF-4058-B80A-56D74EF9D362} = {E596A4EE-63AF-4058-B80A-56D74EF9D362}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReEngineEditor", "ReEngineEditor\ReEngineEditor.vcxproj", "{6DC82D64-4255-4D27-8EDE-0F8246D153CD}"
 	ProjectSection(ProjectDependencies) = postProject
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6} = {B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}
 		{D78CF5F4-3D34-4B42-9E51-EA7E3471A0C0} = {D78CF5F4-3D34-4B42-9E51-EA7E3471A0C0}
 		{E596A4EE-63AF-4058-B80A-56D74EF9D362} = {E596A4EE-63AF-4058-B80A-56D74EF9D362}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReflectionCore", "ReEngineReflectionCore\ReflectionCore.vcxproj", "{E596A4EE-63AF-4058-B80A-56D74EF9D362}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReEngineCore", "ReEngineCore\ReEngineCore.vcxproj", "{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,6 +52,14 @@ Global
 		{E596A4EE-63AF-4058-B80A-56D74EF9D362}.Release|x64.Build.0 = Release|x64
 		{E596A4EE-63AF-4058-B80A-56D74EF9D362}.Release|x86.ActiveCfg = Release|Win32
 		{E596A4EE-63AF-4058-B80A-56D74EF9D362}.Release|x86.Build.0 = Release|Win32
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Debug|x64.ActiveCfg = Debug|x64
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Debug|x64.Build.0 = Debug|x64
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Debug|x86.ActiveCfg = Debug|Win32
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Debug|x86.Build.0 = Debug|Win32
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Release|x64.ActiveCfg = Release|x64
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Release|x64.Build.0 = Release|x64
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Release|x86.ActiveCfg = Release|Win32
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

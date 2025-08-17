@@ -99,7 +99,7 @@
     <ClCompile Include="Private\Engine\Core\Application.cpp">
       <Filter>Source Files\Private\Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Private\Engine\Core\Coordinator\ComponentArray.cpp">
+    <ClCompile Include="Private\Engine\Core\Coordinator\GenericComponentArray.cpp">
       <Filter>Source Files\Private\Engine\Core\Coordinator</Filter>
     </ClCompile>
     <ClCompile Include="Private\Engine\Core\Coordinator\ComponentManager.cpp">
@@ -134,9 +134,6 @@
     </ClCompile>
     <ClCompile Include="Private\Engine\Components\Collision\Octree.cpp">
       <Filter>Source Files\Private\Engine\Components\Collision</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\System.cpp">
-      <Filter>Source Files\Private\Engine\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Private\Engine\Systems\UI\UiSystem.cpp">
       <Filter>Source Files\Private\Engine\Systems\UI</Filter>
@@ -194,7 +191,7 @@
     <ClInclude Include="Public\Engine\Core\WindowManager.h">
       <Filter>Source Files\Public\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Public\Engine\Core\Coordinator\ComponentArray.h">
+    <ClInclude Include="Public\Engine\Core\Coordinator\GenericComponentArray.h">
       <Filter>Source Files\Public\Engine\Core\Coordinator</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Core\Coordinator\ComponentManager.h">
@@ -259,9 +256,6 @@
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\Collision\Octree.h">
       <Filter>Source Files\Public\Engine\Components\Collision</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\System.h">
-      <Filter>Source Files\Public\Engine\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Systems\Animation\AnimationSequence.h">
       <Filter>Source Files\Public\Engine\Systems\Animation</Filter>

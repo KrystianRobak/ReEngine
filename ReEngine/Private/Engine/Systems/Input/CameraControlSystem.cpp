@@ -4,7 +4,7 @@
 
 #include "Engine/Components/Transform.h"
 #include "Engine/Core/Coordinator/Coordinator.h"
-#include "Engine/Core/Types.h"
+#include "ReTypes.h"
 
 
 void CameraControlSystem::Init()

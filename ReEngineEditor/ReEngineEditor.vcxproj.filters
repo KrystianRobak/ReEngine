@@ -102,6 +102,9 @@
     <ClCompile Include="Panels\SceneView.cpp">
       <Filter>Source Files\Panels</Filter>
     </ClCompile>
+    <ClCompile Include="ApplicationWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IWindow.h">
@@ -184,6 +187,9 @@
     </ClInclude>
     <ClInclude Include="Panels\UIComponent.h">
       <Filter>Header Files\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="ApplicationWrapper.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

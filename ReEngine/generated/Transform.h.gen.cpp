@@ -51,7 +51,7 @@ struct Transform_AutoRegister {
             Transform_Variables.push_back(std::move(rv));
         }
         ci.variables = Transform_Variables;
-        Reflection::Registry::Instance().RegisterClass(std::move(ci));
+        Reflection::Registry::Instance().RegisterComponent(std::move(ci));
     }
 };
 static Transform_AutoRegister _transform_autoreg;

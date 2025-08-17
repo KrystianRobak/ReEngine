@@ -21,6 +21,28 @@ void Registry::RegisterClass(ClassInfo&& info) {
     std::cout << "[ReflectionCore] Registered: " << key << "";
 }
 
+void Registry::RegisterComponent(ClassInfo&& info) {
+    std::string key = sizeof(info.module) > 0 ? (std::string(info.module) + "." + info.name) : info.name;
+    components_.emplace(key, std::move(info));
+    // Also store by plain name if not present to simplify lookups
+    auto& entry = components_.find(key)->second;
+    if (components_.find(entry.name) == components_.end()) {
+        components_.emplace(entry.name, entry);
+    }
+    std::cout << "[ReflectionCore] Registered Component: " << key << "\n";
+}
+
+void Registry::RegisterSystem(ClassInfo&& info) {
+    std::string key = sizeof(info.module) > 0 ? (std::string(info.module) + "." + info.name) : info.name;
+    systems_.emplace(key, std::move(info));
+    // Also store by plain name if not present to simplify lookups
+    auto& entry = systems_.find(key)->second;
+    if (systems_.find(entry.name) == systems_.end()) {
+        systems_.emplace(entry.name, entry);
+    }
+    std::cout << "[ReflectionCore] Registered System: " << key << "\n";
+}
+
 const ClassInfo* Registry::FindClass(const std::string& fullName) const {
     auto it = classes_.find(fullName);
     if (it != classes_.end()) return &it->second;
@@ -31,6 +53,42 @@ std::vector<const ClassInfo*> Registry::GetAllClasses() const {
     std::vector<const ClassInfo*> out;
     out.reserve(classes_.size());
     for (auto& p : classes_) {
+        // store only entries that include module (to avoid duplicates)
+        if (p.first.find('.') != std::string::npos) out.push_back(&p.second);
+    }
+    return out;
+}
+
+const ClassInfo* Reflection::Registry::FindComponent(const std::string& fullName) const
+{
+    auto it = components_.find(fullName);
+    if (it != components_.end()) return &it->second;
+    return nullptr;
+}
+
+std::vector<const ClassInfo*> Reflection::Registry::GetAllComponents() const
+{
+    std::vector<const ClassInfo*> out;
+    out.reserve(components_.size());
+    for (auto& p : components_) {
+        // store only entries that include module (to avoid duplicates)
+        if (p.first.find('.') != std::string::npos) out.push_back(&p.second);
+    }
+    return out;
+}
+
+const ClassInfo* Reflection::Registry::FindSystem(const std::string& fullName) const
+{
+    auto it = systems_.find(fullName);
+    if (it != systems_.end()) return &it->second;
+    return nullptr;
+}
+
+std::vector<const ClassInfo*> Reflection::Registry::GetAllSystems() const
+{
+    std::vector<const ClassInfo*> out;
+    out.reserve(systems_.size());
+    for (auto& p : systems_) {
         // store only entries that include module (to avoid duplicates)
         if (p.first.find('.') != std::string::npos) out.push_back(&p.second);
     }

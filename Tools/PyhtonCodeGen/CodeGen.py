@@ -5,7 +5,8 @@ from pathlib import Path
 from collections import defaultdict
 import clang.cindex
 
-# Configure libclang path if necessary (Windows example):
+
+# Configure libclang path if necessary
 clang.cindex.Config.set_library_file(r"D:\LLVM\bin\libclang.dll")
 
 
@@ -13,16 +14,17 @@ def normalize_type_spelling(spelling: str) -> str:
     return spelling.strip().replace("class ", "").replace("struct ", "").replace("enum ", "")
 
 
+# ... (type_category_for and base_offset_expr functions remain the same) ...
 def type_category_for(clang_type) -> str:
     from clang.cindex import TypeKind
     tk = clang_type.kind
     if tk in (
-        TypeKind.VOID, TypeKind.BOOL,
-        TypeKind.CHAR_U, TypeKind.UCHAR, TypeKind.CHAR_S, TypeKind.SCHAR,
-        TypeKind.USHORT, TypeKind.SHORT, TypeKind.UINT, TypeKind.INT,
-        TypeKind.ULONG, TypeKind.LONG, TypeKind.ULONGLONG, TypeKind.LONGLONG,
-        TypeKind.FLOAT, TypeKind.DOUBLE, TypeKind.LONGDOUBLE,
-        TypeKind.WCHAR, TypeKind.CHAR16, TypeKind.CHAR32
+            TypeKind.VOID, TypeKind.BOOL,
+            TypeKind.CHAR_U, TypeKind.UCHAR, TypeKind.CHAR_S, TypeKind.SCHAR,
+            TypeKind.USHORT, TypeKind.SHORT, TypeKind.UINT, TypeKind.INT,
+            TypeKind.ULONG, TypeKind.LONG, TypeKind.ULONGLONG, TypeKind.LONGLONG,
+            TypeKind.FLOAT, TypeKind.DOUBLE, TypeKind.LONGDOUBLE,
+            TypeKind.WCHAR, TypeKind.CHAR16, TypeKind.CHAR32
     ):
         return "Primitive"
     if tk == TypeKind.ENUM:
@@ -53,11 +55,13 @@ class ReflectionGenerator:
     # ---------- Parsing ----------
     def parse(self, filepath: str, clang_parse_args=None):
         index = clang.cindex.Index.create()
-        # Combine the dynamic args with the static ones
+        # <--- MODIFIED: Add all reflection macros here to be ignored by the parser
         final_args = clang_parse_args + [
-            "-DREFLECT(x)=",
-            "-DREFFUNCTION(x)=",
-            "-DREFVARIABLE(x)=",
+            "-DREFLECT()=",
+            "-DREFCOMPONENT()=",
+            "-DREFSYSTEM()=",
+            "-DREFFUNCTION()=",
+            "-DREFVARIABLE()=",
         ]
         tu = index.parse(filepath, args=final_args)
 
@@ -67,19 +71,21 @@ class ReflectionGenerator:
                 continue
 
             if cursor.kind in (clang.cindex.CursorKind.CLASS_DECL, clang.cindex.CursorKind.STRUCT_DECL):
-                if cursor.spelling and self._has_reflect_macro(cursor):
+                # <--- MODIFIED: Check for any of the valid reflection macros
+                reflection_type = self._get_reflection_type(cursor)
+                if cursor.spelling and reflection_type:
                     found_classes = True
                     cls = {
                         "name": cursor.spelling,
                         "full_name": cursor.type.spelling or cursor.spelling,
-                        # --- CHANGE START: Differentiate between class and struct ---
+                        "reflection_type": reflection_type,  # <--- NEW: Store which macro was found
                         "is_struct": cursor.kind == clang.cindex.CursorKind.STRUCT_DECL,
-                        # --- CHANGE END ---
                         "functions": [],
                         "variables": [],
                         "bases": [],
                     }
 
+                    # ... (rest of the parsing for bases and members is unchanged) ...
                     # Bases
                     for c in cursor.get_children():
                         if c.kind == clang.cindex.CursorKind.CXX_BASE_SPECIFIER:
@@ -112,23 +118,34 @@ class ReflectionGenerator:
                                 "is_static": False,
                             })
 
-                    if cls["functions"] or cls["variables"]:
+                    if cls["functions"] or cls["variables"] or reflection_type:
                         self.classes.append((filepath, cls))
 
         if found_classes:
             self.processed_files.append(filepath)
 
-    def _has_reflect_macro(self, cursor) -> bool:
+    # <--- NEW: Replaced _has_reflect_macro with a more powerful version
+    def _get_reflection_type(self, cursor) -> str | None:
+        """Checks the line(s) before a cursor for a reflection macro and returns its type."""
         try:
             with open(cursor.location.file.name, "r", encoding="utf-8") as f:
                 lines = f.readlines()
+                # Check the line right before the class/struct definition
                 if cursor.location.line > 1:
-                    return "REFLECT(" in lines[cursor.location.line - 2]
-                return False
+                    prev_line = lines[cursor.location.line - 2]
+                    if "REFCOMPONENT" in prev_line:
+                        return "Component"
+                    if "REFSYSTEM" in prev_line:
+                        return "System"
+                    # REFLECT should be checked last as it's the most generic
+                    if "REFLECT" in prev_line:
+                        return "Class"
+            return None
         except Exception:
-            return False
+            return None
 
     def _has_ref_macro(self, cursor, macro: str) -> bool:
+        # ... (this function remains the same) ...
         try:
             with open(cursor.location.file.name, "r", encoding="utf-8") as f:
                 lines = f.readlines()
@@ -143,20 +160,19 @@ class ReflectionGenerator:
             return False
 
     def _get_access_specifier(self, cursor) -> str:
+        # ... (this function remains the same) ...
         a = cursor.access_specifier
         from clang.cindex import AccessSpecifier
         if a == AccessSpecifier.PUBLIC: return "public"
         if a == AccessSpecifier.PROTECTED: return "protected"
         if a == AccessSpecifier.PRIVATE: return "private"
-        # --- CHANGE START: Default access for structs is public ---
-        # Get the parent (the class or struct) and check its kind
         if cursor.semantic_parent and cursor.semantic_parent.kind == clang.cindex.CursorKind.STRUCT_DECL:
             return "public"
-        return "private" # Default for class
-        # --- CHANGE END ---
+        return "private"
 
     # ---------- Emission ----------
     def generate_cpp_for_classes(self, out_path: str, header_file: str, classes):
+        # ... (this function's start remains the same) ...
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(f"// Auto-generated reflection file for {header_file}\n")
             f.write(f'#include "{header_file}"\n')
@@ -168,11 +184,11 @@ class ReflectionGenerator:
             for cls in classes:
                 self._emit_class_block(f, cls)
 
-
             f.write("} // namespace ReflectionGenerated\n\n")
 
     def _emit_class_block(self, f, cls):
         class_name = cls["name"]
+        # ... (most of this function remains the same until the registration call) ...
         funcCounter = 0
         # Hook pointers
         for func in cls["functions"]:
@@ -203,7 +219,7 @@ class ReflectionGenerator:
         f.write(f'        ci.fullName = "{cls["full_name"]}";\n')
         f.write(f'        ci.module = "/Script/GeneratedModule";\n')
         f.write(f"        ci.size = sizeof({class_name});\n")
-        # --- CHANGE START: Set struct/class specific info ---
+
         if cls["is_struct"]:
             f.write(f"        ci.category = Reflection::TypeCategory::Struct;\n")
             f.write(f"        ci.isClass = false;\n")
@@ -212,7 +228,6 @@ class ReflectionGenerator:
             f.write(f"        ci.category = Reflection::TypeCategory::Class;\n")
             f.write(f"        ci.isClass = true;\n")
             f.write(f"        ci.isStruct = false;\n")
-        # --- CHANGE END ---
         f.write(f"        ci.construct = []() -> void* {{ return new {class_name}(); }};\n")
         f.write(f"        ci.destruct = [](void* p) {{ delete static_cast<{class_name}*>(p); }};\n")
 
@@ -230,13 +245,16 @@ class ReflectionGenerator:
             f.write(f"        {class_name}_Functions.clear();\n")
             for func in cls["functions"]:
                 f.write("        {\n")
-                f.write(f'            auto* retType = Reflection::Registry::Instance().GetOrCreateType("{func["return_type"]}");\n')
+                f.write(
+                    f'            auto* retType = Reflection::Registry::Instance().GetOrCreateType("{func["return_type"]}");\n')
                 f.write("            std::vector<const Reflection::TypeInfo*> paramTypes;\n")
                 for (t, _) in func["params"]:
-                    f.write(f'            paramTypes.push_back(Reflection::Registry::Instance().GetOrCreateType("{t}"));\n')
+                    f.write(
+                        f'            paramTypes.push_back(Reflection::Registry::Instance().GetOrCreateType("{t}"));\n')
                 f.write("            Reflection::ReflectedFunction rf = {\n")
                 f.write(f'                "{func["name"]}", "{func["access"]}",\n')
-                f.write(f"                {str(func['is_static']).lower()}, {str(func['is_virtual']).lower()}, {str(func['is_const']).lower()},\n")
+                f.write(
+                    f"                {str(func['is_static']).lower()}, {str(func['is_virtual']).lower()}, {str(func['is_const']).lower()},\n")
                 f.write(f"                retType,\n")
                 f.write(f"                paramTypes,\n")
                 f.write(f"                &{class_name}_{func['name']}_Invoke\n")
@@ -249,7 +267,8 @@ class ReflectionGenerator:
         if cls["variables"]:
             f.write(f"        {class_name}_Variables.clear();\n")
             for var in cls["variables"]:
-                f.write(f'        {"auto*" if funcCounter == 0 else ""} vType = Reflection::Registry::Instance().GetOrCreateType("{var["type"]}");\n')
+                f.write(
+                    f'        {"auto*" if funcCounter == 0 else ""} vType = Reflection::Registry::Instance().GetOrCreateType("{var["type"]}");\n')
                 f.write("        {\n")
                 f.write(f"            Reflection::ReflectedVariable rv = {{\n")
                 f.write(f'                "{var["name"]}", "{var["access"]}",\n')
@@ -262,12 +281,21 @@ class ReflectionGenerator:
                 funcCounter += 1
             f.write(f"        ci.variables = {class_name}_Variables;\n")
 
-        f.write("        Reflection::Registry::Instance().RegisterClass(std::move(ci));\n")
+        # <--- MODIFIED: Call the correct registration function based on the stored type
+        reflection_type = cls.get("reflection_type", "Class")
+        if reflection_type == "Component":
+            f.write("        Reflection::Registry::Instance().RegisterComponent(std::move(ci));\n")
+        elif reflection_type == "System":
+            f.write("        Reflection::Registry::Instance().RegisterSystem(std::move(ci));\n")
+        else:  # Default to "Class"
+            f.write("        Reflection::Registry::Instance().RegisterClass(std::move(ci));\n")
+
         f.write("    }\n")
         f.write("};\n")
         f.write(f"static {class_name}_AutoRegister _{class_name.lower()}_autoreg;\n\n")
 
     def _emit_function_invoker(self, f, class_name, func):
+        # ... (this function remains the same) ...
         func_name = func["name"]
         params = func["params"]
         ret = func["return_type"]
@@ -291,22 +319,21 @@ class ReflectionGenerator:
         f.write("}\n\n")
 
     def generate_master_include(self, output_dir: str):
-        import networkx as nx  # optional: can also do manually if you prefer
+        # ... (this function remains the same) ...
+        import networkx as nx
 
         cpp_files = [f for f in os.listdir(output_dir) if f.endswith(".gen.cpp")]
         file_to_classes = defaultdict(list)
         class_to_file = {}
 
         if not nx:
-            # Simple alphabetical sort if networkx is not available
             sorted_files = sorted([f for f in cpp_files if f != "AllGenerated.cpp"])
         else:
             file_to_classes = defaultdict(list)
             class_to_file = {}
             G = nx.DiGraph()
 
-            # Step 1: Add all files as nodes and map classes to them
-            G.add_nodes_from(cpp_files)  # Add all files as nodes initially
+            G.add_nodes_from(cpp_files)
             for fpath in cpp_files:
                 full_path = os.path.join(output_dir, fpath)
                 with open(full_path, "r", encoding="utf-8") as f:
@@ -317,7 +344,6 @@ class ReflectionGenerator:
                     class_to_file[cls_name] = fpath
                     file_to_classes[fpath].append(cls_name)
 
-            # Step 2: Build dependency graph by adding edges for base classes
             for fpath in cpp_files:
                 with open(os.path.join(output_dir, fpath), "r", encoding="utf-8") as f:
                     content = f.read()
@@ -326,15 +352,11 @@ class ReflectionGenerator:
                     if base in class_to_file and class_to_file[base] != fpath:
                         G.add_edge(class_to_file[base], fpath)
 
-            # Step 3: Topological sort
             try:
                 sorted_files = list(nx.topological_sort(G))
             except nx.NetworkXUnfeasible:
                 print("[Warning] Cyclic dependency detected. Falling back to alphabetical order.")
                 sorted_files = sorted(cpp_files)
-            # --- FIX ENDS HERE ---
-
-            # Step 4: Write master include
         master_path = os.path.join(output_dir, "AllGenerated.cpp")
         with open(master_path, "w", encoding="utf-8") as f:
             f.write("// Auto-generated master reflection file\n")
@@ -349,12 +371,12 @@ class ReflectionGenerator:
         return master_path
 
 
+# ... (main function remains the same) ...
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scan-dir", required=True)
     parser.add_argument("--out-dir", required=True)
 
-    # --- CHANGE: Argument to accept a semicolon-delimited string from MSBuild ---
     parser.add_argument("--ms-includes", default="",
                         help="Semicolon-delimited string of include paths from MSBuild.")
 
@@ -374,19 +396,16 @@ def main():
         "-x", "c++",
         "-I."
     ]
-    # Split the semicolon-delimited string and add each path with a -I prefix
     if args.ms_includes:
         for path in args.ms_includes.split(';'):
-            if path:  # Avoid adding empty strings
+            if path:
                 clang_parse_args.append(f"-I{path}")
 
-        # --- ADDED: Print the final Clang arguments for debugging ---
     print("[CodeGen] Paths:")
     print(args.ms_includes)
     print("[CodeGen] Using Clang arguments:")
     for arg in clang_parse_args:
         print(f"  {arg}")
-    # --- END ADDED ---
 
     gen = ReflectionGenerator()
     header_files = list(scan_dir.rglob("*.h")) + list(scan_dir.rglob("*.hpp"))

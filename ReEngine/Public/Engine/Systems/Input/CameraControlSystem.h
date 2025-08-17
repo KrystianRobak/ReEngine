@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../System.h"
+#include "System/System.h"
 #include "Engine/Components/Camera.h"
 
 class Event;

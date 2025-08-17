@@ -15,10 +15,10 @@
 
 void RenderSystem::OnLightEntityAdded() 
 {
-	std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+	/*std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
 	shader->ChangeShaderDefineStatus(coordinator->GetLightEntitiesAmount());
-	RecompileShader();
+	RecompileShader();*/
 }
 
 void RenderSystem::RecompileShader()
@@ -29,30 +29,30 @@ void RenderSystem::RecompileShader()
 
 void RenderSystem::Init()
 {
-	std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+	//std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
-	coordinator->AddEventListener(METHOD_LISTENER_ONE_PARAM(Events::Window::RESIZED, RenderSystem::WindowSizeListener));
-	coordinator->AddEventListener(METHOD_LISTENER_NO_PARAM(Events::Application::RECOMPILE_SHADER, RenderSystem::RecompileShader));
-	
-	coordinator->AddEventListener(METHOD_LISTENER_NO_PARAM(Events::Application::LIGHT_ENTITY_ADDED, RenderSystem::OnLightEntityAdded));
-	
-	shader = std::make_unique<Shader>("shaders/Default.vs", "shaders/Default.fs");
-	LightShader = std::make_unique<Shader>("shaders/LightSourceShader/LightSource.vs", "shaders/LightSourceShader/LightSource.fs");
-	AABBshader = std::make_unique<Shader>("shaders/AABB/AABB.vs", "shaders/AABB/AABB.fs");
+	//coordinator->AddEventListener(METHOD_LISTENER_ONE_PARAM(Events::Window::RESIZED, RenderSystem::WindowSizeListener));
+	//coordinator->AddEventListener(METHOD_LISTENER_NO_PARAM(Events::Application::RECOMPILE_SHADER, RenderSystem::RecompileShader));
+	//
+	//coordinator->AddEventListener(METHOD_LISTENER_NO_PARAM(Events::Application::LIGHT_ENTITY_ADDED, RenderSystem::OnLightEntityAdded));
+	//
+	//shader = std::make_unique<Shader>("shaders/Default.vs", "shaders/Default.fs");
+	//LightShader = std::make_unique<Shader>("shaders/LightSourceShader/LightSource.vs", "shaders/LightSourceShader/LightSource.fs");
+	//AABBshader = std::make_unique<Shader>("shaders/AABB/AABB.vs", "shaders/AABB/AABB.fs");
 
-	std::cout << "Initializing AABB system..." << std::endl;
-	AABB::buffersInitialized = false; // Reset flag to ensure initialization happens
+	//std::cout << "Initializing AABB system..." << std::endl;
+	//AABB::buffersInitialized = false; // Reset flag to ensure initialization happens
 
-	AABB::setupStaticBuffers();
+	//AABB::setupStaticBuffers();
 
-	
+	//
 
-	BindCamera(coordinator->GetCamera());
+	//BindCamera(coordinator->GetCamera());
 }
 
 void RenderSystem::Update(float dt)
 {
-	std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+	/*std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
 	std::shared_ptr<ComponentManager> Manager = coordinator->GetComponentManager();
 
@@ -148,7 +148,7 @@ void RenderSystem::Update(float dt)
 		}
 	}
 
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 }
 
 void RenderSystem::Cleanup()
@@ -160,7 +160,7 @@ void RenderSystem::Cleanup()
 
 void RenderSystem::SetupModelAndMesh(std::shared_ptr<Coordinator>& coordinator, const Entity& entity, Shader& ChangeShader)
 {
-	auto signature = coordinator->GetEntitySignature(entity);
+	/*auto signature = coordinator->GetEntitySignature(entity);
 
 	auto const& transform = coordinator->GetComponent<Transform>(entity);
 	
@@ -175,20 +175,20 @@ void RenderSystem::SetupModelAndMesh(std::shared_ptr<Coordinator>& coordinator, 
 	{
 		auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
 		staticMesh.Draw(ChangeShader);
-	}
+	}*/
 }
 
 
 void RenderSystem::WindowSizeListener(Event& event)
 {
-	std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+	//std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
-	auto windowWidth = event.GetParam<unsigned int>(Events::Window::Resized::WIDTH);
-	auto windowHeight = event.GetParam<unsigned int>(Events::Window::Resized::HEIGHT);
+	//auto windowWidth = event.GetParam<unsigned int>(Events::Window::Resized::WIDTH);
+	//auto windowHeight = event.GetParam<unsigned int>(Events::Window::Resized::HEIGHT);
 
-	Camera* camera = coordinator->GetCamera();
-	//camera.projectionTransform = Camera::MakeProjectionTransform(45.0f, 0.1f, 1000.0f, windowWidth, windowHeight);
-	
+	//Camera* camera = coordinator->GetCamera();
+	////camera.projectionTransform = Camera::MakeProjectionTransform(45.0f, 0.1f, 1000.0f, windowWidth, windowHeight);
+	//
 
 }
 

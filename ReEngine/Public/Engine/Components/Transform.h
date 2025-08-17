@@ -2,7 +2,7 @@
 
 #include "../ComponentBasic.h"
 
-REFLECT()
+REFCOMPONENT()
 struct Transform
 {
 	REFVARIABLE()

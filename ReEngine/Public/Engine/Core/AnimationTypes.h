@@ -8,7 +8,7 @@
 #include <glm/vec3.hpp>
 
 #include "imgui/imgui.h"
-#include "Types.h"
+#include "ReTypes.h"
 
 enum class AnimationInterpolation {
     Linear = 0,

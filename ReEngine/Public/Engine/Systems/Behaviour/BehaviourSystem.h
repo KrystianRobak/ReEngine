@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../System.h"
+#include "System/System.h"
 #include <Engine/Core/Coordinator/Coordinator.h>
 #include <Engine/Components/BehaviourScript.h>
 #include "../../../../Script.h"
@@ -135,18 +135,18 @@ public:
     }
 
     void LoadScripts() {
-        for (Entity entity : mEntities)
-        {
-            auto& script = coordinator->GetComponent<BehaviourScript>(entity);
+        //for (Entity entity : mEntities)
+        //{
+        //    auto& script = coordinator->GetComponent<BehaviourScript>(entity);
 
-            std::filesystem::path path(script.ScriptPath);
-            std::string filename = path.stem().string();
+        //    std::filesystem::path path(script.ScriptPath);
+        //    std::string filename = path.stem().string();
 
-            CompileScript(script.ScriptPath, "C:/Users/ragberr/Desktop/ExampleProj/Bin", EngineIncludePaths);
+        //    CompileScript(script.ScriptPath, "C:/Users/ragberr/Desktop/ExampleProj/Bin", EngineIncludePaths);
 
-            LoadDll("C:/Users/ragberr/Desktop/ExampleProj/Bin", filename, entity);
+        //    LoadDll("C:/Users/ragberr/Desktop/ExampleProj/Bin", filename, entity);
 
-        }
+        //}
     }
 
 private:

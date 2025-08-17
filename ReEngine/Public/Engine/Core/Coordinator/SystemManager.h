@@ -1,83 +1,99 @@
 #pragma once
 
-#include "Engine/Systems/System.h"
-#include "Engine/Core/Types.h"
+#include "System/System.h"
+#include "Types.h"
+#include "ReflectionEngine.h"
 #include <cassert>
 #include <memory>
+#include <string>
 #include <unordered_map>
-
-
 
 class SystemManager
 {
 public:
-	template<typename T>
-	std::shared_ptr<T> RegisterSystem()
-	{
-		const char* typeName = typeid(T).name();
+    // Destructor to clean up raw pointers
+    ~SystemManager()
+    {
+        for (auto const& pair : mSystems)
+        {
+            delete pair.second;
+        }
+        mSystems.clear();
+    }
 
-		assert(mSystems.find(typeName) == mSystems.end() && "Registering system more than once.");
+    // Register a system using its reflection data
+    System* RegisterSystem(const Reflection::ClassInfo* classInfo)
+    {
+        const char* typeName = classInfo->fullName;
+        assert(mSystems.find(typeName) == mSystems.end() && "Registering system more than once.");
+        assert(classInfo->construct && "Reflected class has no default constructor.");
 
-		auto system = std::make_shared<T>();
-		mSystems.emplace(typeName, system);
-		return system;
-	}
+        // Use the reflection 'construct' function to create a new instance
+        void* newInstanceRaw = classInfo->construct();
 
-	template<typename T>
-	std::shared_ptr<T> GetSystem()
-	{
-		const char* typeName = typeid(T).name();
-		auto it = mSystems.find(typeName);
-		if (it != mSystems.end()) {
-			// Convert the shared_ptr<void> to the correct type
-			return std::static_pointer_cast<T>(it->second);
-		}
-		else {
-			return nullptr;
-		}
-	}
+        // Cast the void* to the base System*
+        System* newSystem = static_cast<System*>(newInstanceRaw);
 
-	template<typename T>
-	void SetSignature(Signature signature)
-	{
-		const char* typeName = typeid(T).name();
+        // Store the raw pointer in the map
+        mSystems.emplace(typeName, newSystem);
 
-		assert(mSystems.find(typeName) != mSystems.end() && "System used before registered.");
+        return newSystem;
+    }
 
-		mSignatures.insert({ typeName, signature });
-	}
+    // Get a system by its string name
+    System* GetSystem(const std::string& typeName)
+    {
+        auto it = mSystems.find(typeName);
+        if (it != mSystems.end()) {
+            return it->second; // Return the raw System*
+        }
+        return nullptr;
+    }
 
-	void EntityDestroyed(Entity entity)
-	{
-		for (auto const& pair : mSystems)
-		{
-			auto const& system = pair.second;
+    // Set a system's component signature using its string name
+    void SetSignature(const std::string& typeName, Signature signature)
+    {
+        assert(mSystems.find(typeName) != mSystems.end() && "System used before registered.");
+        mSignatures.insert({ typeName, signature });
+    }
 
+    void EntityDestroyed(Entity entity)
+    {
+        for (auto const& pair : mSystems)
+        {
+            auto const& system = pair.second;
+            system->GetEntities().erase(entity);
+        }
+    }
 
-			system->GetEntities().erase(entity);
-		}
-	}
+    void EntitySignatureChanged(Entity entity, Signature entitySignature)
+    {
+        for (auto const& pair : mSystems)
+        {
+            auto const& type = pair.first;
+            auto const& system = pair.second;
 
-	void EntitySignatureChanged(Entity entity, Signature entitySignature)
-	{
-		for (auto const& pair : mSystems)
-		{
-			auto const& type = pair.first;
-			auto const& system = pair.second;
-			auto const& systemSignature = mSignatures[type];
+            // Ensure the signature exists before accessing it
+            if (mSignatures.count(type)) {
+                auto const& systemSignature = mSignatures[type];
 
-			if ((entitySignature & systemSignature) == systemSignature)
-			{
-				system->GetEntities().insert(entity);
-			}
-			else
-			{
-				system->GetEntities().erase(entity);
-			}
-		}
-	}
+                // If the entity's signature contains all the bits from the system's signature
+                if ((entitySignature & systemSignature) == systemSignature)
+                {
+                    system->GetEntities().insert(entity);
+                }
+                else
+                {
+                    system->GetEntities().erase(entity);
+                }
+            }
+        }
+    }
 
 private:
-	std::unordered_map<const char*, Signature> mSignatures{};
-	std::unordered_map<const char*, std::shared_ptr<System>> mSystems{};
+    // Maps system name to its required component signature
+    std::unordered_map<std::string, Signature> mSignatures{};
+
+    // Maps system name to the actual system instance (raw pointer)
+    std::unordered_map<std::string, System*> mSystems{};
 };

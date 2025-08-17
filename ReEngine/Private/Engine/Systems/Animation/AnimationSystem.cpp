@@ -13,14 +13,14 @@ void AnimationSystem::Update(float dt) {
 }
 
 void AnimationSystem::SetEntityTransform(unsigned entity, glm::vec3 Position, glm::vec3 Rotation) {
-    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+  /*  std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
     auto& transform = coordinator->GetComponent<Transform>(entity);
     transform.position = Position;
-    transform.rotation = glm::quat(glm::radians(Rotation));
+    transform.rotation = glm::quat(glm::radians(Rotation));*/
 }
 
 void AnimationSystem::Step(float dt) {
-    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+   /* std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
     for (auto entity : mEntities) {
         auto& animated = coordinator->GetComponent<Animated>(entity);
 
@@ -81,19 +81,19 @@ void AnimationSystem::Step(float dt) {
         currentAnimation.CurrentKeyFrame = *nextKeyframe;
     }
     LastFrame = CurrentFrame;
-    CurrentFrame++;
+    CurrentFrame++;*/
 }
 
 void AnimationSystem::Init() {
-    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-    coordinator->AddEventListener(METHOD_LISTENER_NO_PARAM(Events::Application::TOGGLE, AnimationSystem::Reset));
+  /*  std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+    coordinator->AddEventListener(METHOD_LISTENER_NO_PARAM(Events::Application::TOGGLE, AnimationSystem::Reset));*/
 }
 
 void AnimationSystem::Reset() {
-    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+    //std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
-    for (auto entity : mEntities) {
-        auto& animated = coordinator->GetComponent<Animated>(entity);
-        animated.AnimPath.CurrentTime = 0;
-    }
+    //for (auto entity : mEntities) {
+    //    auto& animated = coordinator->GetComponent<Animated>(entity);
+    //    animated.AnimPath.CurrentTime = 0;
+    //}
 }

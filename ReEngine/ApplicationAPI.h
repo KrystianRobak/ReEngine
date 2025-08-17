@@ -9,4 +9,5 @@ extern "C" {
     ENGINE_API void Application_Update(void* app);
     ENGINE_API void Application_Render(void* app);
     ENGINE_API bool Application_IsRunning(void* app);
+
 }

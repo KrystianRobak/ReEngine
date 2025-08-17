@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Engine/Core/Types.h"
+#include "ReflectionMacros.h"
+#include <ReTypes.h>
 #include <set>
+
 
 
 class System
