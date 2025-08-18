@@ -112,14 +112,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories);E:\Inżynierka\ReEngine\ReEngineReflectionCore;E:\Inżynierka\ReEngine\ReEngineCore</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories);$(SolutionDir)\ReEngineReflectionCore;$(SolutionDir)\ReEngineCore</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;$(SolutionDir)\Libs\Lib\ReEngine;E:\Inżynierka\ReEngine\bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReEngine.lib;ReflectionCore.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;$(SolutionDir)\Libs\Lib\ReEngine;$(SolutionDir)bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReEngine.lib;ReflectionCore.lib;ReEngineCore.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -15,13 +15,13 @@ extern "C" __declspec(dllexport) Script* CreateScriptInstance() { \
 class Script {
 protected:
     Entity entity;
-    std::weak_ptr<Coordinator> coordinator;
+    //std::weak_ptr<Coordinator> coordinator;
 
 protected:
-    template<typename T>
-    T& GetComponent() {
-        return coordinator.lock()->GetComponent<T>(entity);
-    }
+    //template<typename T>
+    //T& GetComponent() {
+    //    return coordinator.lock()->GetComponent<T>(entity);
+    //}
 
     Entity GetEntity() const {
         return entity;
@@ -32,7 +32,7 @@ public:
 
     virtual void Init(Entity e, std::shared_ptr<Coordinator> coord) {
         this->entity = e;
-        this->coordinator = coord;
+        //this->coordinator = coord;
     }
 
     virtual void Begin() = 0;

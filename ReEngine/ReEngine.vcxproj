@@ -113,13 +113,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_DLL_EXPORTS;ENGINE_DLL_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;E:\Inżynierka\ReEngine\ReEngineReflectionCore;E:\Inżynierka\ReEngine\ReEngine\Public\Engine\Components;E:\Inżynierka\ReEngine\ReEngine\Public\Engine\Systems\Physics;E:\Inżynierka\ReEngine\ReEngineCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;$(SolutionDir)ReEngineReflectionCore;$(SolutionDir)ReEngine\Public\Engine\Components;$(SolutionDir)ReEngine\Public\Engine\Systems\Physics;$(SolutionDir)ReEngineCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;E:\Inżynierka\ReEngine\bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReflectionCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;$(SolutionDir)\bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReflectionCore.lib;ReEngineCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(MyIncludes)"</Command>

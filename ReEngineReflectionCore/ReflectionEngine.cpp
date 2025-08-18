@@ -1,5 +1,5 @@
 #include "ReflectionEngine.h"
-
+#include "Logger.h"
 #include <iostream>
 #include <cstring>
 
@@ -18,7 +18,7 @@ void Registry::RegisterClass(ClassInfo&& info) {
     if (classes_.find(entry.name) == classes_.end()) {
         classes_.emplace(entry.name, entry);
     }
-    std::cout << "[ReflectionCore] Registered: " << key << "";
+    LOGF_INFO("[ReflectionCore] Registered Class %s", key)
 }
 
 void Registry::RegisterComponent(ClassInfo&& info) {
@@ -29,7 +29,7 @@ void Registry::RegisterComponent(ClassInfo&& info) {
     if (components_.find(entry.name) == components_.end()) {
         components_.emplace(entry.name, entry);
     }
-    std::cout << "[ReflectionCore] Registered Component: " << key << "\n";
+    LOGF_INFO("[ReflectionCore] Registered Component %s", key)
 }
 
 void Registry::RegisterSystem(ClassInfo&& info) {
@@ -40,7 +40,7 @@ void Registry::RegisterSystem(ClassInfo&& info) {
     if (systems_.find(entry.name) == systems_.end()) {
         systems_.emplace(entry.name, entry);
     }
-    std::cout << "[ReflectionCore]" << " Registered System: " << key << "\n";
+    LOGF_INFO("[ReflectionCore] Registered System %s", key)
 }
 
 const ClassInfo* Registry::FindClass(const std::string& fullName) const {
