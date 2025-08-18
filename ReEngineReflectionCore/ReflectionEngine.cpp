@@ -40,7 +40,7 @@ void Registry::RegisterSystem(ClassInfo&& info) {
     if (systems_.find(entry.name) == systems_.end()) {
         systems_.emplace(entry.name, entry);
     }
-    std::cout << "[ReflectionCore] Registered System: " << key << "\n";
+    std::cout << "[ReflectionCore]" << " Registered System: " << key << "\n";
 }
 
 const ClassInfo* Registry::FindClass(const std::string& fullName) const {

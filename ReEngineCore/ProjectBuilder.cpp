@@ -1,13 +1,17 @@
 #include "ProjectBuilder.h"
 
 
+void ProjectBuilder::ParseConfig() {
+	
+	std::ifstream file;
 
-
-
-
-extern "C" {
-    CORE_API ProjectBuilder* CreateProjectBuilder()
-    {
-        return new ProjectBuilder();
-    }
+	file.open(ProjectPath_)
 }
+
+
+//extern "C" {
+//    CORE_API ProjectBuilder* CreateProjectBuilder()
+//    {
+//        return new ProjectBuilder();
+//    }
+//}

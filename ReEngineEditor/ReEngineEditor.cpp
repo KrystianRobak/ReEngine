@@ -4,14 +4,23 @@
 #include "ReflectionEngine.h"
 #include "ReflectionHelpers.h"
 
+#include "ProjectBuilder.h"
+
 #include "CoordinatorWrapper.h"
 #include "ApplicationWrapper.h"
 #include "Window.h"
 
 
 
-int main()
+int main(int argc, char** argv)
 {
+    for(int i = 1; i < argc;i++)
+    {
+        LOGF_INFO("Passed as argument: %s", argv[i])
+    }
+
+    ProjectBuilder builder(argv[1]);
+
     HMODULE engineDLL = LoadLibraryA("ReEngine.dll");
     if (!engineDLL) {
         LOGF_ERROR("%s","Failed to load Engine.dll")
@@ -28,6 +37,9 @@ int main()
         FreeLibrary(engineDLL);
         return -1;
     }
+
+    builder.ParseConfig();
+
 
     auto transform = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Transform");
 
