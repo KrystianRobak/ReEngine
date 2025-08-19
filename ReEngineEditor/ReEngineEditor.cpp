@@ -57,28 +57,29 @@ int main(int argc, char** argv)
         LOGF_ERROR("%s", "Application pointer is uninitialized!")
     }
 
-    
-    auto registry = Reflection::Registry::Instance();
-    auto Classes = Reflection::Registry::Instance().GetAllSystems();
+    //
+    //auto registry = Reflection::Registry::Instance();
+    //auto Classes = Reflection::Registry::Instance().GetAllSystems();
 
-    for (auto* cls : Classes)
-    {
-        InspectClass(cls);
-        std::cout << "\n";
-    }
+    //for (auto* cls : Classes)
+    //{
+    //    InspectClass(cls);
+    //    std::cout << "\n";
+    //}
 
-    Classes = Reflection::Registry::Instance().GetAllComponents();
+    //Classes = Reflection::Registry::Instance().GetAllComponents();
 
-    for (auto* cls : Classes)
-    {
-        InspectClass(cls);
-        std::cout << "\n";
-    }
+    //for (auto* cls : Classes)
+    //{
+    //    InspectClass(cls);
+    //    std::cout << "\n";
+    //}
 
     while (window.is_running())
     {
         window.PreRender();
         window.Render();
+		builder.RendererSystem_->Update(0.016f);
         applicationWrap.Application_Update(applicationWrap.app);
         applicationWrap.Application_Render(applicationWrap.app);
         window.PostRender();

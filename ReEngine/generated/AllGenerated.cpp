@@ -1,4 +1,5 @@
 // Auto-generated master reflection file
+#pragma once
 #include "ReflectionEngine.h"
 
 #include "PhysicsSystem.h.gen.cpp"

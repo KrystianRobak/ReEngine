@@ -5,7 +5,6 @@ from pathlib import Path
 from collections import defaultdict
 import clang.cindex
 
-
 # Configure libclang path if necessary
 clang.cindex.Config.set_library_file(r"D:\Liblaries\llvm\bin\libclang.dll")
 
@@ -55,8 +54,8 @@ class ReflectionGenerator:
     # ---------- Parsing ----------
     def parse(self, filepath: str, clang_parse_args=None):
         index = clang.cindex.Index.create()
-        # <--- MODIFIED: Add all reflection macros here to be ignored by the parser
         final_args = clang_parse_args + [
+            "-DREFLECTION_API=",
             "-DREFLECT()=",
             "-DREFCOMPONENT()=",
             "-DREFSYSTEM()=",
@@ -71,20 +70,22 @@ class ReflectionGenerator:
                 continue
 
             if cursor.kind in (clang.cindex.CursorKind.CLASS_DECL, clang.cindex.CursorKind.STRUCT_DECL):
-                # <--- MODIFIED: Check for any of the valid reflection macros
                 reflection_type = self._get_reflection_type(cursor)
-                if cursor.spelling and reflection_type:
+
+                # <--- MODIFIED: Use the new robust method to get the class name
+                class_name = self._get_class_name_from_cursor(cursor)
+
+                if class_name and reflection_type:
                     found_classes = True
                     cls = {
-                        "name": cursor.spelling,
-                        "full_name": cursor.type.spelling or cursor.spelling,
-                        "reflection_type": reflection_type,  # <--- NEW: Store which macro was found
+                        "name": class_name,
+                        "full_name": cursor.type.spelling or class_name,
+                        "reflection_type": reflection_type,
                         "is_struct": cursor.kind == clang.cindex.CursorKind.STRUCT_DECL,
                         "functions": [],
                         "variables": [],
                         "bases": [],
                     }
-
                     # ... (rest of the parsing for bases and members is unchanged) ...
                     # Bases
                     for c in cursor.get_children():
@@ -124,20 +125,41 @@ class ReflectionGenerator:
         if found_classes:
             self.processed_files.append(filepath)
 
-    # <--- NEW: Replaced _has_reflect_macro with a more powerful version
+    # <--- NEW HELPER FUNCTION
+    def _get_class_name_from_cursor(self, cursor) -> str:
+        """
+        Gets the class name by analyzing tokens, correctly skipping any `_API` macros.
+        For a declaration like 'class MY_API MyClass :', it will correctly return 'MyClass'.
+        """
+        tokens = list(cursor.get_tokens())
+        if not tokens:
+            return cursor.spelling  # Fallback to the default behavior
+
+        # Find the end of the declaration part (before body '{' or inheritance ':')
+        decl_end_index = len(tokens)
+        for i, token in enumerate(tokens):
+            if token.spelling in (':', '{'):
+                decl_end_index = i
+                break
+
+        # Working backwards from the end, the first identifier we find is the class name.
+        for i in range(decl_end_index - 1, -1, -1):
+            if tokens[i].kind == clang.cindex.TokenKind.IDENTIFIER:
+                return tokens[i].spelling
+
+        return cursor.spelling  # Fallback if our logic fails
+
     def _get_reflection_type(self, cursor) -> str | None:
         """Checks the line(s) before a cursor for a reflection macro and returns its type."""
         try:
             with open(cursor.location.file.name, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                # Check the line right before the class/struct definition
                 if cursor.location.line > 1:
                     prev_line = lines[cursor.location.line - 2]
                     if "REFCOMPONENT" in prev_line:
                         return "Component"
                     if "REFSYSTEM" in prev_line:
                         return "System"
-                    # REFLECT should be checked last as it's the most generic
                     if "REFLECT" in prev_line:
                         return "Class"
             return None
@@ -175,6 +197,7 @@ class ReflectionGenerator:
         # ... (this function's start remains the same) ...
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(f"// Auto-generated reflection file for {header_file}\n")
+            f.write('#pragma once\n')
             f.write(f'#include "{header_file}"\n')
             f.write('#include "ReflectionEngine.h"\n')
             f.write("#include <cstddef>\n\n")
@@ -281,13 +304,12 @@ class ReflectionGenerator:
                 funcCounter += 1
             f.write(f"        ci.variables = {class_name}_Variables;\n")
 
-        # <--- MODIFIED: Call the correct registration function based on the stored type
         reflection_type = cls.get("reflection_type", "Class")
         if reflection_type == "Component":
             f.write("        Reflection::Registry::Instance().RegisterComponent(std::move(ci));\n")
         elif reflection_type == "System":
             f.write("        Reflection::Registry::Instance().RegisterSystem(std::move(ci));\n")
-        else:  # Default to "Class"
+        else:
             f.write("        Reflection::Registry::Instance().RegisterClass(std::move(ci));\n")
 
         f.write("    }\n")
@@ -360,6 +382,7 @@ class ReflectionGenerator:
         master_path = os.path.join(output_dir, "AllGenerated.cpp")
         with open(master_path, "w", encoding="utf-8") as f:
             f.write("// Auto-generated master reflection file\n")
+            f.write('#pragma once\n')
             f.write('#include "ReflectionEngine.h"\n\n')
             for cpp_file in sorted_files:
                 if cpp_file != "AllGenerated.cpp":

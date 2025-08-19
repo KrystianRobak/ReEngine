@@ -1,4 +1,5 @@
 // Auto-generated reflection file for PhysicsSystem.h
+#pragma once
 #include "PhysicsSystem.h"
 #include "ReflectionEngine.h"
 #include <cstddef>
