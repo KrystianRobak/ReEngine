@@ -10,6 +10,7 @@
 #define COLOR_INFO    "\033[32m"  // green
 #define COLOR_WARN    "\033[33m"  // yellow
 #define COLOR_ERROR   "\033[31m"  // red
+#define COLOR_REGISTER_PASS "\033[32m"  // green
 
 // Fixed widths
 constexpr int LEVEL_WIDTH = 8;
@@ -46,3 +47,4 @@ inline void log_printf(const char* level, const char* color, const char* file, i
 #define LOGF_INFO(fmt, ...)  log_printf("INFO",  COLOR_INFO,  __FILE__, __LINE__, fmt, ##__VA_ARGS__);
 #define LOGF_WARN(fmt, ...)  log_printf("WARN",  COLOR_WARN,  __FILE__, __LINE__, fmt, ##__VA_ARGS__);
 #define LOGF_ERROR(fmt, ...) log_printf("ERROR", COLOR_ERROR, __FILE__, __LINE__, fmt, ##__VA_ARGS__);
+#define LOGF_REGISTER_PASS(fmt, ...) log_printf("ERROR", COLOR_REGISTER_PASS, __FILE__, __LINE__, fmt, ##__VA_ARGS__);

@@ -22,6 +22,10 @@ public:
 
     virtual void Render();
 
+	void PreRender();
+
+    void PostRender();
+
 private:
     std::shared_ptr<Application> application;
     std::unique_ptr<OpenGlFrameBuffer> frameBuffer;

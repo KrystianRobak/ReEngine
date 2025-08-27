@@ -171,14 +171,7 @@
     <ClCompile Include="Private\Engine\Core\Coordinator\SystemManager.cpp" />
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp" />
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Animation\AnimationSystem.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Behaviour\BehaviourSystem.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Input\CameraControlSystem.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Input\PlayerControlSystem.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Physics\PhysicsSystem.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Render\RenderSystem.cpp" />
     <ClCompile Include="Private\Engine\Systems\Render\Shader.cpp" />
-    <ClCompile Include="Private\Engine\Systems\UI\UiSystem.cpp" />
     <ClCompile Include="Script.cpp" />
     <ClCompile Include="ScriptRegistry.cpp" />
   </ItemGroup>
@@ -212,18 +205,7 @@
     <ClInclude Include="Public\Engine\Core\Coordinator\SystemManager.h" />
     <ClInclude Include="Public\Engine\Core\Types.h" />
     <ClInclude Include="Public\Engine\Core\WindowManager.h" />
-    <ClInclude Include="Public\Engine\Systems\Animation\AnimationSequence.h" />
-    <ClInclude Include="Public\Engine\Systems\Animation\AnimationSystem.h" />
-    <ClInclude Include="Public\Engine\Systems\Behaviour\BehaviourSystem.h" />
-    <ClInclude Include="Public\Engine\Systems\Input\CameraControlSystem.h" />
-    <ClInclude Include="Public\Engine\Systems\Input\PlayerControlSystem.h" />
-    <ClInclude Include="Public\Engine\Systems\Physics\PhysicsSystem.h" />
-    <ClInclude Include="Public\Engine\Systems\Render\RenderSystem.h" />
-    <ClInclude Include="Public\Engine\Systems\Render\Shader.h" />
-    <ClInclude Include="Public\Engine\Systems\UI\UiSystem.h" />
     <ClInclude Include="ReEngineExport.h" />
-    <ClInclude Include="Script.h" />
-    <ClInclude Include="ScriptRegistry.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />

@@ -18,7 +18,7 @@ void Registry::RegisterClass(ClassInfo&& info) {
     if (classes_.find(entry.name) == classes_.end()) {
         classes_.emplace(entry.name, entry);
     }
-    LOGF_INFO("[ReflectionCore] Registered Class %s", key)
+    LOGF_INFO("[ReflectionCore] Registered Class %s", entry.name)
 }
 
 void Registry::RegisterComponent(ClassInfo&& info) {
@@ -29,7 +29,7 @@ void Registry::RegisterComponent(ClassInfo&& info) {
     if (components_.find(entry.name) == components_.end()) {
         components_.emplace(entry.name, entry);
     }
-    LOGF_INFO("[ReflectionCore] Registered Component %s", key)
+    LOGF_INFO("[ReflectionCore] Registered Component %s", entry.name)
 }
 
 void Registry::RegisterSystem(ClassInfo&& info) {
@@ -40,7 +40,7 @@ void Registry::RegisterSystem(ClassInfo&& info) {
     if (systems_.find(entry.name) == systems_.end()) {
         systems_.emplace(entry.name, entry);
     }
-    LOGF_INFO("[ReflectionCore] Registered System %s", key)
+    LOGF_INFO("[ReflectionCore] Registered System %s", entry.name)
 }
 
 const ClassInfo* Registry::FindClass(const std::string& fullName) const {

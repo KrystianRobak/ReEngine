@@ -28,29 +28,11 @@
     <Filter Include="Source Files\Public\Engine\Components">
       <UniqueIdentifier>{01a9f064-9ba8-4076-95a3-778e8000ec55}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Public\Engine\Systems">
-      <UniqueIdentifier>{7bc98178-88c0-49fb-b204-95aa1ec7155c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Public\Engine\Core\Coordinator">
       <UniqueIdentifier>{1119a317-da76-4cf8-889e-77d0fc4ebeb1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Public\Engine\Components\Collision">
       <UniqueIdentifier>{9a8570b7-c3a2-4b88-948d-aca1a4e12c96}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Public\Engine\Systems\Animation">
-      <UniqueIdentifier>{585a361d-13a7-4801-b434-decadb6d42af}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Public\Engine\Systems\Input">
-      <UniqueIdentifier>{46fee3c0-e308-4713-8e39-4721cabb5c89}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Public\Engine\Systems\Physics">
-      <UniqueIdentifier>{7a6d8e4c-363b-457f-b486-ea705afb9aee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Public\Engine\Systems\Render">
-      <UniqueIdentifier>{f61a8892-6a12-48f1-8704-24c89957ef02}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Public\Engine\Systems\UI">
-      <UniqueIdentifier>{9ad1cb98-d8f4-4cc6-bc9f-4d014c97a822}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Private\Engine">
       <UniqueIdentifier>{8f453e17-ece0-4e3b-a975-93f6c2e521e7}</UniqueIdentifier>
@@ -87,9 +69,6 @@
     </Filter>
     <Filter Include="Source Files\Private\Engine\Systems\Behaviour">
       <UniqueIdentifier>{04139374-e252-4ae3-bfdc-efd149edf047}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Public\Engine\Systems\Behaviour">
-      <UniqueIdentifier>{317bcfe6-44fd-45bf-93b3-76dc4cf3f91f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -135,35 +114,14 @@
     <ClCompile Include="Private\Engine\Components\Collision\Octree.cpp">
       <Filter>Source Files\Private\Engine\Components\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\UI\UiSystem.cpp">
-      <Filter>Source Files\Private\Engine\Systems\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\Render\RenderSystem.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Render</Filter>
-    </ClCompile>
     <ClCompile Include="Private\Engine\Systems\Render\Shader.cpp">
       <Filter>Source Files\Private\Engine\Systems\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\Physics\PhysicsSystem.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\Input\CameraControlSystem.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\Input\PlayerControlSystem.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Input</Filter>
     </ClCompile>
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp">
       <Filter>Source Files\Private\Engine\Systems\Animation</Filter>
     </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\Animation\AnimationSystem.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Animation</Filter>
-    </ClCompile>
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp">
       <Filter>Source Files\Private\Engine\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\Behaviour\BehaviourSystem.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Behaviour</Filter>
     </ClCompile>
     <ClCompile Include="Script.cpp">
       <Filter>Source Files\Private\Engine\Systems\Behaviour</Filter>
@@ -257,41 +215,8 @@
     <ClInclude Include="Public\Engine\Components\Collision\Octree.h">
       <Filter>Source Files\Public\Engine\Components\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Animation\AnimationSequence.h">
-      <Filter>Source Files\Public\Engine\Systems\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Animation\AnimationSystem.h">
-      <Filter>Source Files\Public\Engine\Systems\Animation</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Input\CameraControlSystem.h">
-      <Filter>Source Files\Public\Engine\Systems\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Input\PlayerControlSystem.h">
-      <Filter>Source Files\Public\Engine\Systems\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Physics\PhysicsSystem.h">
-      <Filter>Source Files\Public\Engine\Systems\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\UI\UiSystem.h">
-      <Filter>Source Files\Public\Engine\Systems\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Render\RenderSystem.h">
-      <Filter>Source Files\Public\Engine\Systems\Render</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Render\Shader.h">
-      <Filter>Source Files\Public\Engine\Systems\Render</Filter>
-    </ClInclude>
     <ClInclude Include="Public\Engine\Components\BehaviourScript.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Systems\Behaviour\BehaviourSystem.h">
-      <Filter>Source Files\Public\Engine\Systems\Behaviour</Filter>
-    </ClInclude>
-    <ClInclude Include="ScriptRegistry.h">
-      <Filter>Source Files\Public\Engine\Systems\Behaviour</Filter>
-    </ClInclude>
-    <ClInclude Include="Script.h">
-      <Filter>Source Files\Public\Engine\Systems\Behaviour</Filter>
     </ClInclude>
     <ClInclude Include="ReEngineExport.h">
       <Filter>Header Files</Filter>

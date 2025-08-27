@@ -63,8 +63,8 @@ extern "C" {
         Coordinator::GetCoordinator()->RegisterComponent(Class);
     }
 
-    ENGINE_API void Coordinator_AddComponent(uint32_t entity, const char* componentTypeName, void* componentData) {
-        Coordinator::GetCoordinator()->AddComponent(entity, componentTypeName, componentData);
+    ENGINE_API void Coordinator_AddComponent(uint32_t entity, const char* componentTypeName) {
+        Coordinator::GetCoordinator()->AddComponent(entity, componentTypeName);
     }
 
     ENGINE_API void Coordinator_RemoveComponent(uint32_t entity, const char* componentTypeName) {
@@ -90,10 +90,19 @@ extern "C" {
         return Coordinator::GetCoordinator()->GetSystem(typeName);
     }
 
+    ENGINE_API void* GetCoordinator()
+    {
+        return Coordinator::GetCoordinator().get();
+    }
 
-    void SetSystemSignature(const std::string& typeName, Signature signature)
+    ENGINE_API void SetSystemSignature(const std::string& typeName, Signature signature)
     {
         Coordinator::GetCoordinator()->SetSystemSignature(typeName, signature);
+    }
+
+    ENGINE_API ComponentType GetComponentType(const std::string& typeName)
+    {
+        return Coordinator::GetCoordinator()->GetComponentType(typeName);
     }
 
     // === Component Type Information (NEW & Improved) ===

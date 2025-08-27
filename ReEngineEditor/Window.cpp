@@ -55,7 +55,7 @@ void Window::on_close()
 
 void Window::Render()
 {
-
+    sceneView->Render();
 
     //controlPanel->Render();
 
@@ -87,11 +87,12 @@ void Window::PreRender()
     RenderCtx->pre_render();
 
     UICtx->pre_render();
+
+	sceneView->PreRender();
 }
 
 void Window::PostRender()
 {
-    sceneView->Render();
 
     UICtx->post_render();
 

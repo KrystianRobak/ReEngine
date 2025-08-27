@@ -70,7 +70,7 @@ bool OpenGlContext::init(IWindow* window)
 void OpenGlContext::pre_render()
 {
     glViewport(0, 0, window->width, window->height);
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

@@ -1,5 +1,4 @@
 // Auto-generated reflection file for Transform.h
-#pragma once
 #include "Transform.h"
 #include "ReflectionEngine.h"
 #include <cstddef>

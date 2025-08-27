@@ -106,6 +106,7 @@ void UIContext::post_render()
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+    ImGui::EndFrame();
 }
 
 void UIContext::end()

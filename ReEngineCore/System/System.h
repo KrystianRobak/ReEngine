@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include "SystemApi/CoordinatorSystemApi.h"
 #include "ReflectionMacros.h"
 #include <ReTypes.h>
 #include <set>
@@ -10,7 +10,7 @@
 class System
 {
 public:
-	virtual void Init() = 0;
+	virtual void Init(Engine::IEngineApi* engine) = 0;
 
 	virtual void Update(float dt) = 0;
 
@@ -21,4 +21,5 @@ public:
 
 protected:
 	std::set<Entity> mEntities;
+	Engine::IEngineApi* engine_;
 };

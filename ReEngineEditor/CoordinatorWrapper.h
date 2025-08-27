@@ -1,7 +1,9 @@
 #pragma once
 
+#include "System/System.h"
 #include <windows.h>
 #include "Logger.h"
+#include "ReTypes.h"
 #include "ReflectionEngine.h"
 #include <iostream>
 #include <cstdint> // Use cstdint for integer types
@@ -17,10 +19,18 @@ typedef uint32_t(*CoordinatorGetSelectedEntityFunc)();
 
 // --- Component Management ---
 typedef void(*CoordinatorRegisterComponentFunc)(const Reflection::ClassInfo*);
-typedef void(*CoordinatorAddComponentFunc)(uint32_t, const char*, void*);
+typedef void(*CoordinatorAddComponentFunc)(uint32_t, const char*);
 typedef void(*CoordinatorRemoveComponentFunc)(uint32_t, const char*);
 typedef void* (*CoordinatorGetComponentFunc)(uint32_t, const char*);
 typedef bool(*CoordinatorHasComponentFunc)(uint32_t, const char*);
+typedef ComponentType(*CoordinatorGetComponentTypeFunc)(const std::string&);
+typedef void* (*GetCoordinatorFunc)();
+
+// --- System Management ---
+
+typedef System* (*CoordinatorRegisterSystemFunc)(const Reflection::ClassInfo*);
+typedef System* (*CoordinatorGetSystemFunc)(std::string);
+typedef void(*CoordinatorSetSystemSignatureFunc)(const std::string&, Signature);
 
 // --- Component Type Information ---
 typedef int(*CoordinatorGetComponentTypeCountFunc)();
@@ -34,7 +44,7 @@ public:
 	{}
 
 	void LoadFunctions(HMODULE engineDLL) {
-		CreateEntityFunc;
+		CreateEntityFunc = (CoordinatorCreateEntityFunc)GetProcAddress(engineDLL, "CreateEntity");
 		CreateLightEntityFunc;
 		DestroyEntityFunc;
 		GetEntitiesAmountFunc;
@@ -47,9 +57,15 @@ public:
 		RemoveComponentFunc = (CoordinatorRemoveComponentFunc)GetProcAddress(engineDLL, "Coordinator_RemoveComponent");
 		GetComponentFunc = (CoordinatorGetComponentFunc)GetProcAddress(engineDLL, "Coordinator_GetComponent");
 		HasComponentFunc = (CoordinatorHasComponentFunc)GetProcAddress(engineDLL, "Coordinator_HasComponent");
+		GetComponentType = (CoordinatorGetComponentTypeFunc)GetProcAddress(engineDLL, "GetComponentType");
 
+		GetCoordinator = (GetCoordinatorFunc)GetProcAddress(engineDLL, "GetCoordinator");
 		GetComponentTypeCountFunc = (CoordinatorGetComponentTypeCountFunc)GetProcAddress(engineDLL, "Coordinator_GetComponentTypeCount");
 		GetComponentTypeNameFunc = (CoordinatorGetComponentTypeNameFunc)GetProcAddress(engineDLL, "Coordinator_GetComponentTypeName");
+
+		RegisterSystem = (CoordinatorRegisterSystemFunc)GetProcAddress(engineDLL, "RegisterSystem");
+		GetSystem = (CoordinatorGetSystemFunc)GetProcAddress(engineDLL, "GetSystem");
+		SetSystemSignature = (CoordinatorSetSystemSignatureFunc)GetProcAddress(engineDLL, "SetSystemSignature");
 
 	}
 
@@ -83,8 +99,8 @@ public:
 	}
 
 	// === Wrapped Component Calls ===
-	void AddComponent(uint32_t entity, const char* componentTypeName, void* componentData) {
-		AddComponentFunc(entity, componentTypeName, componentData);
+	void AddComponent(uint32_t entity, const char* componentTypeName) {
+		AddComponentFunc(entity, componentTypeName);
 	}
 
 	void RemoveComponent(uint32_t entity, const char* componentTypeName) {
@@ -132,12 +148,20 @@ public:
 	CoordinatorSetSelectedEntityFunc SetSelectedEntityFunc;
 	CoordinatorGetSelectedEntityFunc GetSelectedEntityFunc;
 
+	GetCoordinatorFunc GetCoordinator;
+
 	// Component Management
 	CoordinatorRegisterComponentFunc RegisterComponentFunc;
 	CoordinatorAddComponentFunc AddComponentFunc;
 	CoordinatorRemoveComponentFunc RemoveComponentFunc;
 	CoordinatorGetComponentFunc GetComponentFunc;
 	CoordinatorHasComponentFunc HasComponentFunc;
+	CoordinatorGetComponentTypeFunc GetComponentType;
+
+	// System Management
+	CoordinatorRegisterSystemFunc RegisterSystem;
+	CoordinatorGetSystemFunc GetSystem;
+	CoordinatorSetSystemSignatureFunc SetSystemSignature;
 
 	// Component Type Information
 	CoordinatorGetComponentTypeCountFunc GetComponentTypeCountFunc;

@@ -1,4 +1,6 @@
 #include "Engine/Components/Collision/AABB.h"
+#include "Logger.h"
+
 
 unsigned int AABB::staticVAO = 0;
 unsigned int AABB::staticVBO = 0;
@@ -37,6 +39,7 @@ void AABB::setupStaticBuffers() {
 
     glBindVertexArray(0);
     buffersInitialized = true;
-    std::cout << "Initialized AABB static buffers" << std::endl;
+
+    LOGF_INFO("%s", "Initialized AABB static buffers")
 }
 

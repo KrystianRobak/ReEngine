@@ -24,14 +24,19 @@ void SceneView::resize(int32_t width, int32_t height)
     frameBuffer->create_buffers((int32_t)size.x, (int32_t)size.y);
 }
 
-void SceneView::Render()
+void SceneView::PreRender()
 {
     frameBuffer->bind();
+}
 
-    application->Render();
+void SceneView::PostRender()
+{
 
+}
+
+void SceneView::Render()
+{
     frameBuffer->unbind();
-    
     
     if(application->IsRunning())
         application->Update();

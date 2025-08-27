@@ -1,5 +1,6 @@
 #pragma once
 
+#include "SystemApi/CoordinatorSystemApi.h"
 #include "ComponentManager.h"
 #include "EntityManager.h"
 #include "EventManager.h"
@@ -13,7 +14,7 @@
 
 #include "../ReEngineExport.h"
 
-class ENGINE_API Coordinator
+class ENGINE_API Coordinator : public Engine::IEngineApi
 {
 private:
 	std::shared_ptr<ComponentManager> mComponentManager;
@@ -108,12 +109,14 @@ public:
 		mComponentManager->RegisterComponent(classInfo);
 	}
 
-	void AddComponent(Entity entity, const std::string& typeName, void* componentData)
+	void AddComponent(Entity entity, const std::string& fullName)
 	{
-		mComponentManager->AddComponent(entity, typeName, componentData);
+		auto componentInfo = Reflection::Registry::Instance().FindComponent(fullName);
+		void* componentData = componentInfo->construct();
+		mComponentManager->AddComponent(entity, fullName, componentData);
 
 		auto signature = mEntityManager->GetSignature(entity);
-		signature.set(mComponentManager->GetComponentType(typeName), true);
+		signature.set(mComponentManager->GetComponentType(fullName), true);
 		mEntityManager->SetSignature(entity, signature);
 
 		mSystemManager->EntitySignatureChanged(entity, signature);
@@ -141,7 +144,7 @@ public:
 		return mComponentManager->GetComponentType(typeName);
 	}
 
-	std::unordered_map<const char*, ComponentType> GetComponentsTypes()
+	std::unordered_map<std::string, ComponentType> GetComponentsTypes()
 	{
 		return mComponentManager->GetComponentsTypes();
 	}

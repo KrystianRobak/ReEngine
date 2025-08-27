@@ -137,12 +137,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ProjectBuilder.cpp" />
+    <ClCompile Include="SystemApi\CoordinatorSystemApi.cpp" />
     <ClCompile Include="System\System.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CoreExport.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ProjectBuilder.h" />
+    <ClInclude Include="SystemApi\CoordinatorSystemApi.h" />
     <ClInclude Include="System\System.h" />
     <ClInclude Include="ReTypes.h" />
   </ItemGroup>

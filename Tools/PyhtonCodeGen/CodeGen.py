@@ -6,7 +6,7 @@ from collections import defaultdict
 import clang.cindex
 
 # Configure libclang path if necessary
-clang.cindex.Config.set_library_file(r"D:\Liblaries\llvm\bin\libclang.dll")
+clang.cindex.Config.set_library_file(r"D:\LLVM\bin\libclang.dll")
 
 
 def normalize_type_spelling(spelling: str) -> str:
@@ -197,7 +197,6 @@ class ReflectionGenerator:
         # ... (this function's start remains the same) ...
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(f"// Auto-generated reflection file for {header_file}\n")
-            f.write('#pragma once\n')
             f.write(f'#include "{header_file}"\n')
             f.write('#include "ReflectionEngine.h"\n')
             f.write("#include <cstddef>\n\n")
@@ -382,7 +381,6 @@ class ReflectionGenerator:
         master_path = os.path.join(output_dir, "AllGenerated.cpp")
         with open(master_path, "w", encoding="utf-8") as f:
             f.write("// Auto-generated master reflection file\n")
-            f.write('#pragma once\n')
             f.write('#include "ReflectionEngine.h"\n\n')
             for cpp_file in sorted_files:
                 if cpp_file != "AllGenerated.cpp":

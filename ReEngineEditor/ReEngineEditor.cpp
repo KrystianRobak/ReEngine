@@ -30,6 +30,8 @@ int main(int argc, char** argv)
     CoordinatorWrapper coordinatorWrap;
     ApplicationWrapper applicationWrap;
 
+
+
     coordinatorWrap.LoadFunctions(engineDLL);
     applicationWrap.LoadFunctions(engineDLL);
 
@@ -38,48 +40,58 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    builder.ParseConfig();
+    
 
 
-    auto transform = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Transform");
+   
 
     applicationWrap.app = applicationWrap.CreateApplication();
     applicationWrap.Application_Init(applicationWrap.app);
 
-    coordinatorWrap.RegisterComponent(transform);
+    
 
     Window window;
-    window.Init(300, 300, "Okno zycia");
+    window.Init(1280, 720, "Okno zycia");
 
+    Engine::IEngineApi* engine = static_cast<Engine::IEngineApi*>(coordinatorWrap.GetCoordinator());
+
+    builder.ParseConfig(engine);
+
+    auto systems = Reflection::Registry::Instance().GetAllSystems();
+
+    for (auto system : systems)
+    {
+        LOGF_WARN("Znaleziono system: %s", system->fullName)
+    }
+
+
+    auto transform = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Transform");
+    auto renderSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.RenderOpenGL");
+
+    coordinatorWrap.RegisterComponent(transform);
+    System* renderer = coordinatorWrap.RegisterSystem(renderSystem);
+    renderer->Init(engine);
+    Signature signature;
+    signature.set(coordinatorWrap.GetComponentType(transform->fullName));
+
+    coordinatorWrap.SetSystemSignature(renderSystem->fullName, signature);
     
+    auto entity = coordinatorWrap.CreateEntity();
+
+    coordinatorWrap.AddComponent(entity, transform->fullName);
 
     if (applicationWrap.app == nullptr) {
         LOGF_ERROR("%s", "Application pointer is uninitialized!")
     }
 
-    //
-    //auto registry = Reflection::Registry::Instance();
-    //auto Classes = Reflection::Registry::Instance().GetAllSystems();
-
-    //for (auto* cls : Classes)
-    //{
-    //    InspectClass(cls);
-    //    std::cout << "\n";
-    //}
-
-    //Classes = Reflection::Registry::Instance().GetAllComponents();
-
-    //for (auto* cls : Classes)
-    //{
-    //    InspectClass(cls);
-    //    std::cout << "\n";
-    //}
 
     while (window.is_running())
     {
         window.PreRender();
+		
         window.Render();
-		builder.RendererSystem_->Update(0.016f);
+        
+        renderer->Update(0.016f);
         applicationWrap.Application_Update(applicationWrap.app);
         applicationWrap.Application_Render(applicationWrap.app);
         window.PostRender();

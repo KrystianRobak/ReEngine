@@ -15,6 +15,9 @@ private:
     {
         assert(mComponentTypes.find(typeName.c_str()) != mComponentTypes.end() && "Component not registered before use.");
 
+        auto array = std::static_pointer_cast<GenericComponentArray>(mComponentArrays["Transform"]);
+        auto array2 = std::static_pointer_cast<GenericComponentArray>(mComponentArrays[typeName.c_str()]);
+
         return std::static_pointer_cast<GenericComponentArray>(mComponentArrays[typeName.c_str()]);
     }
 
@@ -68,17 +71,17 @@ public:
     }
 
     // Returns all registered component names and their type IDs
-    std::unordered_map<const char*, ComponentType> GetComponentsTypes()
+    std::unordered_map<std::string, ComponentType> GetComponentsTypes()
     {
         return mComponentTypes;
     }
 
 private:
     // Maps component name (e.g., "Engine.Transform") to a ComponentType (bit index)
-    std::unordered_map<const char*, ComponentType> mComponentTypes{};
+    std::unordered_map<std::string, ComponentType> mComponentTypes{};
 
     // Maps component name to its storage array
-    std::unordered_map<const char*, std::shared_ptr<IComponentArray>> mComponentArrays{};
+    std::unordered_map<std::string, std::shared_ptr<IComponentArray>> mComponentArrays{};
 
     // The next available bit index for a new component type
     ComponentType mNextComponentType{};

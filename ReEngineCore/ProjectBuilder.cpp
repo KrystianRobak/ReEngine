@@ -1,16 +1,29 @@
 #include "ProjectBuilder.h"
 
+#include <Windows.h>
+
+#include <Logger.h>
+
+
+
 typedef System* (*CreateSystemFunc)();
 
-void ProjectBuilder::ParseConfig() {
-    ModulesToLoad_.push_back("Systems/OpenGLRenderer.dll");
+void ProjectBuilder::ParseConfig(Engine::IEngineApi* engine) {
+	const char* moduleName = "Systems/OpenGLRenderer.dll";
 
-	for(const char* moduleName : ModulesToLoad_) {
-		LOGF_INFO("Loading module: %s", moduleName);
-		System* system = LoadModule(moduleName);
-		system->Init();
-		RendererSystem_ = system; // Store the renderer system if needed
-	}
+	LOGF_INFO("Loading module: %s", moduleName);
+	System* system = LoadModule(moduleName);
+	system->Init(engine);
+	RendererSystem_ = system; // Store the renderer system if needed
+
+	moduleName = "Systems/Physics2D.dll";
+
+	LOGF_INFO("Loading module: %s", moduleName);
+	System* system2 = LoadModule(moduleName);
+	system2->Init(engine);
+	PhysicsSystem_ = system2; // Store the renderer system if needed
+
+    ModulesToLoad_.push_back("Systems/OpenGLRenderer.dll");
 }
 
 System* ProjectBuilder::LoadModule(const char* ModuleName)

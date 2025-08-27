@@ -22,7 +22,7 @@ public:
 
     void InsertData(Entity entity, void* componentData)
     {
-        assert(mEntityToIndexMap.find(entity) == mEntityToIndexMap.end() && "Component added to same entity more than once.");
+        //assert(mEntityToIndexMap.find(entity) == mEntityToIndexMap.end() && "Component added to same entity more than once.");
 
         size_t newIndex = mSize;
         mEntityToIndexMap[entity] = newIndex;

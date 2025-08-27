@@ -1,39 +1,23 @@
 #pragma once
 
-#include "../Components/Gravity.h"
-#include "../Components/RigidBody.h"
-#include "../Components/Renderable.h"
-#include "../Components/Thrust.h"
-#include "../Components/Transform.h"
-#include "../Components/Collision.h"
-#include "../Components/Camera.h"
-#include "../Components/Player.h"
-#include "../Components/Thrust.h"
-#include "../Components/LightSource.h"
-#include "../Components/StaticMesh.h"
-#include "../Components/Animated.h"
-#include <Engine/Components/BehaviourScript.h>
-
 #include "Engine/Core/Coordinator/Coordinator.h"
-
-#include "Engine/Systems/Input/CameraControlSystem.h"
-#include "Engine/Systems/Physics/PhysicsSystem.h"
-#include "Engine/Systems/Input/PlayerControlSystem.h"
-#include "Engine/Systems/Render/RenderSystem.h"
-#include "Engine/Systems/Animation/AnimationSystem.h"
-#include "Engine/Systems/Behaviour/BehaviourSystem.h"
 
 #include <chrono>
 #include <random>
+#include <thread>
 
 #include "../ReEngineExport.h"
 
 class ENGINE_API Application
 {
 public:
+	void StartClock();
+	void MeasureTime();
 	void Init();
+
 	void Update();
 	void Render();
+	void PhysicsTick();
 
 	void RenderEntitiesUI();
 
@@ -53,6 +37,20 @@ public:
 private:
 	float dt = 0.0f;
 	bool running;
+
+	std::unique_ptr<std::thread> GameThread;
+	std::unique_ptr<std::thread> RenderThread;
+	std::unique_ptr<std::thread> PhysicsThread;
+
 	std::shared_ptr<Coordinator> coordinator;
+	System* Renderer_;
+	System* PhysicsSystem_;
+
+	bool HasRenderUpdateThreadFinished = false;
+
+	const float targetFrameDuration = 1.0f / 60.0f;
+	float frameTimeAccumulator = 0.0f;
+	int frameCount = 0;
+	std::chrono::steady_clock::time_point frameStartTime;
 };
 
