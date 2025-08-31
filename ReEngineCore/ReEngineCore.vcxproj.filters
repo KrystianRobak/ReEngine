@@ -22,6 +22,9 @@
     <Filter Include="Pliki źródłowe\SystemApi">
       <UniqueIdentifier>{ca5d76cc-9ad8-49a7-b49c-bdb704afef40}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Pliki nagłówkowe\SystemEditorApi">
+      <UniqueIdentifier>{c8341749-41e5-4830-8310-1be899614cf7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="System\System.cpp">
@@ -52,6 +55,12 @@
     </ClInclude>
     <ClInclude Include="SystemApi\CoordinatorSystemApi.h">
       <Filter>Pliki nagłówkowe\SystemApi</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineApi\CoordinatorEditorApi.h">
+      <Filter>Pliki nagłówkowe\SystemEditorApi</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseApi.h">
+      <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

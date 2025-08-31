@@ -110,6 +110,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\ReEngineCore;$(SolutionDir)\ReEngineReflectionCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,7 +142,9 @@
     <ClCompile Include="System\System.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BaseApi.h" />
     <ClInclude Include="CoreExport.h" />
+    <ClInclude Include="EngineApi\CoordinatorEditorApi.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ProjectBuilder.h" />
     <ClInclude Include="SystemApi\CoordinatorSystemApi.h" />

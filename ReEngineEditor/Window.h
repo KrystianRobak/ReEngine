@@ -29,7 +29,7 @@ public:
 
     ~Window();
 
-    bool Init(int width, int height, const std::string& title);
+    bool Init(int width, int height, const std::string& title, Editor::IEngineEditorApi* EngineApi);
 
     void PreRender();
 

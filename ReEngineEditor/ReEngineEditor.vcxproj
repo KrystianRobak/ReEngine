@@ -114,6 +114,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories);$(SolutionDir)\ReEngineReflectionCore;$(SolutionDir)\ReEngineCore</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

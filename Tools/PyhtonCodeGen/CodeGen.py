@@ -6,7 +6,7 @@ from collections import defaultdict
 import clang.cindex
 
 # Configure libclang path if necessary
-clang.cindex.Config.set_library_file(r"D:\LLVM\bin\libclang.dll")
+clang.cindex.Config.set_library_file(r"C:\LLVM\bin\libclang.dll")
 
 
 def normalize_type_spelling(spelling: str) -> str:

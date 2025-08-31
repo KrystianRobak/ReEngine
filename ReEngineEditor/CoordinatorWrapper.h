@@ -1,5 +1,9 @@
 #pragma once
 
+#include "EngineApi/CoordinatorEditorApi.h"
+#include "SystemApi/CoordinatorSystemApi.h"
+
+
 #include "System/System.h"
 #include <windows.h>
 #include "Logger.h"
@@ -24,7 +28,8 @@ typedef void(*CoordinatorRemoveComponentFunc)(uint32_t, const char*);
 typedef void* (*CoordinatorGetComponentFunc)(uint32_t, const char*);
 typedef bool(*CoordinatorHasComponentFunc)(uint32_t, const char*);
 typedef ComponentType(*CoordinatorGetComponentTypeFunc)(const std::string&);
-typedef void* (*GetCoordinatorFunc)();
+typedef Editor::IEngineEditorApi* (*GetCoordinatorEditorFunc)();
+typedef Engine::IEngineApi* (*GetCoordinatorSystemFunc)();
 
 // --- System Management ---
 
@@ -59,7 +64,9 @@ public:
 		HasComponentFunc = (CoordinatorHasComponentFunc)GetProcAddress(engineDLL, "Coordinator_HasComponent");
 		GetComponentType = (CoordinatorGetComponentTypeFunc)GetProcAddress(engineDLL, "GetComponentType");
 
-		GetCoordinator = (GetCoordinatorFunc)GetProcAddress(engineDLL, "GetCoordinator");
+		GetCoordinatorEditor = (GetCoordinatorEditorFunc)GetProcAddress(engineDLL, "GetCoordinator");
+		GetCoordinatorSystem = (GetCoordinatorSystemFunc)GetProcAddress(engineDLL, "GetCoordinator");
+
 		GetComponentTypeCountFunc = (CoordinatorGetComponentTypeCountFunc)GetProcAddress(engineDLL, "Coordinator_GetComponentTypeCount");
 		GetComponentTypeNameFunc = (CoordinatorGetComponentTypeNameFunc)GetProcAddress(engineDLL, "Coordinator_GetComponentTypeName");
 
@@ -148,7 +155,8 @@ public:
 	CoordinatorSetSelectedEntityFunc SetSelectedEntityFunc;
 	CoordinatorGetSelectedEntityFunc GetSelectedEntityFunc;
 
-	GetCoordinatorFunc GetCoordinator;
+	GetCoordinatorEditorFunc GetCoordinatorEditor;
+	GetCoordinatorSystemFunc GetCoordinatorSystem;
 
 	// Component Management
 	CoordinatorRegisterComponentFunc RegisterComponentFunc;

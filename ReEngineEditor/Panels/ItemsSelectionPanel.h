@@ -2,7 +2,7 @@
 
 #include "UIComponent.h"
 
-class ItemsSelectionPanel
+class ItemsSelectionPanel : public UIComponent
 {
 public:
 

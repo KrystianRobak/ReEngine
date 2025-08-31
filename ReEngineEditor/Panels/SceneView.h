@@ -9,12 +9,12 @@
 class SceneView : public UIComponent
 {
 public:
-    SceneView(std::shared_ptr<Application> application) : application(application), frameBuffer(nullptr), size(800, 600)
+    SceneView() : frameBuffer(nullptr), size(800, 600)
     {
         frameBuffer = std::make_unique<OpenGlFrameBuffer>();
         frameBuffer->create_buffers(800, 600);
        // mLight = std::make_unique<nelems::Light>();
-        std::cout << application << std::endl;
+        //std::cout << application << std::endl;
     }
 
 
@@ -27,7 +27,6 @@ public:
     void PostRender();
 
 private:
-    std::shared_ptr<Application> application;
     std::unique_ptr<OpenGlFrameBuffer> frameBuffer;
     glm::vec2 size;
 };

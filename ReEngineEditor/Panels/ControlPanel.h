@@ -1,12 +1,11 @@
 #pragma once
 #include "UIComponent.h"
 #include "Types.h"
-#include "Engine/Core/Coordinator/Coordinator.h"
 
 
 
 
-class ControlPanel
+class ControlPanel : public UIComponent
 {
 public:
 

@@ -17,6 +17,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReEngineEditor", "ReEngineE
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReflectionCore", "ReEngineReflectionCore\ReflectionCore.vcxproj", "{E596A4EE-63AF-4058-B80A-56D74EF9D362}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6} = {B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReEngineCore", "ReEngineCore\ReEngineCore.vcxproj", "{B9CBA2DC-E166-4D90-96DE-862E2D1F9BE6}"
 EndProject

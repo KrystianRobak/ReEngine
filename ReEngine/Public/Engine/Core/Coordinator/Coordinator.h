@@ -1,6 +1,8 @@
 #pragma once
 
 #include "SystemApi/CoordinatorSystemApi.h"
+#include "EngineApi/CoordinatorEditorApi.h"
+
 #include "ComponentManager.h"
 #include "EntityManager.h"
 #include "EventManager.h"
@@ -14,7 +16,7 @@
 
 #include "../ReEngineExport.h"
 
-class ENGINE_API Coordinator : public Engine::IEngineApi
+class ENGINE_API Coordinator : public Editor::IEngineEditorApi
 {
 private:
 	std::shared_ptr<ComponentManager> mComponentManager;
@@ -43,6 +45,7 @@ public:
 	Coordinator(): mReSequencer(&Sequencer) {
 	}
 
+
 	void Init()
 	{
 		mComponentManager = std::make_shared<ComponentManager>();
@@ -57,12 +60,12 @@ public:
 	}  
 
 
-	Entity CreateEntity()
+	Entity CreateEntity() override
 	{
 		return mEntityManager->CreateEntity();
 	}
 
-	Entity CreateLightEntity()
+	Entity CreateLightEntity() override
 	{
 
 		Entity entity = mEntityManager->CreateLightEntity();
@@ -70,7 +73,7 @@ public:
 		return entity;
 	}
 
-	void DestroyEntity(Entity entity)
+	void DestroyEntity(Entity entity) override
 	{
 		mEntityManager->DestroyEntity(entity);
 
@@ -79,25 +82,27 @@ public:
 		mSystemManager->EntityDestroyed(entity);
 	}
 
-	std::uint32_t GetEntitiesAmount()
+	std::uint32_t GetEntitiesAmount() override
 	{
 		return mEntityManager->GetEntityCount();
 	}
 
-	std::uint32_t GetLightEntitiesAmount()
+	std::uint32_t GetLightEntitiesAmount() override
 	{
 		return mEntityManager->GetLightEntityCount();
 	}
 
-	void SetSelectedEntity(std::uint32_t entity) {
+	void SetSelectedEntity(std::uint32_t entity) override 
+	{
 		this->mEntityManager->SetSelectedEntity(entity);
 	}
 
-	std::uint32_t GetSelectedEntity() {
+	std::uint32_t GetSelectedEntity() override 
+	{
 		return this->mEntityManager->GetSelectedEntity();
 	}
 
-	Signature GetEntitySignature(Entity entity)
+	Signature GetEntitySignature(Entity entity) override
 	{
 		return mEntityManager->GetSignature(entity);
 	}
@@ -109,7 +114,7 @@ public:
 		mComponentManager->RegisterComponent(classInfo);
 	}
 
-	void AddComponent(Entity entity, const std::string& fullName)
+	void AddComponent(Entity entity, const std::string& fullName) override
 	{
 		auto componentInfo = Reflection::Registry::Instance().FindComponent(fullName);
 		void* componentData = componentInfo->construct();
@@ -122,7 +127,7 @@ public:
 		mSystemManager->EntitySignatureChanged(entity, signature);
 	}
 
-	void RemoveComponent(Entity entity, const std::string& typeName)
+	void RemoveComponent(Entity entity, const std::string& typeName) override
 	{
 		mComponentManager->RemoveComponent(entity, typeName);
 
@@ -134,12 +139,12 @@ public:
 	}
 
 	// Returns a raw pointer, which the caller must cast
-	void* GetComponent(Entity entity, const std::string& typeName)
+	void* GetComponent(Entity entity, const std::string& typeName) override
 	{
 		return mComponentManager->GetComponent(entity, typeName);
 	}
 
-	ComponentType GetComponentType(const std::string& typeName)
+	ComponentType GetComponentType(const std::string& typeName) override
 	{
 		return mComponentManager->GetComponentType(typeName);
 	}
@@ -158,7 +163,7 @@ public:
 	}
 
 
-	System* GetSystem(const std::string& typeName)
+	System* GetSystem(const std::string& typeName) override
 	{
 		// Asks the SystemManager for a system by its string name.
 		return mSystemManager->GetSystem(typeName);
@@ -178,12 +183,12 @@ public:
 		mEventManager->AddListener(eventType, listener);
 	}
 
-	void SendEvent(Event& event)
+	void SendEvent(Event& event) 
 	{
 		mEventManager->SendEvent(event);
 	}
 
-	void SendEvent(EventType eventType)
+	void SendEvent(EventType eventType) override
 	{
 		mEventManager->SendEvent(eventType);
 	}

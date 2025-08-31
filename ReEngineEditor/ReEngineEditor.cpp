@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <iostream>
 
+#include "EngineApi/CoordinatorEditorApi.h"
+
 #include "ReflectionEngine.h"
 #include "ReflectionHelpers.h"
 
@@ -51,9 +53,10 @@ int main(int argc, char** argv)
     
 
     Window window;
-    window.Init(1280, 720, "Okno zycia");
 
-    Engine::IEngineApi* engine = static_cast<Engine::IEngineApi*>(coordinatorWrap.GetCoordinator());
+    window.Init(1280, 720, "Okno zycia", coordinatorWrap.GetCoordinatorEditor());
+
+	Editor::IEngineEditorApi* engine = coordinatorWrap.GetCoordinatorEditor();
 
     builder.ParseConfig(engine);
 
@@ -69,21 +72,25 @@ int main(int argc, char** argv)
     auto renderSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.RenderOpenGL");
 
     coordinatorWrap.RegisterComponent(transform);
+
     System* renderer = coordinatorWrap.RegisterSystem(renderSystem);
-    renderer->Init(engine);
+
+	renderer->InitApi(engine);
+
     Signature signature;
     signature.set(coordinatorWrap.GetComponentType(transform->fullName));
 
     coordinatorWrap.SetSystemSignature(renderSystem->fullName, signature);
     
-    auto entity = coordinatorWrap.CreateEntity();
+    //auto entity = coordinatorWrap.CreateEntity();
 
-    coordinatorWrap.AddComponent(entity, transform->fullName);
+    //coordinatorWrap.AddComponent(entity, transform->fullName);
 
     if (applicationWrap.app == nullptr) {
         LOGF_ERROR("%s", "Application pointer is uninitialized!")
     }
 
+    engine->CreateEntity();
 
     while (window.is_running())
     {
@@ -92,8 +99,8 @@ int main(int argc, char** argv)
         window.Render();
         
         renderer->Update(0.016f);
-        applicationWrap.Application_Update(applicationWrap.app);
-        applicationWrap.Application_Render(applicationWrap.app);
+        //applicationWrap.Application_Update(applicationWrap.app);
+        //applicationWrap.Application_Render(applicationWrap.app);
         window.PostRender();
     }
 

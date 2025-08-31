@@ -14,7 +14,7 @@ public:
 		ProjectPath_ = ProjectPath;
 	}
 
-	void ParseConfig(Engine::IEngineApi* engine);
+	void ParseConfig(Editor::IEngineEditorApi* engine);
 
 	System* LoadModule(const char* ModuleName);
 

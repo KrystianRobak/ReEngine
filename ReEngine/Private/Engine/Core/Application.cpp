@@ -46,33 +46,39 @@ void Application::Init()
 	coordinator = Coordinator::GetCoordinator();
 
 	coordinator->Init();
-	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
-	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
-	PhysicsThread = std::make_unique<std::thread>(std::thread(&Application::PhysicsTick, this));
+	//GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
+	//RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
+	//PhysicsThread = std::make_unique<std::thread>(std::thread(&Application::PhysicsTick, this));
 
 	//GameThread->join();
 	//RenderThread->join();
-	PhysicsThread->join();
+	//PhysicsThread->join();
 
 }
 
 void Application::Update()
 {
 	std::cout << "Update" << std::endl;
+	auto systems = Reflection::Registry::Instance().GetAllSystems();
+	for (auto system : systems)
+	{
+		
+	}
 }
 
 
 void Application::Render()
 {
 	//auto renderSystem = coordinator->GetSystem<RenderSystem>();
-	std::cout << "Render" << std::endl;
-	//renderSystem->Update(dt);
+	//std::cout << "Render" << std::endl;
+	Renderer_->Update(dt);
 }
 
 
 void Application::PhysicsTick()
 {
 	std::cout << "Physics Tick" << std::endl;
+	PhysicsSystem_->Update(dt);
 }
 
 void Application::RenderEntitiesUI()

@@ -1,6 +1,6 @@
 #include "Window.h"
 
-bool Window::Init(int width, int height, const std::string& title)
+bool Window::Init(int width, int height, const std::string& title, Editor::IEngineEditorApi* EngineApi)
 {
     this->width = width;
     this->height = height;
@@ -13,13 +13,23 @@ bool Window::Init(int width, int height, const std::string& title)
     application->Init();
 
     propertyPanel = std::make_unique<PropertyPanel>();
-    sceneView = std::make_unique<SceneView>(application);
+    sceneView = std::make_unique<SceneView>();
     fileBrowser = std::make_unique<FileBrowser>();
     itemsSelectionPanel = std::make_unique<ItemsSelectionPanel>();
     addingPanel = std::make_unique<AddingPanel>();
     controlPanel = std::make_unique<ControlPanel>();
     animationPanel = std::make_unique<AnimationPanel>();
     keyframeEditor = std::make_unique<KeyframeEditorPanel>();
+
+    sceneView->Init(EngineApi);
+
+    controlPanel->Init(EngineApi);
+
+    itemsSelectionPanel->Init(EngineApi);
+
+    propertyPanel->Init(EngineApi);
+    fileBrowser->Init(EngineApi);
+    addingPanel->Init(EngineApi);
 
     std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
     coordinator->AddEventListener(METHOD_LISTENER_ONE_PARAM(Events::Application::MENU_CHANGED, Window::on_mode_Changed));
@@ -57,29 +67,22 @@ void Window::Render()
 {
     sceneView->Render();
 
-    //controlPanel->Render();
+    controlPanel->Render();
 
-    //itemsSelectionPanel->Render();
+    itemsSelectionPanel->Render();
 
-    //switch(CurrentMode) {
-    //    case MenuType::BaseMenu:
+    switch(CurrentMode) {
+        case MenuType::BaseMenu:
+              propertyPanel->Render();
+              fileBrowser->Render();
+              addingPanel->Render();
+        break;
 
-    //        propertyPanel->Render();
-
-    //        fileBrowser->Render();
-    //        addingPanel->Render();
-
-    //        break;
-
-    //    case MenuType::AnimationMenu:
-
+        case MenuType::AnimationMenu:
     //        animationPanel->Render();
     //        keyframeEditor->Render();
-
-    //    break;
-    //}
-    
-
+        break;
+    }
 }
 
 void Window::PreRender()

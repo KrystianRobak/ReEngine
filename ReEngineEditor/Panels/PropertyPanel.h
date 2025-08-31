@@ -2,17 +2,15 @@
 
 #include "UIComponent.h"
 
-#include "Engine/Core/Coordinator/Coordinator.h"
-//#include "Engine/Components/StaticMesh.h"
-#include "Engine/Components/Transform.h"
-
-class PropertyPanel
+class PropertyPanel : public UIComponent
 {
 public:
 
     PropertyPanel()
     {
     }
+
+    void ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function);
 
     void Render();
 

@@ -1,14 +1,15 @@
 #pragma once
 
+#include "BaseApi.h"
 #include <ReTypes.h>
 
-
+class System;
 
 namespace Engine
 {
-	class IEngineApi 
+	class IEngineApi
 	{
 	public:
-		virtual void* GetComponent(Entity entity, const std::string& typeName) = 0;
+
 	};
 }

@@ -19,6 +19,7 @@ public:
         iconPath = "icons/folder.png";
         folderTextureID = LoadFileTexture(iconPath);
     };
+
     void FindFiles(std::string folderPath, bool direction);
     void RenderFile(GLuint textureID, float itemWidth, float itemSpacing, int itemsPerRow, int& itemsInRow, std::filesystem::directory_entry& entry);
     virtual void Render();

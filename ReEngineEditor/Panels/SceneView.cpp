@@ -37,10 +37,6 @@ void SceneView::PostRender()
 void SceneView::Render()
 {
     frameBuffer->unbind();
-    
-    if(application->IsRunning())
-        application->Update();
-
 
     ImGui::Begin("Scene");
 
@@ -59,9 +55,9 @@ void SceneView::Render()
                     std::string name = parts[0];
                     std::string path = parts[1];
                     
-                    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+                   /* std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
-                    Entity entity = coordinator->CreateEntity();
+                    Entity entity = coordinator->CreateEntity();*/
                 }
             }
         } 

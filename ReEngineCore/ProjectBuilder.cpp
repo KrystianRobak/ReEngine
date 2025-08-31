@@ -8,19 +8,17 @@
 
 typedef System* (*CreateSystemFunc)();
 
-void ProjectBuilder::ParseConfig(Engine::IEngineApi* engine) {
+void ProjectBuilder::ParseConfig(Editor::IEngineEditorApi* engine) {
 	const char* moduleName = "Systems/OpenGLRenderer.dll";
 
 	LOGF_INFO("Loading module: %s", moduleName);
 	System* system = LoadModule(moduleName);
-	system->Init(engine);
 	RendererSystem_ = system; // Store the renderer system if needed
 
 	moduleName = "Systems/Physics2D.dll";
 
 	LOGF_INFO("Loading module: %s", moduleName);
 	System* system2 = LoadModule(moduleName);
-	system2->Init(engine);
 	PhysicsSystem_ = system2; // Store the renderer system if needed
 
     ModulesToLoad_.push_back("Systems/OpenGLRenderer.dll");

@@ -1,23 +1,18 @@
 #include "AddingPanel.h"
-#include "Engine/Components/Gravity.h"
-#include "Engine/Components/LightSource.h"
-#include "Engine/Components/Renderable.h"
-#include "Engine/Components/RigidBody.h"
-//#include "Engine/Components/Collision.h"
-//#include "Engine/Components/StaticMesh.h"
-#include "Engine/Components/Transform.h"
-#include "Engine/Core/Coordinator/Coordinator.h"
 
 #include <random>
 
-#include "imgui/imgui.h"
-
 void AddingPanel::Render()
 {
+
+    Reflection::Registry::Instance().GetAllComponents();
     //std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
-    //ImGui::Begin("AddingPanel");
-    //if (ImGui::CollapsingHeader("Shapes"))
+    ImGui::Begin("AddingPanel");
+    if (ImGui::CollapsingHeader("Shapes"))
+    {
+
+    }
     //{
     //    ImGui::Selectable("Sphere");
     //    if (ImGui::IsItemClicked())
@@ -126,7 +121,9 @@ void AddingPanel::Render()
     //        renderable.Shininess = 50;
     //    }
     //}
-    //if (ImGui::CollapsingHeader("LightSources"))
+    if (ImGui::CollapsingHeader("LightSources"))
+    {
+    }
     //{
     //    ImGui::Selectable("Light");
     //    if (ImGui::IsItemClicked())

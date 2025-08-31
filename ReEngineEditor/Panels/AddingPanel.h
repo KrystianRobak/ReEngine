@@ -3,7 +3,7 @@
 #include "UIComponent.h"
 
 
-class AddingPanel
+class AddingPanel : public UIComponent
 {
 public:
     AddingPanel()

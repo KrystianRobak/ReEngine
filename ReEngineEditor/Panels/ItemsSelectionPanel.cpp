@@ -3,31 +3,28 @@
 
 void ItemsSelectionPanel::Render()
 {
-    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-
     ImGui::Begin("SelectionPanel");
     if (ImGui::CollapsingHeader("Objects"))
     {
         ImGui::Indent();
 
         ImGui::BeginChild("ObjectList", ImVec2(0, 150), true);
-        for (int entity = 0; entity < coordinator->GetLightEntitiesAmount(); entity++)
+        for (int entity = 0; entity < engineAPI->GetLightEntitiesAmount(); entity++)
         {
             std::string objectName = "Light " + std::to_string(entity);
             ImGui::Selectable(objectName.c_str());
             if (ImGui::IsItemClicked())
             {
-                coordinator->SetSelectedEntity(entity);
+                engineAPI->SetSelectedEntity(entity);
             }
-
         }
-        for (int entity = 11; entity <= coordinator->GetEntitiesAmount()+10; entity++)
+        for (int entity = 11; entity <= engineAPI->GetEntitiesAmount()+10; entity++)
         {
             std::string objectName = "Entity " + std::to_string(entity);
             ImGui::Selectable(objectName.c_str());
             if (ImGui::IsItemClicked())
             {
-                coordinator->SetSelectedEntity(entity);
+                engineAPI->SetSelectedEntity(entity);
             }
         }
         ImGui::EndChild();

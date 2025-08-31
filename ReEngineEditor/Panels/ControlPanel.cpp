@@ -25,23 +25,23 @@ void ControlPanel::Render()
 
         if (ImGui::Combo("Select Menu", &type, items, 2))
         {
-            std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+            /*std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
             Event KeyEvent(Events::Application::MENU_CHANGED);
             KeyEvent.SetParam<int>("MenuType", type);
-            coordinator->SendEvent(KeyEvent);
+            coordinator->SendEvent(KeyEvent);*/
         }
         if (ImGui::Button("Start/Pause"))
         {
-            std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-            coordinator->SendEvent(Events::Application::TOGGLE);
+           /* std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+            coordinator->SendEvent(Events::Application::TOGGLE);*/
         }
         //ImGui::EndGroup();
         //ImGui::BeginGroup();
         if (ImGui::Button("Recompile shader"))
         {
-            std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-            coordinator->SendEvent(Events::Application::RECOMPILE_SHADER);
+            /*std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+            coordinator->SendEvent(Events::Application::RECOMPILE_SHADER);*/
         }
         ImGui::EndGroup();
     ImGui::End();

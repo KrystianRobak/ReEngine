@@ -22,9 +22,7 @@ inline std::vector<std::string> splitString(const std::string& str, char delimit
 
 void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature) 
 {
-    //std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
-    //if (ImGui::CollapsingHeader("Add component"))
     //{
     //    if (!signature.test(coordinator->GetComponentType<Transform>()))
     //    {
@@ -193,77 +191,83 @@ void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature)
 
 }
 
+void PropertyPanel::ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function)
+{
+    if (ImGui::CollapsingHeader(header))
+    {
+        for (auto component : Components)
+        {
+            Entity entity = engineAPI->GetSelectedEntity();
+
+            if (ImGui::Button(component->name))
+            {
+                function(entity, component->name);
+            }
+            
+        }
+    }
+}
+
 
 void PropertyPanel::Render()
 {
-    //std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-    //std::int32_t entity = coordinator->GetSelectedEntity();
-    //if (entity < 0 && entity > MAX_ENTITIES)
-    //    return;
+	ImGui::Begin("Properties");
 
-    //std::bitset<32> signature = coordinator->GetEntitySignature(entity);
-    //ImGui::Begin("Properties");
-    //RenderComponentsMenu(entity, signature);
-    //signature = coordinator->GetEntitySignature(entity);
-   
+    auto Components = Reflection::Registry::Instance().GetAllComponents();
 
-    //std::string label = "Components: ##" + std::to_string(entity);
+    ForEachComponent("Add component", Components,
+        [this](Entity entity, const char* name) {
+            Signature signature = engineAPI->GetEntitySignature(entity);
+            if (!signature.test(engineAPI->GetComponentType(name)))
+            {
+                engineAPI->AddComponent(entity, name);
+            }
+        });
 
-    //if (signature.test(coordinator->GetComponentType<Transform>()))
-    //{
-    //    //coordinator->GetComponent<Transform>(entity).GenerateGUIElements(entity);
-    //}
+    ForEachComponent("Remove component", Components,
+        [this](Entity entity, const char* name) {
+            Signature signature = engineAPI->GetEntitySignature(entity);
+            if (signature.test(engineAPI->GetComponentType(name)))
+            {
+                engineAPI->RemoveComponent(entity, name);
+            }
+        });
 
-    //if (signature.test(coordinator->GetComponentType<Renderable>()))
-    //{
-    //    //coordinator->GetComponent<Renderable>(entity).GenerateGUIElements(entity);
-    //}
+    Entity entity = engineAPI->GetSelectedEntity();
+    Signature signature = engineAPI->GetEntitySignature(entity);
 
-    //if (signature.test(coordinator->GetComponentType<Gravity>()))
-    //{
-    //   // coordinator->GetComponent<Gravity>(entity).GenerateGUIElements(entity);
-    //}
+    for (auto componentInfo : Components) {
+        // Check if the current entity has this component.
+        if (signature.test(engineAPI->GetComponentType(componentInfo->name))) {
+            // If it does, render a collapsible header for it.
+            if (ImGui::CollapsingHeader(componentInfo->name)) {
+                // Get the actual component data pointer.
+                void* componentData = engineAPI->GetComponent(entity, componentInfo->name);
 
-    //if (signature.test(coordinator->GetComponentType<RigidBody>()))
-    //{
-    //   // coordinator->GetComponent<RigidBody>(entity).GenerateGUIElements(entity);
-    //}
+                // Iterate through the reflected variables of the component.
+                for (auto& variable : componentInfo->variables) {
+                    // Get a pointer to the variable's data using the base pointer and offset.
+                    char* varDataPtr = (char*)componentData + variable.offset;
 
-    //if (signature.test(coordinator->GetComponentType<LightSource>()))
-    //{
-    //   // coordinator->GetComponent<LightSource>(entity).GenerateGUIElements(entity);
-    //}
-    //
-    //if (signature.test(coordinator->GetComponentType<Animated>()))
-    //{
-    //    //coordinator->GetComponent<Animated>(entity);
-    //}
+                    // Use the variable's type information to choose the correct ImGui widget.
+                    if (strcmp(variable.type->name, "float") == 0) {
+                        ImGui::DragFloat(variable.name, (float*)varDataPtr);
+                    }
+                    else if (strcmp(variable.type->name, "int") == 0) {
+                        ImGui::InputInt(variable.name, (int*)varDataPtr);
+                    }
+                    else if (strcmp(variable.type->name, "bool") == 0) {
+                        ImGui::Checkbox(variable.name, (bool*)varDataPtr);
+                    }
+                    // Add more conditions for other types like glm::vec3, glm::vec4, etc.
+                    // For example, for a glm::vec3:
+                    else if (strcmp(variable.type->name, "glm::vec3") == 0) {
+                        ImGui::DragFloat3(variable.name, (float*)varDataPtr);
+                    }
+                }
+            }
+        }
+    }
 
-    //if (signature.test(coordinator->GetComponentType<BehaviourScript>()))
-    //{
-    //    //coordinator->GetComponent<BehaviourScript>(entity).GenerateGUIElements(entity);
-    //}
-
-    //ImGui::Text(label.c_str());
-    //if (ImGui::BeginDragDropTarget())
-    //{
-    //    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DIRECTORY_ENTRY"))
-    //    {
-    //        if (payload->DataSize > 0) 
-    //        {
-    //            std::string nameWithPath(static_cast<const char*>(payload->Data));
-    //            std::vector<std::string> parts = splitString(nameWithPath, '|');
-    //            if (parts.size() == 2) 
-    //            {
-    //                std::string name = parts[0];
-    //                std::string path = parts[1];
-    //                //auto& staticMesh = coordinator->GetComponent<StaticMesh>(entity);
-    //                //staticMesh.loadModel(path);
-    //            }
-    //        }
-    //    }
-    //ImGui::EndDragDropTarget();
-    //}
-
-    //ImGui::End();
+	ImGui::End();
 }

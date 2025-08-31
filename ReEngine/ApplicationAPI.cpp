@@ -2,6 +2,14 @@
 
 #include "Public/Engine/Core/Application.h"
 
+namespace Editor {
+    class IEngineEditorApi;
+}
+
+namespace Engine {
+    class IEngineApi;
+}
+
 extern "C" {
 
     ENGINE_API void* CreateApplication() {
@@ -93,6 +101,16 @@ extern "C" {
     ENGINE_API void* GetCoordinator()
     {
         return Coordinator::GetCoordinator().get();
+    }
+
+    ENGINE_API Editor::IEngineEditorApi* GetCoordinatorEditor()
+    {
+        return static_cast<Editor::IEngineEditorApi*>(Coordinator::GetCoordinator().get());
+    }
+
+    ENGINE_API Editor::IEngineEditorApi* GetCoordinatorSystem()
+    {
+        return static_cast<Editor::IEngineEditorApi*>(Coordinator::GetCoordinator().get());
     }
 
     ENGINE_API void SetSystemSignature(const std::string& typeName, Signature signature)

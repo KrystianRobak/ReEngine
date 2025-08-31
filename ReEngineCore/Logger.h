@@ -35,16 +35,27 @@ inline void log_printf(const char* level, const char* color, const char* file, i
 
     va_end(args);
 
-    std::cout
-        << "[" << color << std::left << std::setw(LEVEL_WIDTH) << level << COLOR_RESET << "] "
-        << std::left << std::setw(MSG_WIDTH) << buffer << " | "
-        << " FILE: " << std::left << std::setw(FILE_WIDTH) << basename(file) << " | "
-        << " LINE: " << line
-        << std::endl;
+    if (level == "ERROR") {
+        // For errors, print to stderr
+        std::cerr
+            << "[" << color << std::left << std::setw(LEVEL_WIDTH) << level << COLOR_RESET << "] "
+            << std::left << std::setw(MSG_WIDTH) << buffer << " | "
+            << " FILE: " << std::left << std::setw(FILE_WIDTH) << basename(file) << " | "
+            << " LINE: " << line
+            << std::endl;
+        return;
+	}
+    else
+    {
+        std::cout
+            << "[" << color << std::left << std::setw(LEVEL_WIDTH) << level << COLOR_RESET << "] "
+            << std::left << std::setw(MSG_WIDTH) << buffer << std::endl;
+    }
+    
 }
 
 // Macros
 #define LOGF_INFO(fmt, ...)  log_printf("INFO",  COLOR_INFO,  __FILE__, __LINE__, fmt, ##__VA_ARGS__);
 #define LOGF_WARN(fmt, ...)  log_printf("WARN",  COLOR_WARN,  __FILE__, __LINE__, fmt, ##__VA_ARGS__);
 #define LOGF_ERROR(fmt, ...) log_printf("ERROR", COLOR_ERROR, __FILE__, __LINE__, fmt, ##__VA_ARGS__);
-#define LOGF_REGISTER_PASS(fmt, ...) log_printf("ERROR", COLOR_REGISTER_PASS, __FILE__, __LINE__, fmt, ##__VA_ARGS__);
+#define LOGF_REGISTER_PASS(fmt, ...) log_printf("REGISTERED", COLOR_REGISTER_PASS, __FILE__, __LINE__, fmt, ##__VA_ARGS__);
