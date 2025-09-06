@@ -154,6 +154,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationAPI.cpp" />
+    <ClCompile Include="Commander.cpp" />
+    <ClCompile Include="RenderCommand.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
@@ -178,6 +180,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplicationAPI.h" />
+    <ClInclude Include="Commander.h" />
+    <ClInclude Include="RenderCommand.h" />
     <ClInclude Include="ComponentBasic.h" />
     <ClInclude Include="Public\Engine\Components\Animated.h" />
     <ClInclude Include="Public\Engine\Components\BasicInfo.h" />

@@ -36,6 +36,16 @@ extern "C" {
         return static_cast<Application*>(app)->IsRunning();
     }
 
+    ENGINE_API void Application_InitSystems(void* app)
+    {
+        static_cast<Application*>(app)->InitSystems();
+    }
+
+    ENGINE_API void Application_StartThreads(void* app)
+    {
+		static_cast<Application*>(app)->StartThreads();
+    }
+
     // --- Entity Management ---
     ENGINE_API uint32_t CreateEntity() {
         return Coordinator::GetCoordinator()->CreateEntity();

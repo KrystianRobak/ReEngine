@@ -10,8 +10,6 @@ bool Window::Init(int width, int height, const std::string& title, Editor::IEngi
 
     UICtx->init(this);
 
-    application->Init();
-
     propertyPanel = std::make_unique<PropertyPanel>();
     sceneView = std::make_unique<SceneView>();
     fileBrowser = std::make_unique<FileBrowser>();
@@ -30,9 +28,6 @@ bool Window::Init(int width, int height, const std::string& title, Editor::IEngi
     propertyPanel->Init(EngineApi);
     fileBrowser->Init(EngineApi);
     addingPanel->Init(EngineApi);
-
-    std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-    coordinator->AddEventListener(METHOD_LISTENER_ONE_PARAM(Events::Application::MENU_CHANGED, Window::on_mode_Changed));
 
     return IsRunning;
 }

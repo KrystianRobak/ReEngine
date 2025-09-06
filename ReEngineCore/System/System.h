@@ -4,8 +4,7 @@
 #include "ReflectionMacros.h"
 #include <ReTypes.h>
 #include <set>
-
-
+#include "../../ReEngine/Commander.h"
 
 class System
 {
@@ -17,6 +16,11 @@ public:
 
 	virtual void Update(float dt) = 0;
 
+	void InjectCommander(Commander* commander)
+	{
+		commander_ = commander;
+	}
+
 	std::set<Entity>& GetEntities()
 	{
 		return this->mEntities;
@@ -25,4 +29,5 @@ public:
 protected:
 	std::set<Entity> mEntities;
 	Editor::IEngineEditorApi* engine_;
+	Commander* commander_;
 };

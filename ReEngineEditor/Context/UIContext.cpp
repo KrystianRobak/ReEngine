@@ -1,9 +1,8 @@
-#include "UIContext.h"
+﻿#include "UIContext.h"
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h>
+
+
+#include <stb_image.h>
 
 bool UIContext::init(IWindow* window)
 {
@@ -56,18 +55,34 @@ bool UIContext::init(IWindow* window)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)window->get_native_window(), true);
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    int w, h, channels;
+    unsigned char* data = stbi_load("icon.png", &w, &h, &channels, 4);
+    if (data)
+    {
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+
+        appIcon = (ImTextureID)(intptr_t)tex;
+    }
+
+
     return true;
 }
 
 void UIContext::pre_render()
 {
-
-    // Start the Dear ImGui frame
+    // Start frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Create the docking environment
+    // Main invisible full window
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
         ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
@@ -86,9 +101,96 @@ void UIContext::pre_render()
 
     ImGuiID dockSpaceId = ImGui::GetID("InvisibleWindowDockSpace");
 
+    // ---------------- CUSTOM TITLE BAR ----------------
+    float titleBarHeight = 20.0f;
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, titleBarHeight));
+
+    ImGuiWindowFlags titleFlags = ImGuiWindowFlags_NoDocking |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoSavedSettings |
+        ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 6));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.10f, 0.10f, 0.10f, 1.0f));
+
+    ImGui::Begin("##TitleBar", nullptr, titleFlags); // no label shown
+
+    // Left side: Icon + Title
+    if (appIcon)
+    {
+        ImGui::Image(appIcon, ImVec2(20, 20));
+        ImGui::SameLine();
+    }
+    ImGui::TextUnformatted("ReEngine");
+
+    // Right side: Control buttons
+    float buttonSize = 20.0f;
+    float spacing = 4.0f;
+    ImGui::SameLine(ImGui::GetWindowWidth() - 10 - (buttonSize + spacing) * 3);
+
+    if (ImGui::Button("_", ImVec2(buttonSize, buttonSize))) {
+        glfwIconifyWindow((GLFWwindow*)window->get_native_window());
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("[]", ImVec2(buttonSize, buttonSize))) {
+        auto* win = (GLFWwindow*)window->get_native_window();
+        if (glfwGetWindowAttrib(win, GLFW_MAXIMIZED))
+            glfwRestoreWindow(win);
+        else
+            glfwMaximizeWindow(win);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("X", ImVec2(buttonSize, buttonSize))) {
+        glfwSetWindowShouldClose((GLFWwindow*)window->get_native_window(), GLFW_TRUE);
+    }
+
+    // Dragging by holding anywhere in title bar except buttons
+    if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+    {
+        auto* win = (GLFWwindow*)window->get_native_window();
+        static double lastX, lastY;
+        static bool dragging = false;
+
+        double mouseX, mouseY;
+        glfwGetCursorPos(win, &mouseX, &mouseY);
+
+        int winX, winY;
+        glfwGetWindowPos(win, &winX, &winY);
+
+        if (!dragging) {
+            lastX = mouseX;
+            lastY = mouseY;
+            dragging = true;
+        }
+
+        glfwSetWindowPos(win, (int)(winX + mouseX - lastX), (int)(winY + mouseY - lastY));
+
+        if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            dragging = false;
+    }
+
+    //// Draw bottom border line
+    //ImVec2 winPos = ImGui::GetWindowPos();
+    //ImVec2 winSize = ImGui::GetWindowSize();
+    //ImGui::GetWindowDrawList()->AddLine(
+    //    ImVec2(winPos.x, winPos.y + winSize.y),
+    //    ImVec2(winPos.x + winSize.x, winPos.y + winSize.y),
+    //    IM_COL32(80, 80, 80, 255), 25.0f);
+
+    ImGui::End();
+    ImGui::PopStyleColor();
+    ImGui::PopStyleVar(3);
+    // ---------------- END TITLE BAR ----------------
+
     ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
     ImGui::End();
-
 }
 
 void UIContext::post_render()

@@ -4,6 +4,7 @@
 #include "thread"
 #include "Engine/Systems/UI/UiSystem.h"
 #include <iostream>
+#include "Logger.h"
 
 void Application::StartClock() 
 {
@@ -46,39 +47,73 @@ void Application::Init()
 	coordinator = Coordinator::GetCoordinator();
 
 	coordinator->Init();
-	//GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
-	//RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
-	//PhysicsThread = std::make_unique<std::thread>(std::thread(&Application::PhysicsTick, this));
+	
+}
+
+void Application::StartThreads()
+{
+	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
+	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
+	PhysicsThread = std::make_unique<std::thread>(std::thread(&Application::PhysicsTick, this));
 
 	//GameThread->join();
-	//RenderThread->join();
-	//PhysicsThread->join();
+	LOGF_INFO("Game Thread Joined");
 
+	//RenderThread->join();
+	LOGF_INFO("Render Thread Joined");
+
+	//PhysicsThread->join();
+	LOGF_INFO("Physics Thread Joined");
+}
+
+void Application::InitSystems()
+{
+	Renderer_ = coordinator->GetSystem("RenderOpenGL");
+	PhysicsSystem_ = coordinator->GetSystem("Physics2D");
 }
 
 void Application::Update()
 {
-	std::cout << "Update" << std::endl;
-	auto systems = Reflection::Registry::Instance().GetAllSystems();
-	for (auto system : systems)
+	while (true)
 	{
+		RenderUpdateThreadSemaphore.acquire();
+		StartClock();
+		auto systems = Reflection::Registry::Instance().GetAllSystems();
+		for (auto system : systems)
+		{
+			if (system->fullName == "RendererOpenGl")
+			{
+				
+			}
+		}
 		
+		LOGF_INFO("Game Update Thread with dt: %f", dt);
+		GameUpdateThreadSemaphore.release();
 	}
+
 }
 
 
 void Application::Render()
 {
-	//auto renderSystem = coordinator->GetSystem<RenderSystem>();
-	//std::cout << "Render" << std::endl;
-	Renderer_->Update(dt);
+	while (true)
+	{
+		GameUpdateThreadSemaphore.acquire();
+		Renderer_->Update(dt);
+		std::this_thread::sleep_for(std::chrono::milliseconds(120));
+		RenderUpdateThreadSemaphore.release();
+		MeasureTime();
+	}
+		
 }
 
 
 void Application::PhysicsTick()
 {
-	std::cout << "Physics Tick" << std::endl;
-	PhysicsSystem_->Update(dt);
+	while (true)
+	{
+		PhysicsSystem_->Update(dt);
+	}
 }
 
 void Application::RenderEntitiesUI()

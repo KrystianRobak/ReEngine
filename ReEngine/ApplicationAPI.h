@@ -9,5 +9,7 @@ extern "C" {
     ENGINE_API void Application_Update(void* app);
     ENGINE_API void Application_Render(void* app);
     ENGINE_API bool Application_IsRunning(void* app);
+	ENGINE_API void Application_InitSystems(void* app);
+	ENGINE_API void Application_StartThreads(void* app);
 
 }

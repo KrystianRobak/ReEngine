@@ -29,9 +29,14 @@ bool OpenGlContext::init(IWindow* window)
 {
     RenderContext::init(window);
 
+
+
+
     if (!glfwInit()) {
 
     }
+
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
     // Create a windowed mode window and its OpenGL context
     auto glwindow = glfwCreateWindow(window->width, window->height, "Triangle", NULL, NULL);
@@ -53,6 +58,8 @@ bool OpenGlContext::init(IWindow* window)
     if (glewInit() != GLEW_OK) {
     }
     glEnable(GL_DEPTH_TEST);
+
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
     /* Initialize the library */

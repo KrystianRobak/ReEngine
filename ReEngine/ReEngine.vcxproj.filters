@@ -70,6 +70,18 @@
     <Filter Include="Source Files\Private\Engine\Systems\Behaviour">
       <UniqueIdentifier>{04139374-e252-4ae3-bfdc-efd149edf047}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Private\Engine\Commands">
+      <UniqueIdentifier>{6ae259c2-f048-4218-b43f-10add9acac14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Public\Engine\Commands">
+      <UniqueIdentifier>{2681c19e-2170-478a-be68-6b540f95668d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Private\Engine\Commands\RenderCommands">
+      <UniqueIdentifier>{a3bb6e25-ada6-40a0-9c61-235c48713c84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Public\Engine\Commands\RenderCommands">
+      <UniqueIdentifier>{c39e4786-cb34-47d3-9d41-7d7e0b1dc7a5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp">
@@ -133,6 +145,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderCommand.cpp">
+      <Filter>Source Files\Private\Engine\Commands\RenderCommands</Filter>
+    </ClCompile>
+    <ClCompile Include="Commander.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -226,6 +244,12 @@
     </ClInclude>
     <ClInclude Include="ComponentBasic.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderCommand.h">
+      <Filter>Source Files\Public\Engine\Commands\RenderCommands</Filter>
+    </ClInclude>
+    <ClInclude Include="Commander.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

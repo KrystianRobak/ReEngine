@@ -7,6 +7,7 @@
 #include <thread>
 
 #include "../ReEngineExport.h"
+#include <semaphore>
 
 class ENGINE_API Application
 {
@@ -14,6 +15,10 @@ public:
 	void StartClock();
 	void MeasureTime();
 	void Init();
+
+	void StartThreads();
+
+	void InitSystems();
 
 	void Update();
 	void Render();
@@ -36,13 +41,19 @@ private:
 	float dt = 0.0f;
 	bool running;
 
-	//std::unique_ptr<std::thread> GameThread;
-	//std::unique_ptr<std::thread> RenderThread;
-	//std::unique_ptr<std::thread> PhysicsThread;
+	std::unique_ptr<std::thread> GameThread;
+	std::unique_ptr<std::thread> RenderThread;
+	std::unique_ptr<std::thread> PhysicsThread;
 
 	std::shared_ptr<Coordinator> coordinator;
 	System* Renderer_;
 	System* PhysicsSystem_;
+
+	std::binary_semaphore RenderUpdateThreadSemaphore{ 0 };
+
+	std::binary_semaphore GameUpdateThreadSemaphore{ 1 };
+
+
 
 	bool HasRenderUpdateThreadFinished = false;
 

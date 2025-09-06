@@ -9,6 +9,8 @@ typedef void (*AppInitFunc)(void*);
 typedef void (*AppUpdateFunc)(void*);
 typedef void (*AppRenderFunc)(void*);
 typedef bool (*AppIsRunningFunc)(void*);
+typedef void* (*AppInitSysyemsFunc)(void*);
+typedef void (*AppStartThreadsFunc)(void*);
 
 class ApplicationWrapper
 {
@@ -25,6 +27,8 @@ public:
 		Application_Update = (AppUpdateFunc)GetProcAddress(engineDLL, "Application_Update");
 		Application_Render = (AppRenderFunc)GetProcAddress(engineDLL, "Application_Render");
 		Application_IsRunning = (AppIsRunningFunc)GetProcAddress(engineDLL, "Application_IsRunning");
+		Application_InitSystems = (AppInitSysyemsFunc)GetProcAddress(engineDLL, "Application_InitSystems");
+		Application_StartThreads = (AppStartThreadsFunc)GetProcAddress(engineDLL, "Application_StartThreads");
 	}
 
 	bool IsProperlyLoaded() {
@@ -44,5 +48,8 @@ public:
 	AppUpdateFunc Application_Update;
 	AppRenderFunc Application_Render;
 	AppIsRunningFunc Application_IsRunning;
+	AppInitSysyemsFunc Application_InitSystems;
+	AppStartThreadsFunc Application_StartThreads;
+
 };
 
