@@ -12,13 +12,18 @@ public:
     virtual ~IComponentArray() = default;
     virtual void EntityDestroyed(Entity entity) = 0;
     virtual void* GetData(Entity entity) = 0;
+    virtual void SwapData() = 0;
 };
 
 class GenericComponentArray : public IComponentArray
 {
 public:
     // Constructor takes the size of the component type
-    GenericComponentArray(size_t componentSize) : mComponentSize(componentSize) {}
+    GenericComponentArray(size_t componentSize, bool IsDoubleBuffered) : mComponentSize(componentSize) ,
+        mIsDoubleBuffered(IsDoubleBuffered) , readBufferPtr(&mComponentData), writeBufferPtr(&mComponentDataSecond)
+    {
+
+    }
 
     void InsertData(Entity entity, void* componentData)
     {
@@ -31,10 +36,15 @@ public:
         // Resize the buffer if needed
         if ((newIndex + 1) * mComponentSize > mComponentData.size()) {
             mComponentData.resize((newIndex + 1) * mComponentSize);
+            if(mIsDoubleBuffered)
+                mComponentDataSecond.resize((newIndex + 1) * mComponentSize);
         }
 
         // Copy the component data into our byte array
         memcpy(&mComponentData[newIndex * mComponentSize], componentData, mComponentSize);
+        
+        if(mIsDoubleBuffered)
+            memcpy(&mComponentDataSecond[newIndex * mComponentSize], componentData, mComponentSize);
 
         ++mSize;
     }
@@ -50,6 +60,13 @@ public:
         void* dest = &mComponentData[indexOfRemovedEntity * mComponentSize];
         void* src = &mComponentData[indexOfLastElement * mComponentSize];
         memcpy(dest, src, mComponentSize);
+
+        if (mIsDoubleBuffered)
+        {
+            void* dest = &mComponentDataSecond[indexOfRemovedEntity * mComponentSize];
+            void* src = &mComponentDataSecond[indexOfLastElement * mComponentSize];
+            memcpy(dest, src, mComponentSize);
+        }
 
         // Update the maps to point to the new location
         Entity entityOfLastElement = mIndexToEntityMap[indexOfLastElement];
@@ -69,6 +86,13 @@ public:
         return &mComponentData[mEntityToIndexMap[entity] * mComponentSize];
     }
 
+    void SwapData()
+    {
+        auto oldWritePtr = writeBufferPtr.exchange(readBufferPtr.load());
+
+        readBufferPtr.store(oldWritePtr);
+    }
+
     void EntityDestroyed(Entity entity) override
     {
         if (mEntityToIndexMap.find(entity) != mEntityToIndexMap.end())
@@ -79,8 +103,13 @@ public:
 
 private:
     size_t mComponentSize;
-    std::vector<char> mComponentData; // Raw byte buffer for all components
+    bool mIsDoubleBuffered;
+    std::vector<char> mComponentData;
+    std::vector<char> mComponentDataSecond;
     std::unordered_map<Entity, size_t> mEntityToIndexMap{};
     std::unordered_map<size_t, Entity> mIndexToEntityMap{};
+
+    std::atomic<std::vector<char>*> writeBufferPtr;
+    std::atomic<std::vector<char>*> readBufferPtr;
     size_t mSize{};
 };

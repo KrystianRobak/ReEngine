@@ -31,6 +31,8 @@ namespace Editor
 
 		virtual void RemoveComponent(Entity entity, const std::string& typeName) = 0;
 
+		virtual void SwapComponentBuffers(const std::string& fullName) = 0;
+
 		//virtual void AddEventListener(EventType eventType, std::function<void(Event&)> const& listener) = 0;
 
 		//virtual void SendEvent(Event& event) = 0;

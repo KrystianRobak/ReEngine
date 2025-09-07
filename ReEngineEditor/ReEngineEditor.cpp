@@ -72,7 +72,7 @@ int main(int argc, char** argv)
     auto renderSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.RenderOpenGL");
 	auto physicsSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.Physics2D");
 
-    coordinatorWrap.RegisterComponent(transform);
+    coordinatorWrap.RegisterComponent(transform, false);
 
     System* renderer = coordinatorWrap.RegisterSystem(renderSystem);
 

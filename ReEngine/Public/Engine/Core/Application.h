@@ -49,6 +49,8 @@ private:
 	System* Renderer_;
 	System* PhysicsSystem_;
 
+	Commander Commander_;
+
 	std::binary_semaphore RenderUpdateThreadSemaphore{ 0 };
 
 	std::binary_semaphore GameUpdateThreadSemaphore{ 1 };

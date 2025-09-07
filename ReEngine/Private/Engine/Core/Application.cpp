@@ -47,6 +47,8 @@ void Application::Init()
 	coordinator = Coordinator::GetCoordinator();
 
 	coordinator->Init();
+
+	Commander_.Init(32);
 	
 }
 
@@ -69,21 +71,27 @@ void Application::StartThreads()
 void Application::InitSystems()
 {
 	Renderer_ = coordinator->GetSystem("RenderOpenGL");
+	Renderer_->InjectCommander(Commander_);
 	PhysicsSystem_ = coordinator->GetSystem("Physics2D");
+	//PhysicsSystem_->InjectCommander(Commander_);
 }
 
 void Application::Update()
 {
+	int i = 0;
 	while (true)
 	{
 		RenderUpdateThreadSemaphore.acquire();
 		StartClock();
+
+		coordinator->;
+
 		auto systems = Reflection::Registry::Instance().GetAllSystems();
 		for (auto system : systems)
 		{
-			if (system->fullName == "RendererOpenGl")
+			if (std::strcmp(system->fullName,"RenderOpenGL"))
 			{
-				
+				Commander_.IssueCommand(RenderCommand((uint32_t)i, {(uint32_t)i+3, (uint32_t)i+5}));
 			}
 		}
 		

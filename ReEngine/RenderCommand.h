@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Engine/Components/Transform.h"
+//#include "Transform.h"
+#include <cstdint>
 
 struct RenderPrimitive {
-    Transform transform;
+    //Transform transform;
     uint32_t mesh_id;
     uint32_t material_id;
 };

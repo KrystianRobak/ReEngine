@@ -109,9 +109,9 @@ public:
 
 
 	// Component methods
-	void RegisterComponent(const Reflection::ClassInfo* classInfo)
+	void RegisterComponent(const Reflection::ClassInfo* classInfo, bool IsDoubleBuffered = false)
 	{
-		mComponentManager->RegisterComponent(classInfo);
+		mComponentManager->RegisterComponent(classInfo, IsDoubleBuffered);
 	}
 
 	void AddComponent(Entity entity, const std::string& fullName) override
@@ -137,6 +137,13 @@ public:
 
 		mSystemManager->EntitySignatureChanged(entity, signature);
 	}
+
+	void SwapComponentBuffers(const std::string& fullName) {
+		mComponentManager->SwapComponentBuffers(fullName);
+	}
+
+	GenericComponentArray
+
 
 	// Returns a raw pointer, which the caller must cast
 	void* GetComponent(Entity entity, const std::string& typeName) override

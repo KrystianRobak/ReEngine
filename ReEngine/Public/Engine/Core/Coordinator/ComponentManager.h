@@ -23,7 +23,7 @@ private:
 
 public:
     // Register a component using its reflection data
-    void RegisterComponent(const Reflection::ClassInfo* classInfo)
+    void RegisterComponent(const Reflection::ClassInfo* classInfo, bool IsDoubleBuffered = false)
     {
         const char* typeName = classInfo->fullName;
         assert(mComponentTypes.find(typeName) == mComponentTypes.end() && "Registering component type more than once.");
@@ -32,9 +32,16 @@ public:
         mComponentTypes.insert({ typeName, mNextComponentType });
 
         // Create a GenericComponentArray with the size from reflection
-        mComponentArrays.insert({ typeName, std::make_shared<GenericComponentArray>(classInfo->size) });
+
+        mComponentArrays.insert({ typeName, std::make_shared<GenericComponentArray>(classInfo->size, IsDoubleBuffered) });
 
         ++mNextComponentType;
+    }
+
+    void SwapComponentBuffers(const std::string& typeName)
+    {
+        assert(mComponentTypes.find(typeName.c_str()) != mComponentTypes.end() && "Component not registered before use.");
+        GetComponentArray(typeName)->SwapData();
     }
 
     // Get the ComponentType bit index from a string name

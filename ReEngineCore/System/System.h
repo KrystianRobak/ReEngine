@@ -16,7 +16,7 @@ public:
 
 	virtual void Update(float dt) = 0;
 
-	void InjectCommander(Commander* commander)
+	void InjectCommander(Commander commander)
 	{
 		commander_ = commander;
 	}
@@ -29,5 +29,5 @@ public:
 protected:
 	std::set<Entity> mEntities;
 	Editor::IEngineEditorApi* engine_;
-	Commander* commander_;
+	Commander commander_;
 };

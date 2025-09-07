@@ -8,14 +8,43 @@ class Commander
 {
 private:
 
-	std::vector<RenderCommand> CommandQueue;
-	std::mutex RenderQueueMutex;
+	std::shared_ptr<std::vector<RenderCommand>> CommandQueueWrite;
+	std::shared_ptr<std::vector<RenderCommand>> CommandQueueRead;
 
 public:
 
+	void Init(int SizeOfCommandQueue) {
+		CommandQueueWrite = std::make_shared<std::vector<RenderCommand>>();
+		CommandQueueRead = std::make_shared<std::vector<RenderCommand>>();
 
-	virtual ~Commander() = default;
-	virtual void IssueCommand(RenderCommand command) = 0;
-	virtual std::vector<RenderCommand> ConsumeRenderCommands() = 0;
+		CommandQueueRead->reserve(SizeOfCommandQueue);
+		CommandQueueWrite->reserve(SizeOfCommandQueue);
+	}
+
+	Commander operator=(const Commander& newCommander)
+	{
+		if (this == &newCommander)
+		{
+			return *this;
+		}
+
+
+
+		this->CommandQueueRead = newCommander.CommandQueueRead;
+		this->CommandQueueWrite = newCommander.CommandQueueWrite;
+
+
+		return *this;
+
+	}
+	void IssueCommand(RenderCommand command);
+
+	std::vector<RenderCommand> ConsumeRenderCommands()
+	{
+		CommandQueueRead.swap(this->CommandQueueWrite);
+		CommandQueueRead->clear();
+
+		return *CommandQueueWrite;
+	}
 };
 

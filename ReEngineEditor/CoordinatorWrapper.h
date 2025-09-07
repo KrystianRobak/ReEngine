@@ -22,7 +22,7 @@ typedef void(*CoordinatorSetSelectedEntityFunc)(uint32_t);
 typedef uint32_t(*CoordinatorGetSelectedEntityFunc)();
 
 // --- Component Management ---
-typedef void(*CoordinatorRegisterComponentFunc)(const Reflection::ClassInfo*);
+typedef void(*CoordinatorRegisterComponentFunc)(const Reflection::ClassInfo*, bool);
 typedef void(*CoordinatorAddComponentFunc)(uint32_t, const char*);
 typedef void(*CoordinatorRemoveComponentFunc)(uint32_t, const char*);
 typedef void* (*CoordinatorGetComponentFunc)(uint32_t, const char*);
@@ -131,9 +131,9 @@ public:
 		return GetComponentTypeNameFunc(index);
 	}
 
-	void RegisterComponent(const Reflection::ClassInfo* Class)
+	void RegisterComponent(const Reflection::ClassInfo* Class, bool IsDoubleBuffered = false)
 	{
-		RegisterComponentFunc(Class);
+		RegisterComponentFunc(Class, IsDoubleBuffered);
 	}
 
 	bool IsProperlyLoaded() {

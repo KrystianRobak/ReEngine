@@ -76,9 +76,9 @@ extern "C" {
     }
 
     // === Component Management (NEW) ===
-    ENGINE_API void Coordinator_RegisterComponent(const Reflection::ClassInfo* Class)
+    ENGINE_API void Coordinator_RegisterComponent(const Reflection::ClassInfo* Class, bool IsDoubleBuffered = false)
     {
-        Coordinator::GetCoordinator()->RegisterComponent(Class);
+        Coordinator::GetCoordinator()->RegisterComponent(Class, IsDoubleBuffered);
     }
 
     ENGINE_API void Coordinator_AddComponent(uint32_t entity, const char* componentTypeName) {
