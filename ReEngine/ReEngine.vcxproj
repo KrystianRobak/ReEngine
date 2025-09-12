@@ -153,8 +153,21 @@
     <MyIncludes>@(ClCompile->'%(AdditionalIncludeDirectories)')</MyIncludes>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="..\Libs\Include\imgui\imgui.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ApplicationAPI.cpp" />
     <ClCompile Include="Commander.cpp" />
+    <ClCompile Include="Private\Engine\Context\OpenGlContext.cpp" />
+    <ClCompile Include="Private\Engine\Context\OpenGlFrameBuffer.cpp" />
+    <ClCompile Include="Private\Engine\Context\RenderContext.cpp" />
+    <ClCompile Include="Private\Engine\Context\UIContext.cpp" />
+    <ClCompile Include="Private\Engine\FrameBuffer.cpp" />
+    <ClCompile Include="Private\Engine\Window.cpp" />
     <ClCompile Include="RenderCommand.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision.cpp" />
@@ -174,13 +187,28 @@
     <ClCompile Include="Private\Engine\Core\Coordinator\SystemManager.cpp" />
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp" />
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Render\Shader.cpp" />
     <ClCompile Include="Script.cpp" />
     <ClCompile Include="ScriptRegistry.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_internal.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="ApplicationAPI.h" />
     <ClInclude Include="Commander.h" />
+    <ClInclude Include="Public\Engine\Context\OpenGlContext.h" />
+    <ClInclude Include="Public\Engine\Context\OpenGlFrameBuffer.h" />
+    <ClInclude Include="Public\Engine\Context\RenderContext.h" />
+    <ClInclude Include="Public\Engine\Context\UIContext.h" />
+    <ClInclude Include="Public\Engine\FrameBuffer.h" />
+    <ClInclude Include="Public\Engine\IWindow.h" />
+    <ClInclude Include="Public\Engine\Window.h" />
     <ClInclude Include="RenderCommand.h" />
     <ClInclude Include="ComponentBasic.h" />
     <ClInclude Include="Public\Engine\Components\Animated.h" />
@@ -211,6 +239,7 @@
     <ClInclude Include="Public\Engine\Core\Types.h" />
     <ClInclude Include="Public\Engine\Core\WindowManager.h" />
     <ClInclude Include="ReEngineExport.h" />
+    <ClInclude Include="Sprite.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />

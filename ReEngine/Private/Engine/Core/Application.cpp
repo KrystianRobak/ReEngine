@@ -6,6 +6,9 @@
 #include <iostream>
 #include "Logger.h"
 
+#include <GL/glew.h>
+#include "GLFW/glfw3.h"
+
 void Application::StartClock() 
 {
 	// Measure frame start time
@@ -42,7 +45,7 @@ void Application::MeasureTime()
 	}
 }
 
-void Application::Init()
+void Application::Init() 
 {
 	coordinator = Coordinator::GetCoordinator();
 
@@ -71,8 +74,8 @@ void Application::StartThreads()
 void Application::InitSystems()
 {
 	Renderer_ = coordinator->GetSystem("RenderOpenGL");
-	Renderer_->InjectCommander(Commander_);
-	PhysicsSystem_ = coordinator->GetSystem("Physics2D");
+	Renderer_->InjectCommander(std::make_shared<Commander>(Commander_));
+	PhysicsSystem_ = coordinator->GetSystem("Physics3D");
 	//PhysicsSystem_->InjectCommander(Commander_);
 }
 
@@ -84,18 +87,18 @@ void Application::Update()
 		RenderUpdateThreadSemaphore.acquire();
 		StartClock();
 
-		coordinator->;
-
 		auto systems = Reflection::Registry::Instance().GetAllSystems();
 		for (auto system : systems)
 		{
 			if (std::strcmp(system->fullName,"RenderOpenGL"))
 			{
-				Commander_.IssueCommand(RenderCommand((uint32_t)i, {(uint32_t)i+3, (uint32_t)i+5}));
+				auto RenderSystem = coordinator->GetSystem(system->fullName);
+				for (Entity entity : RenderSystem->GetEntities())
+				{
+					Commander_.IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 3, 5 }));
+				}
 			}
 		}
-		
-		LOGF_INFO("Game Update Thread with dt: %f", dt);
 		GameUpdateThreadSemaphore.release();
 	}
 
@@ -104,24 +107,80 @@ void Application::Update()
 
 void Application::Render()
 {
+
+	window.Init(1280, 720, "Okno zycia", GetCoordinatorEditor());
+
+	Renderer_->InitApi(GetCoordinatorEditor(), glfwGetCurrentContext());
+
+	CreateUiPanels();
+
+	window.InitUiComponets();
+
 	while (true)
 	{
 		GameUpdateThreadSemaphore.acquire();
+
+		/*glfwMakeContextCurrent(Renderer_->GetRenderContext());*/
+
+		window.PreRender();
+		
 		Renderer_->Update(dt);
 		std::this_thread::sleep_for(std::chrono::milliseconds(120));
+
+		window.Render();
+
+
+		window.PostRender();
+
+		/*glfwMakeContextCurrent(nullptr);*/
+
 		RenderUpdateThreadSemaphore.release();
 		MeasureTime();
 	}
 		
 }
 
-
 void Application::PhysicsTick()
 {
+	using clock = std::chrono::steady_clock;
+	const std::chrono::milliseconds fixedDelta(16); // ~60Hz
+
 	while (true)
 	{
-		PhysicsSystem_->Update(dt);
+		auto startTime = clock::now();
+
+		PhysicsSystem_->Update(0.016f);
+		coordinator->SwapComponentBuffers("Transform");
+
+		auto endTime = clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+
+		if (elapsed < fixedDelta)
+		{
+			std::this_thread::sleep_for(fixedDelta - elapsed);
+		}
 	}
+}
+
+
+void Application::SetPostUpdateUI(FunctionDelegate fun)
+{
+	OnPostUpdateUI = std::move(fun);
+}
+
+void Application::SetUpdateUI(FunctionDelegate fun)
+{
+	OnUpdateUI = std::move(fun);
+}
+
+void Application::SetPreUpdateUI(FunctionDelegate fun)
+{
+	OnPreUpdateUI = std::move(fun);
+}
+
+void Application::SetCreateUiPanels(FunctionDelegate fun)
+{
+	CreateUiPanels = std::move(fun);
 }
 
 void Application::RenderEntitiesUI()

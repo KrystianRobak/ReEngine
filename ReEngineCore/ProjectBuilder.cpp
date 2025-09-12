@@ -15,7 +15,7 @@ void ProjectBuilder::ParseConfig(Editor::IEngineEditorApi* engine) {
 	System* system = LoadModule(moduleName);
 	RendererSystem_ = system; // Store the renderer system if needed
 
-	moduleName = "Systems/Physics2D.dll";
+	moduleName = "Systems/Physics3D.dll";
 
 	LOGF_INFO("Loading module: %s", moduleName);
 	System* system2 = LoadModule(moduleName);

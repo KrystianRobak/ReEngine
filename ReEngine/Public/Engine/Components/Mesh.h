@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "Engine/Systems/Render/Shader.h"
+#include "Shader.h"
 
 #define MAX_BONE_INFLUENCE 4
 

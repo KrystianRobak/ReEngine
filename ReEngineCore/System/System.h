@@ -4,19 +4,26 @@
 #include "ReflectionMacros.h"
 #include <ReTypes.h>
 #include <set>
-#include "../../ReEngine/Commander.h"
+#include <memory>
+
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
+
+
+class Commander;
 
 class System
 {
 public:
-	virtual void InitApi(Editor::IEngineEditorApi* engine)
+	virtual void InitApi(Editor::IEngineEditorApi* engine, GLFWwindow* context)
 	{
 		engine_ = engine;
+		renderContext = context;
 	};
 
 	virtual void Update(float dt) = 0;
 
-	void InjectCommander(Commander commander)
+	void InjectCommander(std::shared_ptr<Commander> commander)
 	{
 		commander_ = commander;
 	}
@@ -26,8 +33,11 @@ public:
 		return this->mEntities;
 	}
 
+	GLFWwindow* GetRenderContext() { return renderContext; }
+
 protected:
 	std::set<Entity> mEntities;
 	Editor::IEngineEditorApi* engine_;
-	Commander commander_;
+	std::shared_ptr<Commander> commander_;
+	GLFWwindow* renderContext = nullptr; // context for render thread
 };

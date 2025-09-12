@@ -4,30 +4,31 @@
 
 #include <string>
 
-#include "Panels/AnimationPanel.h"
-#include "Panels/KeyframeEditorPanel.h"
+#include "Engine/Core/Coordinator/Event.h"
+#include "UIComponent.h"
+
 #include "Context/OpenGlContext.h"
 #include "Context/UIContext.h"
+#include "Context/OpenGlFrameBuffer.h"
 
-#include "Panels/AddingPanel.h"
-#include "Panels/ControlPanel.h"
-#include "Panels/FileBrowser.h"
-#include "Panels/ItemsSelectionPanel.h"
-#include "Panels/PropertyPanel.h"
-#include "Panels/SceneView.h"
+
 
 
 class Window : public IWindow
 {
 public:
-    Window() : IsRunning(true), window(nullptr), application(nullptr)
+    Window() : IsRunning(true), window(nullptr)
     {
         UICtx = std::make_unique<UIContext>();
         RenderCtx = std::make_unique<OpenGlContext>();
-        application = std::make_shared<Application>();
     }
 
     ~Window();
+
+    void AddUIComponent(UIComponent* UiComponent)
+    {
+        UIComponents.push_back(UiComponent);
+	}
 
     bool Init(int width, int height, const std::string& title, Editor::IEngineEditorApi* EngineApi);
 
@@ -36,6 +37,8 @@ public:
     void Render();
 
     void PostRender();
+
+    void InitUiComponets();
 
     void* get_native_window() { return window; };
 
@@ -55,31 +58,19 @@ public:
 private:
 
     GLFWwindow* window;
-    std::shared_ptr<Application> application;
 
+    FrameBuffer* frameBuffer;
     // Render contexts
     std::unique_ptr<UIContext> UICtx;
 
     std::unique_ptr<OpenGlContext> RenderCtx;
 
-    std::unique_ptr<PropertyPanel> propertyPanel;
-
-    std::unique_ptr<ItemsSelectionPanel> itemsSelectionPanel;
-
-    std::unique_ptr<SceneView> sceneView;
-
-    std::unique_ptr<FileBrowser> fileBrowser;
-
-    std::unique_ptr<AddingPanel> addingPanel;
-
-    std::unique_ptr<ControlPanel> controlPanel;
-
-    std::unique_ptr<AnimationPanel> animationPanel;
-
-    std::unique_ptr<KeyframeEditorPanel> keyframeEditor;
+	std::vector<UIComponent*> UIComponents;
 
     bool IsRunning;
 
     MenuType CurrentMode = MenuType::BaseMenu;
+
+	Editor::IEngineEditorApi* EngineApi_ = nullptr;
 };
 

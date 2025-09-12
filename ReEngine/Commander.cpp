@@ -2,7 +2,7 @@
 
 void Commander::IssueCommand(RenderCommand Command)
 {
-	CommandQueue->push_back(Command);
+	CommandQueueWrite->push_back(Command);
 }
 
 

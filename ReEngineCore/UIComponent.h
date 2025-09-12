@@ -5,7 +5,7 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #include "stb/stb_image.h"
-
+#include "glm/glm.hpp"
 #include <GL/glew.h>
 #include "GLFW/glfw3.h"
 
@@ -26,6 +26,12 @@ public:
 
 	virtual void Render() = 0;
 
+	virtual void SetTextureID(uint64_t id)
+	{
+		this->textureID = id;
+	}
+
 protected:
 	Editor::IEngineEditorApi* engineAPI = nullptr;
+	uint64_t textureID;
 };

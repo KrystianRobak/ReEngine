@@ -1,15 +1,10 @@
 #pragma once
 #include "ReEngineExport.h"
+#include "Public/Engine/Core/Application.h"
 
 extern "C" {
-    ENGINE_API void* CreateApplication();
-    ENGINE_API void DestroyApplication(void* app);
 
-    ENGINE_API void Application_Init(void* app);
-    ENGINE_API void Application_Update(void* app);
-    ENGINE_API void Application_Render(void* app);
-    ENGINE_API bool Application_IsRunning(void* app);
-	ENGINE_API void Application_InitSystems(void* app);
-	ENGINE_API void Application_StartThreads(void* app);
-
+    ENGINE_API void* CreateApplication() {
+        return static_cast<void*>(new Application());
+    }
 }

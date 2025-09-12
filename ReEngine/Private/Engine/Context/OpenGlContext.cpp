@@ -5,6 +5,7 @@
 #include <cstdio>
 #include "Engine/Core/Coordinator/Coordinator.h"
 #include "IWindow.h"
+#include <Logger.h>
 
 static void on_window_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -25,6 +26,11 @@ static void on_key_callback(GLFWwindow* window, int key, int scancode, int actio
     }
 }
 
+static inline void glfw_error_callback(int error, const char* description)
+{
+   LOGF_ERROR("GLFW Error %d : %s",  error, description)
+}
+
 bool OpenGlContext::init(IWindow* window)
 {
     RenderContext::init(window);
@@ -35,7 +41,7 @@ bool OpenGlContext::init(IWindow* window)
     if (!glfwInit()) {
 
     }
-
+    glfwSetErrorCallback(glfw_error_callback);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
     // Create a windowed mode window and its OpenGL context
@@ -77,7 +83,7 @@ bool OpenGlContext::init(IWindow* window)
 void OpenGlContext::pre_render()
 {
     glViewport(0, 0, window->width, window->height);
-    glClearColor(0.0f, 0.0f, 0.5f, 1.0f);
+    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

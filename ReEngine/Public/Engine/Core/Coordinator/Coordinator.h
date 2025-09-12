@@ -142,9 +142,6 @@ public:
 		mComponentManager->SwapComponentBuffers(fullName);
 	}
 
-	GenericComponentArray
-
-
 	// Returns a raw pointer, which the caller must cast
 	void* GetComponent(Entity entity, const std::string& typeName) override
 	{
@@ -159,6 +156,16 @@ public:
 	std::unordered_map<std::string, ComponentType> GetComponentsTypes()
 	{
 		return mComponentManager->GetComponentsTypes();
+	}
+
+	std::vector<char>* GetWriteBuffer(const std::string& typeName)
+	{
+		return mComponentManager->GetComponentWriteBuffer(typeName);
+	}
+
+	std::vector<char>* GetReadBuffer(const std::string& typeName)
+	{
+		return mComponentManager->GetComponentReadBuffer(typeName);
 	}
 
 

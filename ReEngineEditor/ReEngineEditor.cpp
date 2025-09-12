@@ -1,8 +1,11 @@
 #include <windows.h>
 #include <iostream>
+#include <memory>
 
 #include "EngineApi/CoordinatorEditorApi.h"
+#include "IApplicationApi.h"
 
+#include "Logger.h"
 #include "ReflectionEngine.h"
 #include "ReflectionHelpers.h"
 
@@ -10,9 +13,19 @@
 
 #include "CoordinatorWrapper.h"
 #include "ApplicationWrapper.h"
-#include "Window.h"
 
 
+#include "Panels/AddingPanel.h"
+#include "Panels/AnimationPanel.h"
+#include "Panels/ControlPanel.h"
+#include "Panels/FileBrowser.h"
+#include "Panels/ItemsSelectionPanel.h"
+#include "Panels/KeyframeEditorPanel.h"
+#include "Panels/PropertyPanel.h"
+#include "Panels/SceneView.h"
+
+
+using FuncPtr = void* (*)();
 
 int main(int argc, char** argv)
 {
@@ -28,7 +41,16 @@ int main(int argc, char** argv)
         LOGF_ERROR("%s","Failed to load Engine.dll")
         return -1;
     }
-    
+
+    FuncPtr createFunc = (FuncPtr)(GetProcAddress(engineDLL, "CreateApplication"));
+    if (!createFunc) {
+        LOGF_ERROR("Failed to find CreateSystem function in module");
+        return -1;
+    }
+
+    LOGF_INFO("Module loaded successfully");
+    IApplicationApi* Application = static_cast<IApplicationApi*>(createFunc());
+
     CoordinatorWrapper coordinatorWrap;
     ApplicationWrapper applicationWrap;
 
@@ -42,21 +64,22 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    
+    Application->Init();
 
 
-   
+    Application->SetCreateUiPanels([&]() { 
+        Application->AddUIComponent(new SceneView());
+        Application->AddUIComponent(new AddingPanel());
 
-    applicationWrap.app = applicationWrap.CreateApplication();
-    applicationWrap.Application_Init(applicationWrap.app);
+        Application->AddUIComponent(new ControlPanel());
+        Application->AddUIComponent(new FileBrowser());
+        Application->AddUIComponent(new ItemsSelectionPanel());
+        Application->AddUIComponent(new PropertyPanel());
 
-    
+		});
 
-    Window window;
 
-    window.Init(1280, 720, "Okno zycia", coordinatorWrap.GetCoordinatorEditor());
-
-	Editor::IEngineEditorApi* engine = coordinatorWrap.GetCoordinatorEditor();
+    Editor::IEngineEditorApi* engine = Application->GetCoordinatorEditor();
 
     builder.ParseConfig(engine);
 
@@ -67,16 +90,17 @@ int main(int argc, char** argv)
         LOGF_WARN("Znaleziono system: %s", system->fullName)
     }
 
-
     auto transform = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Transform");
+	auto sprite = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Sprite");
     auto renderSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.RenderOpenGL");
-	auto physicsSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.Physics2D");
+	auto physicsSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.Physics3D");
 
-    coordinatorWrap.RegisterComponent(transform, false);
+    coordinatorWrap.RegisterComponent(transform, true);
+	coordinatorWrap.RegisterComponent(sprite);
 
     System* renderer = coordinatorWrap.RegisterSystem(renderSystem);
 
-	renderer->InitApi(engine);
+	//renderer->InitApi(engine, glfwGetCurrentContext());
 
     Signature signature;
     signature.set(coordinatorWrap.GetComponentType(transform->fullName));
@@ -85,7 +109,7 @@ int main(int argc, char** argv)
 
     System* physics = coordinatorWrap.RegisterSystem(physicsSystem);
 
-    physics->InitApi(engine);
+    physics->InitApi(engine, glfwGetCurrentContext());
 
     Signature signature2;
     signature2.set(coordinatorWrap.GetComponentType(transform->fullName));
@@ -93,28 +117,21 @@ int main(int argc, char** argv)
 
     coordinatorWrap.SetSystemSignature(physicsSystem->fullName, signature2);
 
-    applicationWrap.Application_InitSystems(applicationWrap.app);
-	applicationWrap.Application_StartThreads(applicationWrap.app);
 
-    if (applicationWrap.app == nullptr) {
-        LOGF_ERROR("%s", "Application pointer is uninitialized!")
-    }
+	Application->InitSystems();
+
+	Application->StartThreads();
 
     engine->CreateEntity();
 
-    while (window.is_running())
+
+    while (Application->IsRunning())
     {
-        window.PreRender();
-		
-        window.Render();
-        
-        //renderer->Update(0.016f);
-        //applicationWrap.Application_Update(applicationWrap.app);
-        //applicationWrap.Application_Render(applicationWrap.app);
-        window.PostRender();
+		Application->Update();
     }
 
-    applicationWrap.DestroyApplication(applicationWrap.app);
+    delete Application;
+
     FreeLibrary(engineDLL);
 
     return 0;

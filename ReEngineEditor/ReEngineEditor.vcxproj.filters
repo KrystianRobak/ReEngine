@@ -16,14 +16,8 @@
     <Filter Include="Header Files\Panels">
       <UniqueIdentifier>{da3d38c6-5237-4fb1-838c-310efe145d74}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Context">
-      <UniqueIdentifier>{2d95074d-f43c-4115-97b6-79a834721f0f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Panels">
       <UniqueIdentifier>{a77627d2-e20c-4cab-a191-2e9ed4f2b35e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Context">
-      <UniqueIdentifier>{32acbc3f-2311-40b0-bcda-00c9a346ef5a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\ImGui">
       <UniqueIdentifier>{372d9b49-e0dd-42f8-b89c-7f431cc16729}</UniqueIdentifier>
@@ -35,24 +29,6 @@
   <ItemGroup>
     <ClCompile Include="ReEngineEditor.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FrameBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Context\OpenGlContext.cpp">
-      <Filter>Source Files\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="Context\OpenGlFrameBuffer.cpp">
-      <Filter>Source Files\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="Context\RenderContext.cpp">
-      <Filter>Source Files\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="Context\UIContext.cpp">
-      <Filter>Source Files\Context</Filter>
     </ClCompile>
     <ClCompile Include="..\Libs\Include\imgui\imgui.cpp">
       <Filter>Source Files\ImGui</Filter>
@@ -74,9 +50,6 @@
     </ClCompile>
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp">
       <Filter>Source Files\ImGui</Filter>
-    </ClCompile>
-    <ClCompile Include="CoordinatorWrapper.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Panels\AddingPanel.cpp">
       <Filter>Source Files\Panels</Filter>
@@ -105,29 +78,11 @@
     <ClCompile Include="ApplicationWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CoordinatorWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FrameBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Context\OpenGlContext.h">
-      <Filter>Header Files\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Context\OpenGlFrameBuffer.h">
-      <Filter>Header Files\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Context\RenderContext.h">
-      <Filter>Header Files\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Context\UIContext.h">
-      <Filter>Header Files\Context</Filter>
-    </ClInclude>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h">
       <Filter>Source Files\ImGui</Filter>
     </ClInclude>
@@ -183,9 +138,6 @@
       <Filter>Header Files\Panels</Filter>
     </ClInclude>
     <ClInclude Include="Panels\SceneView.h">
-      <Filter>Header Files\Panels</Filter>
-    </ClInclude>
-    <ClInclude Include="Panels\UIComponent.h">
       <Filter>Header Files\Panels</Filter>
     </ClInclude>
     <ClInclude Include="ApplicationWrapper.h">

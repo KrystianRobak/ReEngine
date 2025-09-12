@@ -1,8 +1,6 @@
-﻿#include "UIContext.h"
+﻿#include "Engine/Context/UIContext.h"
 
-
-
-#include <stb_image.h>
+#include "stb/stb_image.h"
 
 bool UIContext::init(IWindow* window)
 {

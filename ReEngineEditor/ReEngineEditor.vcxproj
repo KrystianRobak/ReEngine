@@ -112,7 +112,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories);$(SolutionDir)\ReEngineReflectionCore;$(SolutionDir)\ReEngineCore</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories);$(SolutionDir)\ReEngineReflectionCore;$(SolutionDir)\ReEngineCore;$(SolutionDir)\ReEngine\Public\Engine\Components</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -150,12 +150,7 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ApplicationWrapper.cpp" />
-    <ClCompile Include="Context\OpenGlContext.cpp" />
-    <ClCompile Include="Context\OpenGlFrameBuffer.cpp" />
-    <ClCompile Include="Context\RenderContext.cpp" />
-    <ClCompile Include="Context\UIContext.cpp" />
     <ClCompile Include="CoordinatorWrapper.cpp" />
-    <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Panels\AddingPanel.cpp" />
     <ClCompile Include="Panels\AnimationPanel.cpp" />
     <ClCompile Include="Panels\ControlPanel.cpp" />
@@ -165,7 +160,6 @@
     <ClCompile Include="Panels\PropertyPanel.cpp" />
     <ClCompile Include="Panels\SceneView.cpp" />
     <ClCompile Include="ReEngineEditor.cpp" />
-    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />
@@ -179,13 +173,7 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="..\Libs\Include\stb\stb_image.h" />
     <ClInclude Include="ApplicationWrapper.h" />
-    <ClInclude Include="Context\OpenGlContext.h" />
-    <ClInclude Include="Context\OpenGlFrameBuffer.h" />
-    <ClInclude Include="Context\RenderContext.h" />
-    <ClInclude Include="Context\UIContext.h" />
     <ClInclude Include="CoordinatorWrapper.h" />
-    <ClInclude Include="FrameBuffer.h" />
-    <ClInclude Include="IWindow.h" />
     <ClInclude Include="Panels\AddingPanel.h" />
     <ClInclude Include="Panels\AnimationPanel.h" />
     <ClInclude Include="Panels\ControlPanel.h" />
@@ -194,8 +182,6 @@
     <ClInclude Include="Panels\KeyframeEditorPanel.h" />
     <ClInclude Include="Panels\PropertyPanel.h" />
     <ClInclude Include="Panels\SceneView.h" />
-    <ClInclude Include="Panels\UIComponent.h" />
-    <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

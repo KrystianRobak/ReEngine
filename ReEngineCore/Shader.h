@@ -1,4 +1,7 @@
 #pragma once
+
+#include "CoreExport.h"
+
 #include <GL/glew.h>
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
@@ -9,7 +12,7 @@
 #include <sstream>
 #include <iostream>
 
-class Shader
+class CORE_API Shader
 {
 public:
 	Shader(const char* vertexPath, const char* fragmentPath);

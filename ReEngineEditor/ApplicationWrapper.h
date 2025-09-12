@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include "Logger.h"
+#include "ReTypes.h"
 
 typedef void* (*CreateAppFunc)();
 typedef void (*DestroyAppFunc)(void*);
@@ -11,6 +12,10 @@ typedef void (*AppRenderFunc)(void*);
 typedef bool (*AppIsRunningFunc)(void*);
 typedef void* (*AppInitSysyemsFunc)(void*);
 typedef void (*AppStartThreadsFunc)(void*);
+typedef void (*AppStartThreadsFunc)(void*);
+typedef void (*AppOnUpdateUIFunc)(void*, FunctionDelegate);
+typedef void (*AppOnPostUpdateUIFunc)(void*, FunctionDelegate);
+typedef void (*AppOnPreUpdateUIFunc)(void*, FunctionDelegate);
 
 class ApplicationWrapper
 {
@@ -29,6 +34,9 @@ public:
 		Application_IsRunning = (AppIsRunningFunc)GetProcAddress(engineDLL, "Application_IsRunning");
 		Application_InitSystems = (AppInitSysyemsFunc)GetProcAddress(engineDLL, "Application_InitSystems");
 		Application_StartThreads = (AppStartThreadsFunc)GetProcAddress(engineDLL, "Application_StartThreads");
+		AppOnUpdateUI = (AppOnUpdateUIFunc)GetProcAddress(engineDLL, "Application_OnUpdateUI");
+		AppOnPostUpdateUI = (AppOnPostUpdateUIFunc)GetProcAddress(engineDLL, "Application_OnPostUpdateUI");
+		AppOnPreUpdateUI = (AppOnPreUpdateUIFunc)GetProcAddress(engineDLL, "Application_OnPreUpdateUI");
 	}
 
 	bool IsProperlyLoaded() {
@@ -50,6 +58,10 @@ public:
 	AppIsRunningFunc Application_IsRunning;
 	AppInitSysyemsFunc Application_InitSystems;
 	AppStartThreadsFunc Application_StartThreads;
+
+	AppOnUpdateUIFunc AppOnUpdateUI;
+	AppOnPostUpdateUIFunc AppOnPostUpdateUI;
+	AppOnPreUpdateUIFunc AppOnPreUpdateUI;
 
 };
 

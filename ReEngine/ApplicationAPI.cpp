@@ -1,7 +1,5 @@
 #include "ApplicationAPI.h"
 
-#include "Public/Engine/Core/Application.h"
-
 namespace Editor {
     class IEngineEditorApi;
 }
@@ -11,10 +9,6 @@ namespace Engine {
 }
 
 extern "C" {
-
-    ENGINE_API void* CreateApplication() {
-        return static_cast<void*>(new Application());
-    }
 
     ENGINE_API void DestroyApplication(void* app) {
         delete static_cast<Application*>(app);
@@ -45,6 +39,21 @@ extern "C" {
     {
 		static_cast<Application*>(app)->StartThreads();
     }
+
+    ENGINE_API void Application_OnUpdateUI(void* app, FunctionDelegate function)
+    {
+		static_cast<Application*>(app)->SetUpdateUI(function);
+	}
+
+    ENGINE_API void Application_OnPostUpdateUI(void* app, FunctionDelegate function)
+	{
+		static_cast<Application*>(app)->SetPostUpdateUI(function);
+	}
+
+	ENGINE_API void Application_OnPreUpdateUI(void* app, FunctionDelegate function)
+	{
+		static_cast<Application*>(app)->SetPreUpdateUI(function);
+	}
 
     // --- Entity Management ---
     ENGINE_API uint32_t CreateEntity() {

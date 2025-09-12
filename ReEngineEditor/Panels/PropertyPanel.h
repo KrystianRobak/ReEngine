@@ -12,7 +12,7 @@ public:
 
     void ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function);
 
-    void Render();
+    void Render() override;
 
 
 private:

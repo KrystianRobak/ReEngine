@@ -164,6 +164,8 @@ enum MenuType
 using EventType = std::string;
 using ParamId = std::string;
 
+using FunctionDelegate = std::function<void()>;
+
 #define METHOD_LISTENER_NO_PARAM(EventType, Listener) EventType, std::bind(&Listener, this)
 #define METHOD_LISTENER_ONE_PARAM(EventType, Listener) EventType, std::bind(&Listener, this, std::placeholders::_1)
 #define METHOD_LISTENER_TWO_PARAM(EventType, Listener) EventType, std::bind(&Listener, this, std::placeholders::_1, std::placeholders::_2)

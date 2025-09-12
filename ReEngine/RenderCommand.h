@@ -1,10 +1,13 @@
 #pragma once
 
-//#include "Transform.h"
+#include "Transform.h"
+
+#include "ReTypes.h"
 #include <cstdint>
 
 struct RenderPrimitive {
-    //Transform transform;
+    Entity entity;
+    Transform transform;
     uint32_t mesh_id;
     uint32_t material_id;
 };

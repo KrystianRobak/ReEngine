@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-#include "Window.h"
 #include "SceneView.h"
 
 
@@ -21,29 +20,15 @@ void SceneView::resize(int32_t width, int32_t height)
     size.x = width;
     size.y = height;
 
-    frameBuffer->create_buffers((int32_t)size.x, (int32_t)size.y);
-}
-
-void SceneView::PreRender()
-{
-    frameBuffer->bind();
-}
-
-void SceneView::PostRender()
-{
-
+    //frameBuffer->create_buffers((int32_t)size.x, (int32_t)size.y);
 }
 
 void SceneView::Render()
 {
-    frameBuffer->unbind();
-
     ImGui::Begin("Scene");
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
     size = { viewportPanelSize.x, viewportPanelSize.y };
-
-    uint64_t textureID = frameBuffer->get_texture();
     ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ size.x, size.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
     if (ImGui::BeginDragDropTarget()) {

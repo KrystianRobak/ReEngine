@@ -15,10 +15,8 @@ private:
     {
         assert(mComponentTypes.find(typeName.c_str()) != mComponentTypes.end() && "Component not registered before use.");
 
-        auto array = std::static_pointer_cast<GenericComponentArray>(mComponentArrays["Transform"]);
-        auto array2 = std::static_pointer_cast<GenericComponentArray>(mComponentArrays[typeName.c_str()]);
-
-        return std::static_pointer_cast<GenericComponentArray>(mComponentArrays[typeName.c_str()]);
+        // **FIX:** Removed the unused 'array' variable that was hardcoded to "Transform".
+        return std::static_pointer_cast<GenericComponentArray>(mComponentArrays[typeName]);
     }
 
 public:
@@ -67,6 +65,16 @@ public:
     void* GetComponent(Entity entity, const std::string& typeName)
     {
         return GetComponentArray(typeName)->GetData(entity);
+    }
+
+    std::vector<char>* GetComponentWriteBuffer(const std::string& typeName)
+    {
+        return GetComponentArray(typeName)->GetWriteBuffer();
+    }
+
+    std::vector<char>* GetComponentReadBuffer(const std::string& typeName)
+    {
+        return GetComponentArray(typeName)->GetReadBuffer();
     }
 
     void EntityDestroyed(Entity entity)

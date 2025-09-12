@@ -6,12 +6,31 @@ from collections import defaultdict
 import clang.cindex
 
 # Configure libclang path if necessary
-clang.cindex.Config.set_library_file(r"D:\LLVM\bin\libclang.dll")
+clang.cindex.Config.set_library_file(r"C:\LLVM\bin\libclang.dll")
 
 
 def normalize_type_spelling(spelling: str) -> str:
     return spelling.strip().replace("class ", "").replace("struct ", "").replace("enum ", "")
 
+
+def get_relative_include(filepath: Path, include_dirs: list[Path]) -> str:
+    """
+    Given a header path and list of include roots, return the relative include path,
+    but prefer an include directory that has 'Components' in its path.
+    """
+    filepath = filepath.resolve()
+    # Step 1: Look only in include paths containing "Components"
+    for inc in include_dirs:
+        inc = Path(inc).resolve()
+        if "components" in str(inc).lower():  # case-insensitive match
+            try:
+                rel = filepath.relative_to(inc)
+                return str(rel).replace("\\", "/")
+            except ValueError:
+                continue
+
+    # Step 3: Fallback to just filename
+    return filepath.name
 
 # ... (type_category_for and base_offset_expr functions remain the same) ...
 def type_category_for(clang_type) -> str:
@@ -195,8 +214,10 @@ class ReflectionGenerator:
     # ---------- Emission ----------
     def generate_cpp_for_classes(self, out_path: str, header_file: str, classes):
         # ... (this function's start remains the same) ...
+        print(out_path)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(f"// Auto-generated reflection file for {header_file}\n")
+            print(header_file)
             f.write(f'#include "{header_file}"\n')
             f.write('#include "ReflectionEngine.h"\n')
             f.write("#include <cstddef>\n\n")
@@ -422,6 +443,12 @@ def main():
             if path:
                 clang_parse_args.append(f"-I{path}")
 
+    include_dirs = [Path(".")]  # always include current folder
+    if args.ms_includes:
+        for path in args.ms_includes.split(";"):
+            if path:
+                include_dirs.append(Path(path))
+
     print("[CodeGen] Paths:")
     print(args.ms_includes)
     print("[CodeGen] Using Clang arguments:")
@@ -444,8 +471,8 @@ def main():
         classes_by_file[filepath].append(cls)
 
     for filepath, classes in classes_by_file.items():
-        header_file = Path(filepath).name
-        cpp_out = out_dir / f"{header_file}.gen.cpp"
+        header_file = get_relative_include(Path(filepath), include_dirs)
+        cpp_out = out_dir / f"{os.path.basename(header_file)}.gen.cpp"
         gen.generate_cpp_for_classes(str(cpp_out), header_file, classes)
         if args.verbose:
             print("Generated", cpp_out, "for", [c["name"] for c in classes])

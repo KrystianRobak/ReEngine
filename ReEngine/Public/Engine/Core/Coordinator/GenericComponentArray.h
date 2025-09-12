@@ -1,10 +1,13 @@
-// In a new file or alongside ComponentArray.h
+// GenericComponentArray.h (Corrected)
 
 #include "ReTypes.h"
 #include <vector>
+#include <atomic>
 #include <unordered_map>
 #include <cassert>
 #include <cstring> // For memcpy
+
+using BufferPtr = std::vector<char>*;
 
 class IComponentArray
 {
@@ -18,33 +21,44 @@ public:
 class GenericComponentArray : public IComponentArray
 {
 public:
-    // Constructor takes the size of the component type
-    GenericComponentArray(size_t componentSize, bool IsDoubleBuffered) : mComponentSize(componentSize) ,
-        mIsDoubleBuffered(IsDoubleBuffered) , readBufferPtr(&mComponentData), writeBufferPtr(&mComponentDataSecond)
+    GenericComponentArray(size_t componentSize, bool IsDoubleBuffered) : mComponentSize(componentSize),
+        mIsDoubleBuffered(IsDoubleBuffered)
     {
-
+        if(mIsDoubleBuffered)
+        {
+            readBufferPtr = &mComponentData;
+            writeBufferPtr = &mComponentDataSecond;
+		}
+        else
+        {
+            readBufferPtr = &mComponentData;
+			writeBufferPtr = &mComponentData;
+        }
+        
     }
 
     void InsertData(Entity entity, void* componentData)
     {
-        //assert(mEntityToIndexMap.find(entity) == mEntityToIndexMap.end() && "Component added to same entity more than once.");
+        assert(mEntityToIndexMap.find(entity) == mEntityToIndexMap.end() && "Component added to same entity more than once.");
 
         size_t newIndex = mSize;
         mEntityToIndexMap[entity] = newIndex;
         mIndexToEntityMap[newIndex] = entity;
 
-        // Resize the buffer if needed
-        if ((newIndex + 1) * mComponentSize > mComponentData.size()) {
+        // Get the current write buffer
+        auto currentWriteBuffer = writeBufferPtr.load();
+
+        // Resize both buffers to keep their sizes in sync, but only write to one.
+        if ((newIndex + 1) * mComponentSize > currentWriteBuffer->size()) {
             mComponentData.resize((newIndex + 1) * mComponentSize);
-            if(mIsDoubleBuffered)
+            if (mIsDoubleBuffered) {
                 mComponentDataSecond.resize((newIndex + 1) * mComponentSize);
+            }
         }
 
-        // Copy the component data into our byte array
-        memcpy(&mComponentData[newIndex * mComponentSize], componentData, mComponentSize);
-        
-        if(mIsDoubleBuffered)
-            memcpy(&mComponentDataSecond[newIndex * mComponentSize], componentData, mComponentSize);
+        // **FIX:** Only copy data into the current write buffer.
+        // The read buffer is left untouched to allow safe reading from another thread.
+        memcpy(&((*currentWriteBuffer)[newIndex * mComponentSize]), componentData, mComponentSize);
 
         ++mSize;
     }
@@ -56,19 +70,16 @@ public:
         size_t indexOfRemovedEntity = mEntityToIndexMap[entity];
         size_t indexOfLastElement = mSize - 1;
 
-        // Move the last element's data into the removed element's slot
-        void* dest = &mComponentData[indexOfRemovedEntity * mComponentSize];
-        void* src = &mComponentData[indexOfLastElement * mComponentSize];
+        // Get the current write buffer
+        auto currentWriteBuffer = writeBufferPtr.load();
+
+        // **FIX:** Only move data within the write buffer.
+        // The data in the read buffer remains valid for the current frame.
+        void* dest = &((*currentWriteBuffer)[indexOfRemovedEntity * mComponentSize]);
+        void* src = &((*currentWriteBuffer)[indexOfLastElement * mComponentSize]);
         memcpy(dest, src, mComponentSize);
 
-        if (mIsDoubleBuffered)
-        {
-            void* dest = &mComponentDataSecond[indexOfRemovedEntity * mComponentSize];
-            void* src = &mComponentDataSecond[indexOfLastElement * mComponentSize];
-            memcpy(dest, src, mComponentSize);
-        }
-
-        // Update the maps to point to the new location
+        // Update the maps to point to the new location. This is shared state.
         Entity entityOfLastElement = mIndexToEntityMap[indexOfLastElement];
         mEntityToIndexMap[entityOfLastElement] = indexOfRemovedEntity;
         mIndexToEntityMap[indexOfRemovedEntity] = entityOfLastElement;
@@ -79,24 +90,41 @@ public:
         --mSize;
     }
 
-    // Returns a raw pointer to the component data
+    std::vector<char>* GetWriteBuffer()
+    {
+        return writeBufferPtr.load();
+    }
+
+    std::vector<char>* GetReadBuffer()
+    {
+        return readBufferPtr.load();
+    }
+
+    // Returns a raw pointer to the component data from the READ buffer
     void* GetData(Entity entity) override
     {
         assert(mEntityToIndexMap.find(entity) != mEntityToIndexMap.end() && "Retrieving non-existent component.");
-        return &mComponentData[mEntityToIndexMap[entity] * mComponentSize];
+
+        // **FIX:** This must read from the buffer pointed to by readBufferPtr.
+        auto currentReadBuffer = readBufferPtr.load();
+        return &((*currentReadBuffer)[mEntityToIndexMap[entity] * mComponentSize]);
     }
 
     void SwapData()
     {
-        auto oldWritePtr = writeBufferPtr.exchange(readBufferPtr.load());
-
-        readBufferPtr.store(oldWritePtr);
+        // This atomic swap is correct. No changes needed here.
+        if (mIsDoubleBuffered)
+        {
+            auto oldWritePtr = writeBufferPtr.exchange(readBufferPtr.load());
+            readBufferPtr.store(oldWritePtr);
+        }
     }
 
     void EntityDestroyed(Entity entity) override
     {
         if (mEntityToIndexMap.find(entity) != mEntityToIndexMap.end())
         {
+            // Note: This stages the removal for the next frame's write buffer.
             RemoveData(entity);
         }
     }
@@ -104,12 +132,14 @@ public:
 private:
     size_t mComponentSize;
     bool mIsDoubleBuffered;
-    std::vector<char> mComponentData;
-    std::vector<char> mComponentDataSecond;
+    std::vector<char> mComponentData; // Acts as Buffer A
+    std::vector<char> mComponentDataSecond; // Acts as Buffer B
+
+    // Mappings are shared and represent the state of the *next* frame.
     std::unordered_map<Entity, size_t> mEntityToIndexMap{};
     std::unordered_map<size_t, Entity> mIndexToEntityMap{};
+    size_t mSize{};
 
     std::atomic<std::vector<char>*> writeBufferPtr;
     std::atomic<std::vector<char>*> readBufferPtr;
-    size_t mSize{};
 };

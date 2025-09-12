@@ -9,7 +9,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <cmath>
-#include "Engine/Systems/Render/Shader.h"
+#include "Shader.h"
 
 class AABB {
 public:
