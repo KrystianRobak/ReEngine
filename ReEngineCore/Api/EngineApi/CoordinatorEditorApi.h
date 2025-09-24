@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseApi.h"
+#include "Api/BaseApi.h"
 #include <ReTypes.h>
 
 class System;
@@ -30,6 +30,8 @@ namespace Editor
 		virtual void AddComponent(Entity entity, const std::string& fullName) = 0;
 
 		virtual void RemoveComponent(Entity entity, const std::string& typeName) = 0;
+
+		virtual void MarkEntityDirty(Entity entity, const std::string& typeName) = 0;
 
 		virtual void SwapComponentBuffers(const std::string& fullName) = 0;
 

@@ -4,6 +4,7 @@
 
 #include "Engine/Core/Coordinator/Coordinator.h"
 #include <Engine/Window.h>
+#include "../AssetManager.h"
 
 #include <chrono>
 #include <random>
@@ -76,6 +77,7 @@ private:
 	Window window;
 
 	Commander Commander_;
+	AssetManager AssetManager_;
 
 	FunctionDelegate OnUpdateUI;
 	FunctionDelegate OnPostUpdateUI;
@@ -83,9 +85,9 @@ private:
 
 	FunctionDelegate CreateUiPanels;
 
-	std::binary_semaphore RenderUpdateThreadSemaphore{ 0 };
+	std::binary_semaphore RenderUpdateThreadSemaphore{ 1 };
 
-	std::binary_semaphore GameUpdateThreadSemaphore{ 1 };
+	std::binary_semaphore GameUpdateThreadSemaphore{ 0 };
 
 	bool HasRenderUpdateThreadFinished = false;
 

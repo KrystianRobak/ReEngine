@@ -159,6 +159,7 @@
     <ClCompile Include="Panels\KeyframeEditorPanel.cpp" />
     <ClCompile Include="Panels\PropertyPanel.cpp" />
     <ClCompile Include="Panels\SceneView.cpp" />
+    <ClCompile Include="Panels\SystemsManagerPanel.cpp" />
     <ClCompile Include="ReEngineEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +183,7 @@
     <ClInclude Include="Panels\KeyframeEditorPanel.h" />
     <ClInclude Include="Panels\PropertyPanel.h" />
     <ClInclude Include="Panels\SceneView.h" />
+    <ClInclude Include="Panels\SystemsManagerPanel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

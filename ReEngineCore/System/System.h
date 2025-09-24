@@ -1,6 +1,8 @@
 #pragma once
 
-#include "EngineApi/CoordinatorEditorApi.h"
+#include "Api/EngineApi/CoordinatorEditorApi.h"
+#include "Api/AssetManagerApi.h"
+
 #include "ReflectionMacros.h"
 #include <ReTypes.h>
 #include <set>
@@ -10,14 +12,16 @@
 #include "GLFW/glfw3.h"
 
 
+
 class Commander;
 
 class System
 {
 public:
-	virtual void InitApi(Editor::IEngineEditorApi* engine, GLFWwindow* context)
+	virtual void InitApi(Editor::IEngineEditorApi* engine, GLFWwindow* context, AssetManagerApi* AssetManger = nullptr)
 	{
 		engine_ = engine;
+		assetManager_ = std::shared_ptr<AssetManagerApi>(AssetManger);
 		renderContext = context;
 	};
 
@@ -39,5 +43,6 @@ protected:
 	std::set<Entity> mEntities;
 	Editor::IEngineEditorApi* engine_;
 	std::shared_ptr<Commander> commander_;
-	GLFWwindow* renderContext = nullptr; // context for render thread
+	std::shared_ptr<AssetManagerApi> assetManager_;
+	GLFWwindow* renderContext = nullptr;
 };

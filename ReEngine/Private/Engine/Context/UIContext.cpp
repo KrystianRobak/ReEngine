@@ -11,7 +11,8 @@ bool UIContext::init(IWindow* window)
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    if (ImGui::GetCurrentContext() == nullptr)
+        ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
@@ -75,6 +76,8 @@ bool UIContext::init(IWindow* window)
 
 void UIContext::pre_render()
 {
+    if (ImGui::GetCurrentContext() == nullptr) return; // Guard: skip if context is missing
+
     // Start frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -193,6 +196,8 @@ void UIContext::pre_render()
 
 void UIContext::post_render()
 {
+    if (ImGui::GetCurrentContext() == nullptr) return; // Guard: skip if context is missing
+
     // Rendering
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -211,7 +216,9 @@ void UIContext::post_render()
 
 void UIContext::end()
 {
+    if (ImGui::GetCurrentContext() != nullptr)
+        ImGui::DestroyContext();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
 }

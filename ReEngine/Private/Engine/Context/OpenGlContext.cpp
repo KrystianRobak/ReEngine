@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 #include "Engine/Core/Coordinator/Coordinator.h"
-#include "IWindow.h"
+#include "Engine/IWindow.h"
 #include <Logger.h>
 
 static void on_window_size_callback(GLFWwindow* window, int width, int height)
@@ -83,14 +83,14 @@ bool OpenGlContext::init(IWindow* window)
 void OpenGlContext::pre_render()
 {
     glViewport(0, 0, window->width, window->height);
-    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void OpenGlContext::post_render()
 {
-    glfwPollEvents();
     glfwSwapBuffers((GLFWwindow*)window->get_native_window());
+    glfwPollEvents();
 }
 
 void OpenGlContext::end()

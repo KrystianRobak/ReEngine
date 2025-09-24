@@ -161,6 +161,7 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ApplicationAPI.cpp" />
+    <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Commander.cpp" />
     <ClCompile Include="Private\Engine\Context\OpenGlContext.cpp" />
     <ClCompile Include="Private\Engine\Context\OpenGlFrameBuffer.cpp" />
@@ -170,13 +171,10 @@
     <ClCompile Include="Private\Engine\Window.cpp" />
     <ClCompile Include="RenderCommand.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
-    <ClCompile Include="Private\Engine\Components\Collision.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Private\Engine\Components\Collision\Octree.cpp" />
-    <ClCompile Include="Private\Engine\Components\Mesh.cpp" />
-    <ClCompile Include="Private\Engine\Components\StaticMesh.cpp" />
     <ClCompile Include="Private\Engine\Core\Application.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\GenericComponentArray.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\ComponentManager.cpp" />
@@ -189,6 +187,7 @@
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp" />
     <ClCompile Include="Script.cpp" />
     <ClCompile Include="ScriptRegistry.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />
@@ -201,6 +200,7 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="ApplicationAPI.h" />
+    <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Commander.h" />
     <ClInclude Include="Public\Engine\Context\OpenGlContext.h" />
     <ClInclude Include="Public\Engine\Context\OpenGlFrameBuffer.h" />
@@ -209,6 +209,8 @@
     <ClInclude Include="Public\Engine\FrameBuffer.h" />
     <ClInclude Include="Public\Engine\IWindow.h" />
     <ClInclude Include="Public\Engine\Window.h" />
+    <ClInclude Include="RawImageData.h" />
+    <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="RenderCommand.h" />
     <ClInclude Include="ComponentBasic.h" />
     <ClInclude Include="Public\Engine\Components\Animated.h" />
@@ -220,11 +222,11 @@
     <ClInclude Include="Public\Engine\Components\Collision\Octree.h" />
     <ClInclude Include="Public\Engine\Components\Gravity.h" />
     <ClInclude Include="Public\Engine\Components\LightSource.h" />
-    <ClInclude Include="Public\Engine\Components\Mesh.h" />
+    <ClInclude Include="Public\Engine\Components\MeshData.h" />
     <ClInclude Include="Public\Engine\Components\Player.h" />
     <ClInclude Include="Public\Engine\Components\Renderable.h" />
     <ClInclude Include="Public\Engine\Components\RigidBody.h" />
-    <ClInclude Include="Public\Engine\Components\StaticMesh.h" />
+    <ClInclude Include="Public\Engine\Components\StaticMeshData.h" />
     <ClInclude Include="Public\Engine\Components\Thrust.h" />
     <ClInclude Include="Public\Engine\Components\Transform.h" />
     <ClInclude Include="Public\Engine\Core\AnimationTypes.h" />
@@ -236,10 +238,10 @@
     <ClInclude Include="Public\Engine\Core\Coordinator\Event.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\EventManager.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\SystemManager.h" />
-    <ClInclude Include="Public\Engine\Core\Types.h" />
     <ClInclude Include="Public\Engine\Core\WindowManager.h" />
     <ClInclude Include="ReEngineExport.h" />
     <ClInclude Include="Sprite.h" />
+    <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />

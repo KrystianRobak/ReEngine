@@ -9,6 +9,8 @@
 #include <GL/glew.h>
 #include "GLFW/glfw3.h"
 
+
+
 void Application::StartClock() 
 {
 	// Measure frame start time
@@ -81,11 +83,15 @@ void Application::InitSystems()
 
 void Application::Update()
 {
+	using clock = std::chrono::steady_clock;
+
+
 	int i = 0;
 	while (true)
 	{
 		RenderUpdateThreadSemaphore.acquire();
-		StartClock();
+
+		auto start = clock::now();
 
 		auto systems = Reflection::Registry::Instance().GetAllSystems();
 		for (auto system : systems)
@@ -95,10 +101,38 @@ void Application::Update()
 				auto RenderSystem = coordinator->GetSystem(system->fullName);
 				for (Entity entity : RenderSystem->GetEntities())
 				{
-					Commander_.IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 3, 5 }));
+					if(coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
+						Commander_.IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 3, 5 }));
 				}
 			}
 		}
+
+		auto& pendingMeshes = AssetManager_.GetPendingMeshes();
+
+		for (auto it = pendingMeshes.begin(); it != pendingMeshes.end(); ) {
+			auto& pending = *it;
+
+			if (pending.future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+				// Move out the loaded mesh
+				std::shared_ptr<StaticMeshData> staticMesh = pending.future.get();
+				// Attach StaticMesh component and assign
+				coordinator->AddComponent(pending.entity, "StaticMesh");
+				auto staticMeshComponent = static_cast<StaticMesh*>(coordinator->GetComponent(pending.entity, "StaticMesh"));
+
+				staticMeshComponent->StaticMeshHandler = staticMesh;
+
+				it = pendingMeshes.erase(it);
+			}
+			else {
+				++it;
+			}
+		}
+
+		auto end = clock::now(); // End timing
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+		LOGF_INFO("Game tick took %lld milliseconds", duration);
+
 		GameUpdateThreadSemaphore.release();
 	}
 
@@ -107,35 +141,34 @@ void Application::Update()
 
 void Application::Render()
 {
-
+	using clock = std::chrono::steady_clock;
 	window.Init(1280, 720, "Okno zycia", GetCoordinatorEditor());
-
-	Renderer_->InitApi(GetCoordinatorEditor(), glfwGetCurrentContext());
+	
+	Renderer_->InitApi(GetCoordinatorEditor(), glfwGetCurrentContext(),&AssetManager_);
 
 	CreateUiPanels();
-
-	window.InitUiComponets();
+	window.InitUiComponets(&AssetManager_);
 
 	while (true)
 	{
 		GameUpdateThreadSemaphore.acquire();
 
-		/*glfwMakeContextCurrent(Renderer_->GetRenderContext());*/
+		auto start = clock::now();
 
 		window.PreRender();
-		
+	
 		Renderer_->Update(dt);
-		std::this_thread::sleep_for(std::chrono::milliseconds(120));
 
 		window.Render();
 
-
 		window.PostRender();
 
-		/*glfwMakeContextCurrent(nullptr);*/
+		auto end = clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+		LOGF_INFO("Render tick took %lld milliseconds", duration);
 
 		RenderUpdateThreadSemaphore.release();
-		MeasureTime();
 	}
 		
 }
@@ -151,6 +184,8 @@ void Application::PhysicsTick()
 
 		PhysicsSystem_->Update(0.016f);
 		coordinator->SwapComponentBuffers("Transform");
+
+		//LOGF_INFO("Physics tick");
 
 		auto endTime = clock::now();
 		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);

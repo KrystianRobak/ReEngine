@@ -42,6 +42,12 @@ public:
         GetComponentArray(typeName)->SwapData();
     }
 
+    void MarkEntityDirty(Entity entity, const std::string& typeName)
+    {
+        assert(mComponentTypes.find(typeName.c_str()) != mComponentTypes.end() && "Component not registered before use.");
+        GetComponentArray(typeName)->MarkDirty(entity);
+	}
+
     // Get the ComponentType bit index from a string name
     ComponentType GetComponentType(const std::string& typeName)
     {

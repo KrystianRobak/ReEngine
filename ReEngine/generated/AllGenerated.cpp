@@ -2,6 +2,7 @@
 #include "ReflectionEngine.h"
 
 #include "Sprite.h.gen.cpp"
+#include "StaticMesh.h.gen.cpp"
 #include "Transform.h.gen.cpp"
 
 namespace ReflectionSystem {

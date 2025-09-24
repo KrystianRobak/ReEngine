@@ -33,9 +33,6 @@
     <ClCompile Include="ProjectBuilder.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
-    <ClCompile Include="SystemApi\CoordinatorSystemApi.cpp">
-      <Filter>Pliki źródłowe\SystemApi</Filter>
-    </ClCompile>
     <ClCompile Include="Shader.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
@@ -73,6 +70,12 @@
     </ClInclude>
     <ClInclude Include="UIComponent.h">
       <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetManagerApi.h">
+      <Filter>Pliki nagłówkowe\SystemEditorApi</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderInterface.h">
+      <Filter>Pliki nagłówkowe\SystemEditorApi</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

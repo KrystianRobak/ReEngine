@@ -41,7 +41,7 @@ void FileBrowser::FindFiles(std::string folderPath, bool direction)
             }
             else if(!entry.is_directory()) {
                 auto extension = entry.path().extension();
-                if (extension == ".jpg" || extension == ".png" || extension == ".obj" || extension == ".mtl" || extension == ".fs" || extension == ".vs" || extension == ".cpp") {
+                if (extension == ".jpg" || extension == ".png" || extension == ".obj" || extension == ".fbx" || extension == ".fs" || extension == ".vs" || extension == ".cpp") {
                     files.push_back(entry);
                 }
             }

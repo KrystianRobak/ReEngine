@@ -10,7 +10,8 @@
 #include "GLFW/glfw3.h"
 
 #include "ReflectionEngine.h"
-#include "EngineApi/CoordinatorEditorApi.h"
+#include "Api/EngineApi/CoordinatorEditorApi.h"
+#include "Api/AssetManagerApi.h"
 
 #include <vector>
 #include <iostream>
@@ -19,9 +20,11 @@
 class UIComponent
 {
 public:
-	virtual void Init(Editor::IEngineEditorApi* engineAPI)
+	virtual void Init(Editor::IEngineEditorApi* engineAPI,AssetManagerApi* AssetManger ,ImGuiContext* context)
 	{
 		this->engineAPI = engineAPI;
+		this->assetManager = std::shared_ptr<AssetManagerApi>(AssetManger);
+		this->context_ = context;
 	}
 
 	virtual void Render() = 0;
@@ -33,5 +36,7 @@ public:
 
 protected:
 	Editor::IEngineEditorApi* engineAPI = nullptr;
+	std::shared_ptr<AssetManagerApi> assetManager = nullptr;
 	uint64_t textureID;
+	ImGuiContext* context_;
 };

@@ -141,15 +141,6 @@
     <ClCompile Include="Private\Engine\Core\Coordinator\SystemManager.cpp">
       <Filter>Source Files\Private\Engine\Core\Coordinator</Filter>
     </ClCompile>
-    <ClCompile Include="Private\Engine\Components\Collision.cpp">
-      <Filter>Source Files\Private\Engine\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Components\Mesh.cpp">
-      <Filter>Source Files\Private\Engine\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Components\StaticMesh.cpp">
-      <Filter>Source Files\Private\Engine\Components</Filter>
-    </ClCompile>
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
       <Filter>Source Files\Private\Engine\Components\Collision</Filter>
     </ClCompile>
@@ -219,15 +210,18 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp">
       <Filter>Source Files\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="AssetManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Public\Engine\Core\AnimationTypes.h">
       <Filter>Source Files\Public\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Core\Application.h">
-      <Filter>Source Files\Public\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Core\Types.h">
       <Filter>Source Files\Public\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Core\WindowManager.h">
@@ -272,7 +266,7 @@
     <ClInclude Include="Public\Engine\Components\LightSource.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Public\Engine\Components\Mesh.h">
+    <ClInclude Include="Public\Engine\Components\MeshData.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\Player.h">
@@ -284,7 +278,7 @@
     <ClInclude Include="Public\Engine\Components\RigidBody.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Public\Engine\Components\StaticMesh.h">
+    <ClInclude Include="Public\Engine\Components\StaticMeshData.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\Thrust.h">
@@ -367,6 +361,18 @@
     </ClInclude>
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h">
       <Filter>Source Files\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticMesh.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RawImageData.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

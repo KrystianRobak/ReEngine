@@ -12,6 +12,8 @@ private:
 	std::shared_ptr<std::vector<RenderCommand>> CommandQueueWrite;
 	std::shared_ptr<std::vector<RenderCommand>> CommandQueueRead;
 
+
+
 public:
 
 	void Init(int SizeOfCommandQueue) {

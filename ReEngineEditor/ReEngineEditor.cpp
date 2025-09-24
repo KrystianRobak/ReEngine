@@ -2,8 +2,8 @@
 #include <iostream>
 #include <memory>
 
-#include "EngineApi/CoordinatorEditorApi.h"
-#include "IApplicationApi.h"
+#include "Api/EngineApi/CoordinatorEditorApi.h"
+#include "Api/IApplicationApi.h"
 
 #include "Logger.h"
 #include "ReflectionEngine.h"
@@ -23,6 +23,8 @@
 #include "Panels/KeyframeEditorPanel.h"
 #include "Panels/PropertyPanel.h"
 #include "Panels/SceneView.h"
+#include "Panels/SystemsManagerPanel.h"
+#include <thread>
 
 
 using FuncPtr = void* (*)();
@@ -70,11 +72,11 @@ int main(int argc, char** argv)
     Application->SetCreateUiPanels([&]() { 
         Application->AddUIComponent(new SceneView());
         Application->AddUIComponent(new AddingPanel());
-
         Application->AddUIComponent(new ControlPanel());
         Application->AddUIComponent(new FileBrowser());
         Application->AddUIComponent(new ItemsSelectionPanel());
         Application->AddUIComponent(new PropertyPanel());
+        Application->AddUIComponent(new SystemsManagerPanel());
 
 		});
 
@@ -91,19 +93,20 @@ int main(int argc, char** argv)
     }
 
     auto transform = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Transform");
+	auto StaticMesh = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.StaticMesh");
 	auto sprite = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Sprite");
     auto renderSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.RenderOpenGL");
 	auto physicsSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.Physics3D");
 
     coordinatorWrap.RegisterComponent(transform, true);
 	coordinatorWrap.RegisterComponent(sprite);
+	coordinatorWrap.RegisterComponent(StaticMesh);
 
     System* renderer = coordinatorWrap.RegisterSystem(renderSystem);
 
-	//renderer->InitApi(engine, glfwGetCurrentContext());
-
     Signature signature;
     signature.set(coordinatorWrap.GetComponentType(transform->fullName));
+	signature.set(coordinatorWrap.GetComponentType(StaticMesh->fullName));
 
     coordinatorWrap.SetSystemSignature(renderSystem->fullName, signature);
 
@@ -122,12 +125,15 @@ int main(int argc, char** argv)
 
 	Application->StartThreads();
 
+
+    engine->CreateEntity();
+
     engine->CreateEntity();
 
 
     while (Application->IsRunning())
     {
-		Application->Update();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     delete Application;

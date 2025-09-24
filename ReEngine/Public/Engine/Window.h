@@ -11,7 +11,7 @@
 #include "Context/UIContext.h"
 #include "Context/OpenGlFrameBuffer.h"
 
-
+class AssetManagerApi;
 
 
 class Window : public IWindow
@@ -38,7 +38,7 @@ public:
 
     void PostRender();
 
-    void InitUiComponets();
+    void InitUiComponets(AssetManagerApi*);
 
     void* get_native_window() { return window; };
 

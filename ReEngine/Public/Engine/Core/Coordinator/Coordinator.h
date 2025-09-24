@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SystemApi/CoordinatorSystemApi.h"
-#include "EngineApi/CoordinatorEditorApi.h"
+#include "Api/SystemApi/CoordinatorSystemApi.h"
+#include "Api/EngineApi/CoordinatorEditorApi.h"
 
 #include "ComponentManager.h"
 #include "EntityManager.h"
@@ -136,6 +136,11 @@ public:
 		mEntityManager->SetSignature(entity, signature);
 
 		mSystemManager->EntitySignatureChanged(entity, signature);
+	}
+
+	void MarkEntityDirty(Entity entity, const std::string& typeName) override
+	{
+		mComponentManager->MarkEntityDirty(entity, typeName);
 	}
 
 	void SwapComponentBuffers(const std::string& fullName) {

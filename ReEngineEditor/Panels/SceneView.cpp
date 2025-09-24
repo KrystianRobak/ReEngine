@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "SceneView.h"
-
+#include "StaticMesh.h"
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -19,12 +19,12 @@ void SceneView::resize(int32_t width, int32_t height)
 {
     size.x = width;
     size.y = height;
-
-    //frameBuffer->create_buffers((int32_t)size.x, (int32_t)size.y);
 }
 
 void SceneView::Render()
 {
+	ImGui::SetCurrentContext(context_);
+
     ImGui::Begin("Scene");
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -40,9 +40,13 @@ void SceneView::Render()
                     std::string name = parts[0];
                     std::string path = parts[1];
                     
-                   /* std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
+					Entity entity = engineAPI->CreateEntity();
 
-                    Entity entity = coordinator->CreateEntity();*/
+					engineAPI->AddComponent(entity, "Transform");
+
+                    auto future = assetManager->loadFBX(path);
+
+					assetManager->AddPendingMesh(entity, std::move(future));
                 }
             }
         } 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "EngineApi/CoordinatorEditorApi.h"
-#include "SystemApi/CoordinatorSystemApi.h"
+#include "Api/EngineApi/CoordinatorEditorApi.h"
+#include "Api/SystemApi/CoordinatorSystemApi.h"
 
 
 #include "System/System.h"

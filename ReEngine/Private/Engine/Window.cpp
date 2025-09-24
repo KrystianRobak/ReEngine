@@ -47,7 +47,7 @@ void Window::on_close()
 
 void Window::Render()
 {
-    for(const auto& component : UIComponents)
+    for(UIComponent* component : UIComponents)
     {
         component->SetTextureID(frameBuffer->get_texture());
         component->Render();
@@ -72,11 +72,11 @@ void Window::PostRender()
     RenderCtx->post_render();
 }
 
-void Window::InitUiComponets()
+void Window::InitUiComponets(AssetManagerApi* AssetManager)
 {
 
     for (const auto& component : UIComponents)
     {
-        component->Init(EngineApi_);
+        component->Init(EngineApi_ ,AssetManager ,ImGui::GetCurrentContext());
     }
 }
