@@ -23,172 +23,6 @@ inline std::vector<std::string> splitString(const std::string& str, char delimit
 void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature) 
 {
 
-    //{
-    //    if (!signature.test(coordinator->GetComponentType<Transform>()))
-    //    {
-    //        if (ImGui::Button("Transform"))
-    //        {
-    //            coordinator->AddComponent(
-    //                entity,
-    //                Transform{
-    //                    .position = glm::vec3(1, 1, -30),
-    //                    .rotation = glm::vec3(0, 0.1, 0),
-    //                    .scale = glm::vec3(3, 3, 3)
-    //                });
-    //        }
-    //    }
-    //    if (!signature.test(coordinator->GetComponentType<BehaviourScript>()))
-    //    {
-    //        if (ImGui::Button("BehaviourScript"))
-    //        {
-    //            coordinator->AddComponent(
-    //                entity,
-    //                BehaviourScript{}
-    //            );
-    //        }
-    //    }
-    //    if (!signature.test(coordinator->GetComponentType<Gravity>()))
-    //    {
-    //        if (ImGui::Button("Gravity"))
-    //        {
-    //            coordinator->AddComponent<Gravity>(
-    //                entity,
-    //                { glm::vec3(0.0f, 0, 0.0f) });
-    //        }
-    //    }
-    //    if (!signature.test(coordinator->GetComponentType<Player>()))
-    //    {
-    //        if (ImGui::Button("Player"))
-    //        {
-
-    //        }
-    //    }
-    //    if (!signature.test(coordinator->GetComponentType<Renderable>()))
-    //    {
-    //        if (ImGui::Button("Renderable"))
-    //        {
-    //            coordinator->AddComponent(
-    //                entity,
-    //                Renderable{
-    //                    .color = glm::vec4(40,40,40, 1)
-    //                });
-    //        }
-    //    }
-    //    if (!signature.test(coordinator->GetComponentType<RigidBody>()))
-    //    {
-    //        if (ImGui::Button("RigidBody"))
-    //        {
-    //            coordinator->AddComponent(
-    //                entity,
-    //                RigidBody{
-    //                    .velocity = glm::vec3(0.0f, 0.0f, 0.0f),
-    //                    .acceleration = glm::vec3(0.0f, 0.0f, 0.0f)
-    //                });
-    //        }
-    //    }
-
-    //    /*if (!signature.test(coordinator->GetComponentType<Collision>()))
-    //    {
-    //        if (ImGui::Button("Collision"))
-    //        {
-    //            coordinator->AddComponent(
-    //                entity,
-    //                Collision{
-
-    //                });
-    //        }
-    //    }*/
-    //    /*if (!signature.test(coordinator->GetComponentType<StaticMesh>()))
-    //    {
-    //        if (ImGui::Button("StaticMesh"))
-    //        {
-    //            coordinator->AddComponent(
-    //                entity,
-    //                StaticMesh{
-
-    //                });
-    //        }
-    //    }*/
-    //    if (!signature.test(coordinator->GetComponentType<Animated>()))
-    //    {
-    //        if (ImGui::Button("Animated"))
-    //        {
-    //            coordinator->AddComponent(
-    //                entity,
-    //                Animated{
-
-    //                });
-    //        }
-    //    }
-    //}
-
-    //if (ImGui::CollapsingHeader("Remove component"))
-    //{
-    //    if (signature.test(coordinator->GetComponentType<Transform>()))
-    //    {
-    //        if (ImGui::Button("Transform"))
-    //        {
-    //            coordinator->RemoveComponent<Transform>(entity);
-    //        }
-    //    }
-    //    if (signature.test(coordinator->GetComponentType<Gravity>()))
-    //    {
-    //        if (ImGui::Button("Gravity"))
-    //        {
-    //            coordinator->RemoveComponent<Gravity>(entity);
-    //        }
-    //    }
-    //    if (signature.test(coordinator->GetComponentType<Player>()))
-    //    {
-    //        if (ImGui::Button("Player"))
-    //        {
-    //            coordinator->RemoveComponent<Player>(entity);
-    //        }
-    //    }
-    //    if (signature.test(coordinator->GetComponentType<Renderable>()))
-    //    {
-    //        if (ImGui::Button("Renderable"))
-    //        {
-    //            coordinator->RemoveComponent<Renderable>(entity);
-    //        }
-    //    }
-    //    if (signature.test(coordinator->GetComponentType<RigidBody>()))
-    //    {
-    //        if (ImGui::Button("RigidBody"))
-    //        {
-    //            coordinator->RemoveComponent<RigidBody>(entity);
-    //        }
-    //    }
-    //    /*if (signature.test(coordinator->GetComponentType<StaticMesh>()))
-    //    {
-    //        if (ImGui::Button("StaticMesh"))
-    //        {
-    //            coordinator->RemoveComponent<StaticMesh>(entity);
-    //        }
-    //    }*/
-    //    /*if (signature.test(coordinator->GetComponentType<Collision>()))
-    //    {
-    //        if (ImGui::Button("Collision"))
-    //        {
-    //            coordinator->RemoveComponent<Collision>(entity);
-    //        }
-    //    }*/
-    //    if (signature.test(coordinator->GetComponentType<Animated>()))
-    //    {
-    //        if (ImGui::Button("Animated"))
-    //        {
-    //            coordinator->RemoveComponent<Animated>(entity);
-    //        }
-    //    }
-    //    if (signature.test(coordinator->GetComponentType<BehaviourScript>()))
-    //    {
-    //        if (ImGui::Button("BehaviourScript"))
-    //        {
-    //            coordinator->RemoveComponent<BehaviourScript>(entity);
-    //        }
-    //    }
-    //}
-
 }
 
 void PropertyPanel::ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function)
@@ -244,27 +78,34 @@ void PropertyPanel::Render()
                 // Get the actual component data pointer.
                 void* componentData = engineAPI->GetComponent(entity, componentInfo->name);
 
-                // Iterate through the reflected variables of the component.
                 for (auto& variable : componentInfo->variables) {
-                    // Get a pointer to the variable's data using the base pointer and offset.
                     char* varDataPtr = (char*)componentData + variable.offset;
-
-                    // Use the variable's type information to choose the correct ImGui widget.
-                    if (strcmp(variable.type->name, "float") == 0) {
-                        ImGui::DragFloat(variable.name, (float*)varDataPtr);
+                    
+                    const char* typeName = variable.type->name;
+                    const char* varName = variable.name;
+                    
+                    if (strcmp(typeName, "float") == 0) {
+                        ImGui::DragFloat(varName, (float*)varDataPtr, 0.1f);
                     }
-                    else if (strcmp(variable.type->name, "int") == 0) {
-                        ImGui::InputInt(variable.name, (int*)varDataPtr);
+                    else if (strcmp(typeName, "int") == 0) {
+                        ImGui::InputInt(varName, (int*)varDataPtr);
                     }
-                    else if (strcmp(variable.type->name, "bool") == 0) {
-                        ImGui::Checkbox(variable.name, (bool*)varDataPtr);
+                    else if (strcmp(typeName, "bool") == 0) {
+                        ImGui::Checkbox(varName, (bool*)varDataPtr);
                     }
-                    // Add more conditions for other types like glm::vec3, glm::vec4, etc.
-                    // For example, for a glm::vec3:
-                    else if (strcmp(variable.type->name, "glm::vec3") == 0) {
-                        ImGui::DragFloat3(variable.name, (float*)varDataPtr);
+                    else if (strcmp(typeName, "glm::vec<3, float>") == 0 || strcmp(typeName, "glm::vec3") == 0) {
+                        ImGui::DragFloat3(varName, (float*)varDataPtr, 0.1f);
                     }
+                    else if (strcmp(typeName, "glm::vec<4, float>") == 0 || strcmp(typeName, "glm::vec4") == 0) {
+                        ImGui::DragFloat4(varName, (float*)varDataPtr, 0.1f);
+                    }
+                    else if (strcmp(typeName, "glm::qua<float>") == 0) {
+                        // Treat quaternion as 4 floats (x,y,z,w)
+                        ImGui::DragFloat4(varName, (float*)varDataPtr, 0.1f);
+                    }
+                    
                 }
+
             }
         }
     }

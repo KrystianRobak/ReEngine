@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../IWindow.h"
+#include "Window/IWindow.h"
 
 class RenderContext
 {

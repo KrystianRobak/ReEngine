@@ -20,7 +20,7 @@ struct Transform_AutoRegister {
         ci.construct = []() -> void* { return new Transform(); };
         ci.destruct = [](void* p) { delete static_cast<Transform*>(p); };
         Transform_Variables.clear();
-        auto* vType = Reflection::Registry::Instance().GetOrCreateType("glm::vec3");
+        auto* vType = Reflection::Registry::Instance().GetOrCreateType("glm::vec<3, float>");
         {
             Reflection::ReflectedVariable rv = {
                 "position", "public",
@@ -30,7 +30,7 @@ struct Transform_AutoRegister {
             };
             Transform_Variables.push_back(std::move(rv));
         }
-         vType = Reflection::Registry::Instance().GetOrCreateType("glm::quat");
+         vType = Reflection::Registry::Instance().GetOrCreateType("glm::qua<float>");
         {
             Reflection::ReflectedVariable rv = {
                 "rotation", "public",
@@ -40,7 +40,7 @@ struct Transform_AutoRegister {
             };
             Transform_Variables.push_back(std::move(rv));
         }
-         vType = Reflection::Registry::Instance().GetOrCreateType("glm::vec3");
+         vType = Reflection::Registry::Instance().GetOrCreateType("glm::vec<3, float>");
         {
             Reflection::ReflectedVariable rv = {
                 "scale", "public",

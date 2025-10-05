@@ -1,8 +1,11 @@
 #pragma once
 
 #include "Api/BaseApi.h"
+#include "Api/AssetManagerApi.h"
+#include <memory>
 #include <ReTypes.h>
 
+class Event;
 class System;
 
 namespace Editor
@@ -10,6 +13,8 @@ namespace Editor
 	class IEngineEditorApi
 	{
 	public:
+
+		virtual std::shared_ptr<AssetManagerApi> GetAssetManager() = 0;
 
 		virtual Entity CreateEntity() = 0;
 
@@ -35,9 +40,11 @@ namespace Editor
 
 		virtual void SwapComponentBuffers(const std::string& fullName) = 0;
 
-		//virtual void AddEventListener(EventType eventType, std::function<void(Event&)> const& listener) = 0;
+		virtual void AddEventListener(EventType eventType, std::function<void(Event&)> const& listener) = 0;
 
-		//virtual void SendEvent(Event& event) = 0;
+		virtual void SendEvent(Event& event) = 0;
+
+		virtual void SendEvent(EventType eventType) = 0;
 
 		virtual void* GetComponent(Entity entity, const std::string& typeName) = 0;
 
@@ -45,6 +52,6 @@ namespace Editor
 
 		virtual ComponentType GetComponentType(const std::string& typeName) = 0;
 
-		virtual void SendEvent(EventType eventType) = 0;
+		
 	};
 }

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
 
 #include "stb/stb_image.h"
 #include "glm/glm.hpp"
@@ -11,7 +9,7 @@
 
 #include "ReflectionEngine.h"
 #include "Api/EngineApi/CoordinatorEditorApi.h"
-#include "Api/AssetManagerApi.h"
+#include "ReTypes.h"
 
 #include <vector>
 #include <iostream>
@@ -20,23 +18,18 @@
 class UIComponent
 {
 public:
-	virtual void Init(Editor::IEngineEditorApi* engineAPI,AssetManagerApi* AssetManger ,ImGuiContext* context)
+	virtual void Init(Editor::IEngineEditorApi* engineAPI)
 	{
 		this->engineAPI = engineAPI;
-		this->assetManager = std::shared_ptr<AssetManagerApi>(AssetManger);
-		this->context_ = context;
+
+		OnInit();
 	}
+
+	virtual void OnInit() {};
 
 	virtual void Render() = 0;
 
-	virtual void SetTextureID(uint64_t id)
-	{
-		this->textureID = id;
-	}
-
 protected:
 	Editor::IEngineEditorApi* engineAPI = nullptr;
-	std::shared_ptr<AssetManagerApi> assetManager = nullptr;
-	uint64_t textureID;
-	ImGuiContext* context_;
+
 };

@@ -1,10 +1,12 @@
 #include "Engine/Core/Application.h"
 
+
 #include "ReTypes.h"
 #include "thread"
 #include "Engine/Systems/UI/UiSystem.h"
 #include <iostream>
 #include "Logger.h"
+#include "StaticMesh.h"
 
 #include <GL/glew.h>
 #include "GLFW/glfw3.h"
@@ -75,7 +77,7 @@ void Application::StartThreads()
 
 void Application::InitSystems()
 {
-	Renderer_ = coordinator->GetSystem("RenderOpenGL");
+	Renderer_ = reinterpret_cast<RenderSystem*>(coordinator->GetSystem("RenderOpenGL"));
 	Renderer_->InjectCommander(std::make_shared<Commander>(Commander_));
 	PhysicsSystem_ = coordinator->GetSystem("Physics3D");
 	//PhysicsSystem_->InjectCommander(Commander_);
@@ -96,7 +98,7 @@ void Application::Update()
 		auto systems = Reflection::Registry::Instance().GetAllSystems();
 		for (auto system : systems)
 		{
-			if (std::strcmp(system->fullName,"RenderOpenGL"))
+			if (std::strcmp(system->fullName,"RenderOpenGL") == 0)
 			{
 				auto RenderSystem = coordinator->GetSystem(system->fullName);
 				for (Entity entity : RenderSystem->GetEntities())
@@ -105,17 +107,26 @@ void Application::Update()
 						Commander_.IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 3, 5 }));
 				}
 			}
+			else if (std::strcmp(system->fullName, "Physics3D") == 0)
+			{
+				continue;
+			}
+			else
+			{
+				auto sys = coordinator->GetSystem(system->fullName);
+				sys->Update(dt);
+			}
 		}
 
-		auto& pendingMeshes = AssetManager_.GetPendingMeshes();
+		auto& pendingMeshes = coordinator->GetAssetManager()->GetPendingMeshes();
 
 		for (auto it = pendingMeshes.begin(); it != pendingMeshes.end(); ) {
 			auto& pending = *it;
 
 			if (pending.future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-				// Move out the loaded mesh
+
 				std::shared_ptr<StaticMeshData> staticMesh = pending.future.get();
-				// Attach StaticMesh component and assign
+
 				coordinator->AddComponent(pending.entity, "StaticMesh");
 				auto staticMeshComponent = static_cast<StaticMesh*>(coordinator->GetComponent(pending.entity, "StaticMesh"));
 
@@ -129,7 +140,7 @@ void Application::Update()
 		}
 
 		auto end = clock::now(); // End timing
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
 		LOGF_INFO("Game tick took %lld milliseconds", duration);
 
@@ -142,12 +153,14 @@ void Application::Update()
 void Application::Render()
 {
 	using clock = std::chrono::steady_clock;
-	window.Init(1280, 720, "Okno zycia", GetCoordinatorEditor());
-	
-	Renderer_->InitApi(GetCoordinatorEditor(), glfwGetCurrentContext(),&AssetManager_);
 
-	CreateUiPanels();
-	window.InitUiComponets(&AssetManager_);
+	window = Renderer_->GetWindow();
+
+	window->Init(1280, 720, "Okno zycia", GetCoordinatorEditor());
+	
+	Renderer_->InitApi(GetCoordinatorEditor() ,coordinator->GetAssetManager());
+	Renderer_->InitRenderContext(glfwGetCurrentContext());
+
 
 	while (true)
 	{
@@ -155,18 +168,19 @@ void Application::Render()
 
 		auto start = clock::now();
 
-		window.PreRender();
+		window->PreRender();
 	
 		Renderer_->Update(dt);
 
-		window.Render();
+		window->Render();
 
-		window.PostRender();
+		window->PostRender();
 
 		auto end = clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
 		LOGF_INFO("Render tick took %lld milliseconds", duration);
+		
 
 		RenderUpdateThreadSemaphore.release();
 	}
@@ -188,7 +202,7 @@ void Application::PhysicsTick()
 		//LOGF_INFO("Physics tick");
 
 		auto endTime = clock::now();
-		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
 
 		if (elapsed < fixedDelta)
 		{

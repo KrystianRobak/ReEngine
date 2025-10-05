@@ -23,8 +23,6 @@ void SceneView::resize(int32_t width, int32_t height)
 
 void SceneView::Render()
 {
-	ImGui::SetCurrentContext(context_);
-
     ImGui::Begin("Scene");
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -43,10 +41,10 @@ void SceneView::Render()
 					Entity entity = engineAPI->CreateEntity();
 
 					engineAPI->AddComponent(entity, "Transform");
+					
+                    auto future = engineAPI->GetAssetManager()->loadFBX(path);
 
-                    auto future = assetManager->loadFBX(path);
-
-					assetManager->AddPendingMesh(entity, std::move(future));
+                    engineAPI->GetAssetManager()->AddPendingMesh(entity, std::move(future));
                 }
             }
         } 

@@ -68,6 +68,7 @@ namespace Reflection {
         std::size_t offset;
 
         const TypeInfo* type;
+        std::string defaultValue;
     };
 
     struct BaseClassInfo {

@@ -4,6 +4,7 @@
 
 #include "Api/EngineApi/CoordinatorEditorApi.h"
 #include "Api/IApplicationApi.h"
+#include "ILayerManager.h"
 
 #include "Logger.h"
 #include "ReflectionEngine.h"
@@ -14,30 +15,51 @@
 #include "CoordinatorWrapper.h"
 #include "ApplicationWrapper.h"
 
-
-#include "Panels/AddingPanel.h"
-#include "Panels/AnimationPanel.h"
-#include "Panels/ControlPanel.h"
-#include "Panels/FileBrowser.h"
-#include "Panels/ItemsSelectionPanel.h"
-#include "Panels/KeyframeEditorPanel.h"
-#include "Panels/PropertyPanel.h"
-#include "Panels/SceneView.h"
-#include "Panels/SystemsManagerPanel.h"
 #include <thread>
+#include "EditorLayer.h"
+#include <sstream>
 
+
+inline  std::vector<std::string> splitBracedList(const std::string& input) {
+    std::vector<std::string> result;
+
+    // Remove the braces { }
+    std::string trimmed = input;
+    if (!trimmed.empty() && trimmed.front() == '{') trimmed.erase(trimmed.begin());
+    if (!trimmed.empty() && trimmed.back() == '}') trimmed.pop_back();
+
+    std::stringstream ss(trimmed);
+    std::string token;
+
+    // Split by comma
+    while (std::getline(ss, token, ',')) {
+        // Trim leading/trailing spaces
+        token.erase(token.begin(),
+            std::find_if(token.begin(), token.end(),
+                [](unsigned char ch) { return !std::isspace(ch); }));
+        token.erase(std::find_if(token.rbegin(), token.rend(),
+            [](unsigned char ch) { return !std::isspace(ch); }).base(),
+            token.end());
+
+        if (!token.empty())
+            result.push_back(token);
+    }
+
+    return result;
+}
 
 using FuncPtr = void* (*)();
 
 int main(int argc, char** argv)
 {
-    for(int i = 1; i < argc;i++)
-    {
-        LOGF_INFO("Passed as argument: %s", argv[i])
-    }
+    std::string input;
+    std::cin >> input;
 
-    ProjectBuilder builder(argv[1]);
+    ProjectBuilder builder(input);
+    //ProjectBuilder builder(argv[1]);
 
+
+	LOGF_INFO("Loading Engine.dll");
     HMODULE engineDLL = LoadLibraryA("ReEngine.dll");
     if (!engineDLL) {
         LOGF_ERROR("%s","Failed to load Engine.dll")
@@ -50,7 +72,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    LOGF_INFO("Module loaded successfully");
+    LOGF_INFO("Engine loaded successfully");
+
     IApplicationApi* Application = static_cast<IApplicationApi*>(createFunc());
 
     CoordinatorWrapper coordinatorWrap;
@@ -68,67 +91,57 @@ int main(int argc, char** argv)
 
     Application->Init();
 
-
-    Application->SetCreateUiPanels([&]() { 
-        Application->AddUIComponent(new SceneView());
-        Application->AddUIComponent(new AddingPanel());
-        Application->AddUIComponent(new ControlPanel());
-        Application->AddUIComponent(new FileBrowser());
-        Application->AddUIComponent(new ItemsSelectionPanel());
-        Application->AddUIComponent(new PropertyPanel());
-        Application->AddUIComponent(new SystemsManagerPanel());
-
-		});
-
-
     Editor::IEngineEditorApi* engine = Application->GetCoordinatorEditor();
 
     builder.ParseConfig(engine);
 
     auto systems = Reflection::Registry::Instance().GetAllSystems();
+	auto components = Reflection::Registry::Instance().GetAllComponents();
+
+    for (auto component : components)
+    {
+        coordinatorWrap.RegisterComponent(component);
+    }
 
     for (auto system : systems)
     {
-        LOGF_WARN("Znaleziono system: %s", system->fullName)
+		System* registeredSystem = coordinatorWrap.RegisterSystem(system);
+
+		registeredSystem->InitApi(engine);
+
+        Signature signature;
+
+		LOGF_INFO("Setting up system: %s", system->fullName)
+
+        for (auto variable : system->variables)
+        {
+
+            if (std::strcmp(variable.name, "ComponentsToRegister") == 0)
+            {
+                std::vector<std::string> components = splitBracedList(variable.defaultValue);
+
+                for (std::string component : components)
+                {
+                    LOGF_INFO("Registered %s to %s", component.c_str(), system->fullName)
+                    signature.set(coordinatorWrap.GetComponentType(component));
+                }
+            }
+        }
+
+        coordinatorWrap.SetSystemSignature(system->fullName, signature);
+
+		LOGF_INFO("System %s setup complete", system->fullName)
     }
-
-    auto transform = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Transform");
-	auto StaticMesh = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.StaticMesh");
-	auto sprite = Reflection::Registry::Instance().FindComponent("/Script/GeneratedModule.Sprite");
-    auto renderSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.RenderOpenGL");
-	auto physicsSystem = Reflection::Registry::Instance().FindSystem("/Script/GeneratedModule.Physics3D");
-
-    coordinatorWrap.RegisterComponent(transform, true);
-	coordinatorWrap.RegisterComponent(sprite);
-	coordinatorWrap.RegisterComponent(StaticMesh);
-
-    System* renderer = coordinatorWrap.RegisterSystem(renderSystem);
-
-    Signature signature;
-    signature.set(coordinatorWrap.GetComponentType(transform->fullName));
-	signature.set(coordinatorWrap.GetComponentType(StaticMesh->fullName));
-
-    coordinatorWrap.SetSystemSignature(renderSystem->fullName, signature);
-
-    System* physics = coordinatorWrap.RegisterSystem(physicsSystem);
-
-    physics->InitApi(engine, glfwGetCurrentContext());
-
-    Signature signature2;
-    signature2.set(coordinatorWrap.GetComponentType(transform->fullName));
-
-
-    coordinatorWrap.SetSystemSignature(physicsSystem->fullName, signature2);
-
 
 	Application->InitSystems();
 
+    engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED, [Application](Event& e) {
+        ILayerManager* layerManager = Application->GetLayerManager();
+        layerManager->AddLayer<EditorLayer>();
+        });
+
 	Application->StartThreads();
 
-
-    engine->CreateEntity();
-
-    engine->CreateEntity();
 
 
     while (Application->IsRunning())

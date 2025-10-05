@@ -7,6 +7,7 @@
 #include "EntityManager.h"
 #include "EventManager.h"
 #include "SystemManager.h"
+#include "AssetManager.h"
 #include "ReTypes.h"
 #include "Engine/Core/AnimationTypes.h"
 #include "Engine/Components/Camera.h"
@@ -14,7 +15,7 @@
 
 #include "Engine/Systems/Animation/AnimationSequence.h"
 
-#include "../ReEngineExport.h"
+#include "ReEngineExport.h"
 
 class ENGINE_API Coordinator : public Editor::IEngineEditorApi
 {
@@ -23,6 +24,7 @@ private:
 	std::unique_ptr<EntityManager> mEntityManager;
 	std::unique_ptr<EventManager> mEventManager;
 	std::unique_ptr<SystemManager> mSystemManager;
+	std::shared_ptr<AssetManager> mAssetManager;
 
 	Camera MainCamera;
 
@@ -32,6 +34,11 @@ private:
 	static std::shared_ptr<Coordinator> instance;
 
 public:
+
+	std::shared_ptr<AssetManagerApi> GetAssetManager() override
+	{
+		return std::static_pointer_cast<AssetManagerApi>(mAssetManager);
+	}
 
 	static std::shared_ptr<Coordinator> GetCoordinator() 
 	{
@@ -52,6 +59,7 @@ public:
 		mEntityManager = std::make_unique<EntityManager>();
 		mEventManager = std::make_unique<EventManager>();
 		mSystemManager = std::make_unique<SystemManager>();
+		mAssetManager = std::make_shared<AssetManager>();
 	}
 
 	std::shared_ptr<ComponentManager> GetComponentManager()
@@ -197,12 +205,12 @@ public:
 
 
 	// Event methods
-	void AddEventListener(EventType eventType, std::function<void(Event&)> const& listener)
+	void AddEventListener(EventType eventType, std::function<void(Event&)> const& listener) override
 	{
 		mEventManager->AddListener(eventType, listener);
 	}
 
-	void SendEvent(Event& event) 
+	void SendEvent(Event& event) override
 	{
 		mEventManager->SendEvent(event);
 	}

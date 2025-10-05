@@ -16,14 +16,26 @@
     <Filter Include="Pliki źródłowe\System">
       <UniqueIdentifier>{2393ea5d-6d25-4e8d-9359-c1d53af7c375}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Pliki nagłówkowe\SystemApi">
-      <UniqueIdentifier>{a1487fb3-665d-45bb-a465-79de940b3140}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Pliki źródłowe\SystemApi">
       <UniqueIdentifier>{ca5d76cc-9ad8-49a7-b49c-bdb704afef40}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Pliki nagłówkowe\SystemEditorApi">
-      <UniqueIdentifier>{c8341749-41e5-4830-8310-1be899614cf7}</UniqueIdentifier>
+    <Filter Include="Pliki nagłówkowe\Api">
+      <UniqueIdentifier>{35695a12-c4f3-41e8-9e0b-d316fff64e08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pliki nagłówkowe\Api\EngineApi">
+      <UniqueIdentifier>{d1b4ada8-4dc2-439b-9052-2c4fed7e36ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pliki nagłówkowe\Api\SystemApi">
+      <UniqueIdentifier>{bb6fba35-926e-4fa2-9ff7-cc0cd7330dab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pliki źródłowe\Window">
+      <UniqueIdentifier>{41c69438-8884-4912-9d44-86f1011cd2d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pliki nagłówkowe\Window">
+      <UniqueIdentifier>{d086c9d6-bdfc-47f9-9520-46ef9ceb96f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pliki źródłowe\LayerManager">
+      <UniqueIdentifier>{13a668b9-539e-4407-a3b7-4f0c0402aaa7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +46,18 @@
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="Window\RenderContext.cpp">
+      <Filter>Pliki źródłowe\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="ILayerManager.h">
+      <Filter>Pliki nagłówkowe\Api</Filter>
+    </ClCompile>
+    <ClCompile Include="ILayerManager.cpp">
+      <Filter>Pliki źródłowe\LayerManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Event.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,12 +77,6 @@
     <ClInclude Include="CoreExport.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
-    <ClInclude Include="SystemApi\CoordinatorSystemApi.h">
-      <Filter>Pliki nagłówkowe\SystemApi</Filter>
-    </ClInclude>
-    <ClInclude Include="EngineApi\CoordinatorEditorApi.h">
-      <Filter>Pliki nagłówkowe\SystemEditorApi</Filter>
-    </ClInclude>
     <ClInclude Include="BaseApi.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
@@ -71,11 +89,32 @@
     <ClInclude Include="UIComponent.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
-    <ClInclude Include="AssetManagerApi.h">
-      <Filter>Pliki nagłówkowe\SystemEditorApi</Filter>
-    </ClInclude>
     <ClInclude Include="RenderInterface.h">
-      <Filter>Pliki nagłówkowe\SystemEditorApi</Filter>
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="Api\SystemApi\CoordinatorSystemApi.h">
+      <Filter>Pliki nagłówkowe\Api\SystemApi</Filter>
+    </ClInclude>
+    <ClInclude Include="Api\EngineApi\CoordinatorEditorApi.h">
+      <Filter>Pliki nagłówkowe\Api\EngineApi</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderSystem.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\FrameBuffer.h">
+      <Filter>Pliki nagłówkowe\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\IWindow.h">
+      <Filter>Pliki nagłówkowe\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\RenderContext.h">
+      <Filter>Pliki nagłówkowe\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="ILayer.h">
+      <Filter>Pliki nagłówkowe\Api</Filter>
+    </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

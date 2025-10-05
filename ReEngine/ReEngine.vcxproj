@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)bin-int\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)\$(ProjectName)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
@@ -113,7 +113,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_DLL_EXPORTS;ENGINE_DLL_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;$(SolutionDir)ReEngineReflectionCore;$(SolutionDir)ReEngine\Public\Engine\Components;$(SolutionDir)ReEngine\Public\Engine\Systems\Physics;$(SolutionDir)ReEngineCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)\ReEngine\Public;$(SolutionDir)ReEngineReflectionCore;$(SolutionDir)ReEngine\Public\Engine\Components;$(SolutionDir)ReEngine\Public\Engine\Systems\Physics;$(SolutionDir)ReEngineCore;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -161,15 +161,9 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ApplicationAPI.cpp" />
-    <ClCompile Include="AssetManager.cpp" />
-    <ClCompile Include="Commander.cpp" />
-    <ClCompile Include="Private\Engine\Context\OpenGlContext.cpp" />
-    <ClCompile Include="Private\Engine\Context\OpenGlFrameBuffer.cpp" />
-    <ClCompile Include="Private\Engine\Context\RenderContext.cpp" />
-    <ClCompile Include="Private\Engine\Context\UIContext.cpp" />
-    <ClCompile Include="Private\Engine\FrameBuffer.cpp" />
-    <ClCompile Include="Private\Engine\Window.cpp" />
-    <ClCompile Include="RenderCommand.cpp" />
+    <ClCompile Include="Private\AssetManager.cpp" />
+    <ClCompile Include="Private\Commander.cpp" />
+    <ClCompile Include="Private\ThreadPool.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -180,14 +174,12 @@
     <ClCompile Include="Private\Engine\Core\Coordinator\ComponentManager.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\Coordinator.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\EntityManager.cpp" />
-    <ClCompile Include="Private\Engine\Core\Coordinator\Event.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\EventManager.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\SystemManager.cpp" />
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp" />
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp" />
     <ClCompile Include="Script.cpp" />
     <ClCompile Include="ScriptRegistry.cpp" />
-    <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />
@@ -200,15 +192,11 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="ApplicationAPI.h" />
-    <ClInclude Include="AssetManager.h" />
-    <ClInclude Include="Commander.h" />
-    <ClInclude Include="Public\Engine\Context\OpenGlContext.h" />
-    <ClInclude Include="Public\Engine\Context\OpenGlFrameBuffer.h" />
-    <ClInclude Include="Public\Engine\Context\RenderContext.h" />
-    <ClInclude Include="Public\Engine\Context\UIContext.h" />
-    <ClInclude Include="Public\Engine\FrameBuffer.h" />
-    <ClInclude Include="Public\Engine\IWindow.h" />
-    <ClInclude Include="Public\Engine\Window.h" />
+    <ClInclude Include="Public\AssetManager.h" />
+    <ClInclude Include="Public\Commander.h" />
+    <ClInclude Include="Public\ReEngineExport.h" />
+    <ClInclude Include="Public\RenderCommand.h" />
+    <ClInclude Include="Public\ThreadPool.h" />
     <ClInclude Include="RawImageData.h" />
     <ClInclude Include="StaticMesh.h" />
     <ClInclude Include="RenderCommand.h" />
@@ -235,13 +223,10 @@
     <ClInclude Include="Public\Engine\Core\Coordinator\ComponentManager.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\Coordinator.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\EntityManager.h" />
-    <ClInclude Include="Public\Engine\Core\Coordinator\Event.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\EventManager.h" />
     <ClInclude Include="Public\Engine\Core\Coordinator\SystemManager.h" />
     <ClInclude Include="Public\Engine\Core\WindowManager.h" />
-    <ClInclude Include="ReEngineExport.h" />
     <ClInclude Include="Sprite.h" />
-    <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />

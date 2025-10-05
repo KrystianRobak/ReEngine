@@ -22,10 +22,20 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>{% if project_type == 'Plugin' %}DynamicLibrary{% else %}Application{% endif %}</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+
+    <OutDir>$(SolutionDir)bin\Debug\</OutDir>
+    <IntDir>$(SolutionDir)intermediate\Debug\</IntDir>
+    <TargetName>$(ProjectName)</TargetName>
+    <LocalDebuggerEnvironment>PATH={{ engine_path }}/bin/Debug;%PATH%</LocalDebuggerEnvironment>
+
+    <LocalDebuggerCommand>{{ editor_path }}</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>--game-dll= $(TargetPath)</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -64,38 +74,28 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>{{ engine_source_path }}\Libs\Include\assimp;{{ engine_source_path }}\Libs\Include\GL;{{ engine_source_path }}\Libs\Include\GLFW;{{ engine_source_path }}\Libs\Include\glm;{{ engine_source_path }}\Libs\Include;{{ engine_source_path }}\ReEngine\Public;{{ engine_source_path }}\ReEngineReflectionCore;{{ engine_source_path }}\ReEngine\Public\Engine;{{ engine_source_path }}\ReEngineCore;$(ProjectDir);{{ engine_source_path }}\ReEngine\Public\Engine\Components;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>
-        $(ProjectDir)Generated;
-        $(ProjectDir)Source;
-        {{ engine_path }}/include;
-        C:\Users\ragberr\Desktop\ReEngine\Libs\Include;
-        %(AdditionalIncludeDirectories)
-      </AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>
-        _DEBUG;
-        {% if project_type == 'Plugin' %}{{ project_name|upper }}_EXPORTS;{% else %}_CONSOLE;{% endif %}
-        ENGINE_DEBUG;
-        %(PreprocessorDefinitions)
-      </PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;REFLECTIONCORE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <SubSystem>{% if project_type == 'Plugin' %}Windows{% else %}Console{% endif %}</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-        ReEngine.lib;
-        {% if project_type != 'Plugin' %}ReEditor.lib;{% endif %}
-        %(AdditionalDependencies)
-      </AdditionalDependencies>
-      <AdditionalLibraryDirectories>
-        {{ engine_path }}/lib/Debug;
-        C:\Users\ragberr\Desktop\ReEngine\Libs\Lib;
-        %(AdditionalLibraryDirectories)
+      <AdditionalLibraryDirectories>{{ engine_source_path }}\Libs\Lib\glfw;{{ engine_source_path }}\Libs\Lib\assimp;{{ engine_source_path }}\Libs\Lib\glew;{{ engine_source_path }}\bin\Debug;%(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
-      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <AdditionalDependencies>
+      opengl32.lib;
+      glfw3.lib;
+      glew32.lib;
+      assimp-vc143-mtd.lib;
+      ReflectionCore.lib;
+      ReEngineCore.lib;
+      %(AdditionalDependencies)
+      </AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
@@ -144,38 +144,11 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <ItemGroup>
-    <ClCompile Include="Source\{{ project_name }}.cpp" />
-    {% if project_type == 'Game' %}
-    <ClCompile Include="Source\{{ project_name }}Application.cpp" />
-    {% elif project_type == 'Plugin' %}
-    <ClCompile Include="Source\{{ project_name }}Plugin.cpp" />
-    {% endif %}
-  </ItemGroup>
-
-  <ItemGroup>
-    {% if project_type == 'Game' %}
-    <ClInclude Include="Source\{{ project_name }}Application.h" />
-    {% elif project_type == 'Plugin' %}
-    <ClInclude Include="Source\{{ project_name }}Plugin.h" />
-    {% endif %}
-    <ClInclude Include="Generated\ReflectionData.h" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="reflection_config.json" />
-    <None Include="{{ project_name }}.json" />
-    <None Include="Build\Scripts\build.bat" />
-    <None Include="Build\Scripts\build.ps1" />
-  </ItemGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
-  <Target Name="CleanGenerated" BeforeTargets="Clean">
-    <ItemGroup>
-      <GeneratedFiles Include="Generated\**\*" />
-    </ItemGroup>
-    <Delete Files="@(GeneratedFiles)" />
-  </Target>
+   <ItemGroup>
+    <None Include="{{ project_name }}.json" />
+  </ItemGroup>
+
 
 </Project>

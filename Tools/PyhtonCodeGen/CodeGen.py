@@ -130,13 +130,20 @@ class ReflectionGenerator:
                                 "is_const": c.is_const_method()
                             })
                         elif c.kind == clang.cindex.CursorKind.FIELD_DECL and self._has_ref_macro(c, "REFVARIABLE"):
-                            vspell = normalize_type_spelling(c.type.spelling)
+                            vspell = normalize_type_spelling(c.type.get_canonical().spelling)
+
+                            default_value = self.get_default_value(c)
+
+
                             cls["variables"].append({
                                 "name": c.spelling,
                                 "type": vspell,
                                 "access": access,
                                 "is_static": False,
+                                "default": default_value
                             })
+
+
 
                     if cls["functions"] or cls["variables"] or reflection_type:
                         self.classes.append((filepath, cls))
@@ -144,7 +151,55 @@ class ReflectionGenerator:
         if found_classes:
             self.processed_files.append(filepath)
 
+        return tu
+
     # <--- NEW HELPER FUNCTION
+    def get_default_value(self, cursor) -> str | None:
+
+        vals = [t.spelling for t in cursor.get_tokens()]
+        print(vals)
+        def parse(i):
+            result = []
+            while i < len(vals):
+                tok = vals[i]
+
+                if tok == ';':  # stop at semicolon
+                    break
+                elif tok == '{':
+                    inner, i = parse(i + 1)
+                    result.append(inner)
+                elif tok == '}':
+                    return result, i
+                elif tok == ',':
+                    i += 1
+                    continue
+                else:
+                    result.append(tok.strip('"'))
+                i += 1
+            return result, i
+
+        # find '=' sign
+        if "=" not in vals:
+            return ""
+
+        eq_index = vals.index("=")
+        rhs_tokens = vals[eq_index + 1:]
+
+        vals = rhs_tokens
+
+        parsed, _ = parse(0)
+
+        def flatten(node):
+            if isinstance(node, list):
+                parts = [flatten(x) for x in node]
+                # use " | " if nested groups, else ", "
+                if any(isinstance(x, list) for x in node):
+                    return " | ".join(parts)
+                return ", ".join(parts)
+            return str(node)
+
+        return flatten(parsed)
+
     def _get_class_name_from_cursor(self, cursor) -> str:
         """
         Gets the class name by analyzing tokens, correctly skipping any `_API` macros.
@@ -317,7 +372,11 @@ class ReflectionGenerator:
                 f.write(f'                "{var["name"]}", "{var["access"]}",\n')
                 f.write(f"                {str(var['is_static']).lower()},\n")
                 f.write(f"                offsetof({class_name}, {var['name']}),\n")
-                f.write("                vType\n")
+                if var.get("default"):
+                    f.write("                vType,\n")
+                    f.write(f'                "{var["default"]}"\n')
+                else:
+                    f.write("                vType\n")
                 f.write("            };\n")
                 f.write(f"            {class_name}_Variables.push_back(std::move(rv));\n")
                 f.write("        }\n")
@@ -412,7 +471,6 @@ class ReflectionGenerator:
         print(f"[CodeGen] Generated master include: {master_path}")
         return master_path
 
-
 # ... (main function remains the same) ...
 def main():
     parser = argparse.ArgumentParser()
@@ -436,8 +494,9 @@ def main():
     clang_parse_args = [
         "-std=c++17",
         "-x", "c++",
-        "-I."
+        "-I.",
     ]
+
     if args.ms_includes:
         for path in args.ms_includes.split(';'):
             if path:
@@ -449,8 +508,6 @@ def main():
             if path:
                 include_dirs.append(Path(path))
 
-    print("[CodeGen] Paths:")
-    print(args.ms_includes)
     print("[CodeGen] Using Clang arguments:")
     for arg in clang_parse_args:
         print(f"  {arg}")
@@ -460,7 +517,7 @@ def main():
     for file_path in header_files:
         if args.verbose:
             print("Parsing", file_path)
-        gen.parse(str(file_path), clang_parse_args)
+        parsed = gen.parse(str(file_path), clang_parse_args)
 
     if not gen.classes:
         print("No reflected classes found")

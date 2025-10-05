@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)bin-int\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)\$(ProjectName)</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -137,24 +137,33 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Event.cpp" />
+    <ClCompile Include="ILayerManager.cpp" />
+    <ClCompile Include="ILayerManager.h" />
     <ClCompile Include="ProjectBuilder.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="System\System.cpp" />
+    <ClCompile Include="Window\RenderContext.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AssetManagerApi.h" />
+    <ClInclude Include="Api\EngineApi\CoordinatorEditorApi.h" />
+    <ClInclude Include="Api\SystemApi\CoordinatorSystemApi.h" />
+    <ClInclude Include="Event.h" />
     <ClInclude Include="IApplicationApi.h" />
     <ClInclude Include="BaseApi.h" />
     <ClInclude Include="CoreExport.h" />
-    <ClInclude Include="EngineApi\CoordinatorEditorApi.h" />
+    <ClInclude Include="ILayer.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="ProjectBuilder.h" />
     <ClInclude Include="RenderInterface.h" />
+    <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="SystemApi\CoordinatorSystemApi.h" />
     <ClInclude Include="System\System.h" />
     <ClInclude Include="ReTypes.h" />
     <ClInclude Include="UIComponent.h" />
+    <ClInclude Include="Window\FrameBuffer.h" />
+    <ClInclude Include="Window\IWindow.h" />
+    <ClInclude Include="Window\RenderContext.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

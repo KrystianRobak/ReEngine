@@ -3,6 +3,7 @@
 #include "ReTypes.h"
 
 class UIComponent;
+class ILayerManager;
 
 namespace Editor
 {
@@ -19,7 +20,7 @@ public:
     virtual bool IsRunning() = 0;
     virtual void InitSystems() = 0;
     virtual void StartThreads() = 0;
-	virtual void AddUIComponent(UIComponent* UiComponent) = 0;
+	virtual ILayerManager* GetLayerManager() = 0;
     virtual Editor::IEngineEditorApi* GetCoordinatorEditor() = 0;
     virtual void SetUpdateUI(FunctionDelegate function) = 0;
     virtual void SetPostUpdateUI(FunctionDelegate function) = 0;

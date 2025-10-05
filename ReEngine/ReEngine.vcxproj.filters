@@ -103,12 +103,6 @@
     <Filter Include="Source Files\Public\Engine\Components\ReFold\Utility">
       <UniqueIdentifier>{e92b9083-800d-44e2-8b18-277990c1ccc9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Public\Engine\Context">
-      <UniqueIdentifier>{2d304cbc-69b1-4934-a049-43b36cc5221d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Private\Engine\Context">
-      <UniqueIdentifier>{c614b05f-7730-4999-8955-cd894942d65a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\ImGui">
       <UniqueIdentifier>{52691c57-d667-4cf5-b88e-1cf12e92fd14}</UniqueIdentifier>
     </Filter>
@@ -130,9 +124,6 @@
       <Filter>Source Files\Private\Engine\Core\Coordinator</Filter>
     </ClCompile>
     <ClCompile Include="Private\Engine\Core\Coordinator\EntityManager.cpp">
-      <Filter>Source Files\Private\Engine\Core\Coordinator</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Core\Coordinator\Event.cpp">
       <Filter>Source Files\Private\Engine\Core\Coordinator</Filter>
     </ClCompile>
     <ClCompile Include="Private\Engine\Core\Coordinator\EventManager.cpp">
@@ -165,30 +156,6 @@
     <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RenderCommand.cpp">
-      <Filter>Source Files\Private\Engine\Commands\RenderCommands</Filter>
-    </ClCompile>
-    <ClCompile Include="Commander.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\FrameBuffer.cpp">
-      <Filter>Source Files\Private\Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Window.cpp">
-      <Filter>Source Files\Private\Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Context\OpenGlContext.cpp">
-      <Filter>Source Files\Private\Engine\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Context\OpenGlFrameBuffer.cpp">
-      <Filter>Source Files\Private\Engine\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Context\RenderContext.cpp">
-      <Filter>Source Files\Private\Engine\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="Private\Engine\Context\UIContext.cpp">
-      <Filter>Source Files\Private\Engine\Context</Filter>
-    </ClCompile>
     <ClCompile Include="..\Libs\Include\imgui\imgui.cpp">
       <Filter>Source Files\ImGui</Filter>
     </ClCompile>
@@ -210,11 +177,14 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp">
       <Filter>Source Files\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="AssetManager.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Private\AssetManager.cpp">
+      <Filter>Source Files\Private</Filter>
     </ClCompile>
-    <ClCompile Include="ThreadPool.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Private\Commander.cpp">
+      <Filter>Source Files\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\ThreadPool.cpp">
+      <Filter>Source Files\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -237,9 +207,6 @@
       <Filter>Source Files\Public\Engine\Core\Coordinator</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Core\Coordinator\EntityManager.h">
-      <Filter>Source Files\Public\Engine\Core\Coordinator</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Core\Coordinator\Event.h">
       <Filter>Source Files\Public\Engine\Core\Coordinator</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Core\Coordinator\EventManager.h">
@@ -296,9 +263,6 @@
     <ClInclude Include="Public\Engine\Components\BehaviourScript.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="ReEngineExport.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ApplicationAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -308,32 +272,8 @@
     <ClInclude Include="RenderCommand.h">
       <Filter>Source Files\Public\Engine\Commands\RenderCommands</Filter>
     </ClInclude>
-    <ClInclude Include="Commander.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Sprite.h">
       <Filter>Source Files\Public\Engine\Components\ReFold\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Context\OpenGlContext.h">
-      <Filter>Source Files\Public\Engine\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Context\OpenGlFrameBuffer.h">
-      <Filter>Source Files\Public\Engine\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Context\RenderContext.h">
-      <Filter>Source Files\Public\Engine\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Context\UIContext.h">
-      <Filter>Source Files\Public\Engine\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\FrameBuffer.h">
-      <Filter>Source Files\Public\Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\IWindow.h">
-      <Filter>Source Files\Public\Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Window.h">
-      <Filter>Source Files\Public\Engine</Filter>
     </ClInclude>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h">
       <Filter>Source Files\ImGui</Filter>
@@ -362,17 +302,26 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h">
       <Filter>Source Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="AssetManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="StaticMesh.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="ThreadPool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RawImageData.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\AssetManager.h">
+      <Filter>Source Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Commander.h">
+      <Filter>Source Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\RenderCommand.h">
+      <Filter>Source Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\ThreadPool.h">
+      <Filter>Source Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\ReEngineExport.h">
+      <Filter>Source Files\Public</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

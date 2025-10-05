@@ -1,19 +1,21 @@
 #pragma once
 
-#include "IApplicationApi.h"
+#include "api/IApplicationApi.h"
 
 #include "Engine/Core/Coordinator/Coordinator.h"
-#include <Engine/Window.h>
-#include "../AssetManager.h"
+#include "Window/IWindow.h"
+
+#include "AssetManager.h"
 
 #include <chrono>
 #include <random>
 #include <thread>
 
-#include "../Commander.h"
+#include "Commander.h"
 
-#include "../ReEngineExport.h"
+#include "ReEngineExport.h"
 #include <semaphore>
+#include <RenderSystem.h>
 
 
 class ENGINE_API Application : public IApplicationApi
@@ -31,9 +33,9 @@ public:
 	void Render() override;
 	void PhysicsTick();
 
-	void AddUIComponent(UIComponent* UiComponent) override
+	ILayerManager* GetLayerManager() override
 	{
-		window.AddUIComponent(UiComponent);
+		return window->GetLayerManager();
 	}
 
 	void SetPostUpdateUI(FunctionDelegate fun) override;
@@ -71,13 +73,12 @@ private:
 	std::unique_ptr<std::thread> PhysicsThread;
 
 	std::shared_ptr<Coordinator> coordinator;
-	System* Renderer_;
+	RenderSystem* Renderer_;
 	System* PhysicsSystem_;
 
-	Window window;
+	IWindow* window;
 
 	Commander Commander_;
-	AssetManager AssetManager_;
 
 	FunctionDelegate OnUpdateUI;
 	FunctionDelegate OnPostUpdateUI;

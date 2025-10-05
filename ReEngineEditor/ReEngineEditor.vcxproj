@@ -72,7 +72,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)bin-int\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)\$(ProjectName)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
@@ -151,6 +151,7 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ApplicationWrapper.cpp" />
     <ClCompile Include="CoordinatorWrapper.cpp" />
+    <ClCompile Include="EditorLayer.cpp" />
     <ClCompile Include="Panels\AddingPanel.cpp" />
     <ClCompile Include="Panels\AnimationPanel.cpp" />
     <ClCompile Include="Panels\ControlPanel.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="..\Libs\Include\stb\stb_image.h" />
     <ClInclude Include="ApplicationWrapper.h" />
     <ClInclude Include="CoordinatorWrapper.h" />
+    <ClInclude Include="EditorLayer.h" />
     <ClInclude Include="Panels\AddingPanel.h" />
     <ClInclude Include="Panels\AnimationPanel.h" />
     <ClInclude Include="Panels\ControlPanel.h" />

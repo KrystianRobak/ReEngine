@@ -22,7 +22,11 @@ private:
 
 public:
     
-    RenderCommand(uint32_t Id, RenderPrimitive primitive);
+    RenderCommand(uint32_t Id, RenderPrimitive primitive)
+    {
+        CommandId = Id;
+        Primitive = primitive;
+    }
 
 	uint32_t GetCommandId() const { return CommandId; }
     
