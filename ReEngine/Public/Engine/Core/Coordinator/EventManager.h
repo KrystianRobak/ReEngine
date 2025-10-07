@@ -16,9 +16,8 @@ public:
 
 	void SendEvent(Event& event)
 	{
-		std::string type = event.GetType();
 
-		for (auto const& listener : listeners[type])
+		for (auto const& listener : listeners[event.GetType()])
 		{
 			listener(event);
 		}
@@ -35,5 +34,5 @@ public:
 	}
 
 private:
-	std::unordered_map<EventType, std::list<std::function<void(Event&)>>> listeners;
+	std::unordered_map<std::string_view, std::list<std::function<void(Event&)>>> listeners;
 };

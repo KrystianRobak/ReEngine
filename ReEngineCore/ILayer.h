@@ -16,9 +16,27 @@ public:
 		ImGui::SetCurrentContext(imguiContext);
 	}
 
-	virtual void OnAttach() = 0;
-	virtual void OnDetach() = 0;
-	virtual void OnUpdate(float deltaTime) = 0;
+	virtual void OnAttach()
+	{
+		for (auto& component : uiComponents)
+		{
+			component->Init(EngineApi_);
+		}
+	}
+
+	virtual void OnDetach()
+	{
+
+	}
+
+	virtual void OnUpdate(float deltaTime)
+	{
+		for (auto& component : uiComponents)
+		{
+			component->Render();
+		}
+	}
+
 	virtual void OnEvent(class Event& event) = 0;
 
 	virtual const char* GetName() const = 0;

@@ -51,6 +51,53 @@ void SceneView::Render()
         ImGui::EndDragDropTarget();
     }
 
+    // ---------- Overlay Gizmo Buttons (Top-Right of Scene Window) ----------
+    {
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 contentMax = ImGui::GetWindowContentRegionMax(); // relative to window
+        ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+
+        ImVec2 btnSize(15, 15);
+        float padding = 10.0f;
+        float spacing = 5.0f;
+
+        // Compute start X position: right-aligned inside window content
+        float startX = contentMax.x - (btnSize.x * 3 + spacing * 2) - padding;
+        float startY = contentMin.y + padding;
+
+        // Set cursor relative to window for the first button
+        ImGui::SetCursorPosX(startX);
+        ImGui::SetCursorPosY(startY);
+
+        // Transparent button styling
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1, 1, 1, 0.1f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1, 1, 1, 0.2f));
+
+        // Button 2: Rotate
+        if (ImGui::ImageButton((void*)(intptr_t)RotateIcon, btnSize))
+            engineAPI->SendEvent(Events::Editor::Gizmo::ROTATE);
+
+        ImGui::SameLine(0, spacing); // horizontal spacing
+
+
+
+        // Button 1: Translate
+        if (ImGui::ImageButton((void*)(intptr_t)TranslateIcon, btnSize))
+            engineAPI->SendEvent(Events::Editor::Gizmo::TRANSLATE);
+
+        ImGui::SameLine(0, spacing); // horizontal spacing
+
+        // Button 3: Scale
+        if (ImGui::ImageButton((void*)(intptr_t)ScaleIcon, btnSize))
+            engineAPI->SendEvent(Events::Editor::Gizmo::SCALE);
+
+        ImGui::PopStyleColor(3);
+    }
+
+
+
     ImGui::End();
 }
 

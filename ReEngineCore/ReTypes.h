@@ -3,6 +3,7 @@
 #include <bitset>
 #include <cstdint>
 #include <functional>
+#include <string_view>
 
 // ECS
 using Entity = std::uint32_t;
@@ -161,8 +162,8 @@ enum MenuType
 };
 
 // Events
-using EventType = std::string;
-using ParamId = std::string;
+using EventType = std::string_view;
+using ParamId = std::string_view;
 
 using FunctionDelegate = std::function<void()>;
 
@@ -176,32 +177,45 @@ using FunctionDelegate = std::function<void()>;
 
 
 namespace Events::Window {
-	const EventType QUIT = "Events::Window::QUIT";
-	const EventType RESIZED = "Events::Window::RESIZED";
-	const EventType INPUT = "Events::Window::INPUT";
+    constexpr inline EventType QUIT = "Events::Window::QUIT";
+    constexpr inline EventType RESIZED = "Events::Window::RESIZED";
+    constexpr inline EventType INPUT = "Events::Window::INPUT";
 }
 
 namespace Events::Window::Input {
-	const ParamId INPUT = "Events::Window::Input::INPUT";
+    constexpr inline ParamId INPUT = "Events::Window::Input::INPUT";
 }
 
 namespace Events::Window::Resized {
-	const ParamId WIDTH = "Events::Window::Resized::WIDTH";
-	const ParamId HEIGHT = "Events::Window::Resized::HEIGHT";
+    constexpr inline ParamId WIDTH = "Events::Window::Resized::WIDTH";
+    constexpr inline ParamId HEIGHT = "Events::Window::Resized::HEIGHT";
 }
 
 namespace Events::Application {
-	const EventType TOGGLE = "Events::Application::TOGGLE";
-	const EventType RECOMPILE_SHADER = "Events::Application::RECOMPILE_SHADER";
-	const EventType LIGHT_ENTITY_ADDED = "Events::Application::LIGHT_ENTITY_ADDED";
-	const EventType MENU_CHANGED = "Events::Application::MENU_CHANGED";
-	const EventType START_GAME = "Events::Application::START_GAME";
+    constexpr inline EventType TOGGLE = "Events::Application::TOGGLE";
+    constexpr inline EventType RECOMPILE_SHADER = "Events::Application::RECOMPILE_SHADER";
+    constexpr inline EventType LIGHT_ENTITY_ADDED = "Events::Application::LIGHT_ENTITY_ADDED";
+    constexpr inline EventType MENU_CHANGED = "Events::Application::MENU_CHANGED";
+    constexpr inline EventType START_GAME = "Events::Application::START_GAME";
+}
+
+namespace Events::Engine::SceneManager {
+    constexpr inline EventType SCENE_LOADED = "Events::Engine::SCENE_LOADED";
+    constexpr inline EventType SCENE_SAVED = "Events::Engine::SCENE_SAVED";
+    constexpr inline EventType SCENE_PLAY = "Events::Engine::SCENE_PLAY";
+    constexpr inline EventType SCENE_STOP = "Events::Engine::SCENE_STOP";
 }
 
 namespace Events::Engine::Renderer {
-	const EventType RENDER_FINISHED = "Events::Engine::Renderer::RENDER_FINISHED";
+    constexpr inline EventType RENDER_FINISHED = "Events::Engine::Renderer::RENDER_FINISHED";
 }
 
 namespace Events::Engine::LayerManager {
-	const EventType INITIALIZED = "Events::Engine::LayerManager::Initialized";
+    constexpr inline EventType INITIALIZED = "Events::Engine::LayerManager::Initialized";
+}
+
+namespace Events::Editor::Gizmo {
+    constexpr inline EventType TRANSLATE = "Events::Editor::Gizmo::TRANSLATE";
+    constexpr inline EventType ROTATE = "Events::Editor::Gizmo::ROTATE";
+    constexpr inline EventType SCALE = "Events::Editor::Gizmo::SCALE";
 }

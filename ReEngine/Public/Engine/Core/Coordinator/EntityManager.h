@@ -91,5 +91,5 @@ private:
 	std::array<Signature, MAX_ENTITIES> mSignatures{};
 	std::uint32_t mLivingEntityCount{};
 	std::uint32_t mLivingLightEntityCount{};
-	std::uint32_t selectedEntity;
+	std::uint32_t selectedEntity = 0;
 };

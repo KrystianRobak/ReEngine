@@ -22,7 +22,9 @@ public:
 
 		ImGui::SetCurrentContext(context);
 
-        EngineApi_->SendEvent(Events::Engine::LayerManager::INITIALIZED);
+		std::string_view temp = Events::Engine::LayerManager::INITIALIZED;
+
+        EngineApi_->SendEvent(temp);
     }
 
     template<typename LayerTemplate>

@@ -9,6 +9,7 @@
 #include "Panels/PropertyPanel.h"
 #include "Panels/SceneView.h"
 #include "Panels/SystemsManagerPanel.h"
+#include "SceneSettings.h"
 
 EditorLayer::EditorLayer()
 {
@@ -19,28 +20,23 @@ EditorLayer::EditorLayer()
     uiComponents.push_back(std::make_unique<SystemsManagerPanel>());
     uiComponents.push_back(std::make_unique<FileBrowser>());
     uiComponents.push_back(std::make_unique<AddingPanel>());
+    uiComponents.push_back(std::make_unique<SceneSettings>());
     name = "EditorLayer";
 }
 
 void EditorLayer::OnAttach()
 {
-    for (auto& component : uiComponents)
-    {
-        component->Init(EngineApi_);
-    }
+    ILayer::OnAttach();
 }
 
 void EditorLayer::OnDetach()
 {
-
+	ILayer::OnDetach();
 }
 
 void EditorLayer::OnUpdate(float deltaTime)
 {
-    for(auto& component : uiComponents)
-    {
-        component->Render();
-	}
+	ILayer::OnUpdate(deltaTime);
 }
 
 void EditorLayer::OnEvent(Event& event)

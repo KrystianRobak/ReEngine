@@ -1,7 +1,5 @@
 #include "ControlPanel.h"
 
-
-
 inline const char* GetMenuType(const MenuType menu) {
     switch (menu)
     {
@@ -14,6 +12,13 @@ inline const char* GetMenuType(const MenuType menu) {
     return "Null";
 }
 
+void ControlPanel::OnInit()
+{
+	startIcon = LoadTexture("pngs/start.png");
+	pauseIcon = LoadTexture("pngs/stop.png");
+	recompileIcon = LoadTexture("pngs/recompile.png");
+}
+
 void ControlPanel::Render()
 {
     ImGui::Begin("ControlPanel");
@@ -23,25 +28,19 @@ void ControlPanel::Render()
             GetMenuType(MenuType::AnimationMenu)
         };
 
-        if (ImGui::Combo("Select Menu", &type, items, 2))
+        /*if (ImGui::Combo("Select Menu", &type, items, 2))
         {
-            /*std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
 
-            Event KeyEvent(Events::Application::MENU_CHANGED);
-            KeyEvent.SetParam<int>("MenuType", type);
-            coordinator->SendEvent(KeyEvent);*/
-        }
-        if (ImGui::Button("Start/Pause"))
+        }*/
+        if (ImGui::ImageButton((isPlaying ? (void*)(intptr_t)startIcon : (void*)(intptr_t)pauseIcon), ImVec2(20, 20)))
         {
-           /* std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-            coordinator->SendEvent(Events::Application::TOGGLE);*/
+            isPlaying = !isPlaying;
         }
-        //ImGui::EndGroup();
-        //ImGui::BeginGroup();
-        if (ImGui::Button("Recompile shader"))
+			
+        ImGui::SameLine();
+        if (ImGui::ImageButton((void*)(intptr_t)recompileIcon, ImVec2(20, 20)))
         {
-            /*std::shared_ptr<Coordinator> coordinator = Coordinator::GetCoordinator();
-            coordinator->SendEvent(Events::Application::RECOMPILE_SHADER);*/
+            // Handle start/pause logic
         }
         ImGui::EndGroup();
     ImGui::End();

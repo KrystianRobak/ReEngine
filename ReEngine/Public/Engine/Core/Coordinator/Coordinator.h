@@ -8,14 +8,16 @@
 #include "EventManager.h"
 #include "SystemManager.h"
 #include "AssetManager.h"
+#include "SceneManager.h"
+
 #include "ReTypes.h"
 #include "Engine/Core/AnimationTypes.h"
-#include "Engine/Components/Camera.h"
 #include <memory>
 
 #include "Engine/Systems/Animation/AnimationSequence.h"
 
 #include "ReEngineExport.h"
+
 
 class ENGINE_API Coordinator : public Editor::IEngineEditorApi
 {
@@ -25,6 +27,7 @@ private:
 	std::unique_ptr<EventManager> mEventManager;
 	std::unique_ptr<SystemManager> mSystemManager;
 	std::shared_ptr<AssetManager> mAssetManager;
+	std::shared_ptr<SceneManager> mSceneManager;
 
 	Camera MainCamera;
 
@@ -60,6 +63,7 @@ public:
 		mEventManager = std::make_unique<EventManager>();
 		mSystemManager = std::make_unique<SystemManager>();
 		mAssetManager = std::make_shared<AssetManager>();
+		mSceneManager = std::make_shared<SceneManager>();
 	}
 
 	std::shared_ptr<ComponentManager> GetComponentManager()
@@ -218,6 +222,13 @@ public:
 	void SendEvent(EventType eventType) override
 	{
 		mEventManager->SendEvent(eventType);
+	}
+
+	//SceneManager
+
+	ReScene* GetCurrentScene() override
+	{
+		return mSceneManager->currentScene_;
 	}
 
 	Camera* GetCamera()

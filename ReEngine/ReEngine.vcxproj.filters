@@ -186,6 +186,9 @@
     <ClCompile Include="Private\ThreadPool.cpp">
       <Filter>Source Files\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\SceneManager.cpp">
+      <Filter>Source Files\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Public\Engine\Core\AnimationTypes.h">
@@ -221,7 +224,7 @@
     <ClInclude Include="Public\Engine\Components\BasicInfo.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Public\Engine\Components\Camera.h">
+    <ClInclude Include="Public\Engine\Components\ReCamera.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\Collision.h">
@@ -321,6 +324,9 @@
       <Filter>Source Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="Public\ReEngineExport.h">
+      <Filter>Source Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\SceneManager.h">
       <Filter>Source Files\Public</Filter>
     </ClInclude>
   </ItemGroup>

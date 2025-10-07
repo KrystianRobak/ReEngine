@@ -30,7 +30,7 @@ public:
 	{
 		return mType;
 	}
-
+	
 private:
 	EventType mType{};
 	std::unordered_map<EventType, std::any> mData{};

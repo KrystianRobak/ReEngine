@@ -141,6 +141,7 @@
     <ClCompile Include="ILayerManager.cpp" />
     <ClCompile Include="ILayerManager.h" />
     <ClCompile Include="ProjectBuilder.cpp" />
+    <ClCompile Include="ReScene.h" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="System\System.cpp" />
     <ClCompile Include="Window\RenderContext.cpp" />

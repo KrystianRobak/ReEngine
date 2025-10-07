@@ -72,6 +72,17 @@ void FileBrowser::RenderFile(GLuint textureID, float itemWidth, float itemSpacin
     else
     {
         ImGui::Image((void*)(intptr_t)textureID, ImVec2(itemWidth, itemWidth));
+
+
+        if (ImGui::BeginPopupContextItem("FileOptions"))
+        {
+            if (ImGui::MenuItem("Rename"))
+            {
+
+            }
+            ImGui::EndPopup();
+        }
+
         ImGui::TextWrapped("%s", name.c_str());
     }
 
@@ -112,7 +123,13 @@ void FileBrowser::Render()
 
         ImGui::BeginGroup();
 
+
+        
+
         ImGui::BeginGroup();
+
+        
+
         float iconPosX = ImGui::GetCursorPosX();
 
         ImGui::Image((void*)(intptr_t)folderTextureID, ImVec2(itemWidth, itemWidth));
@@ -129,6 +146,16 @@ void FileBrowser::Render()
         }
 
         ImGui::SameLine();
+
+        if (ImGui::BeginPopupContextWindow("CreateFilePopUp"))
+        {
+            if (ImGui::MenuItem("Create Scene"))
+            {
+
+            }
+            ImGui::EndPopup();
+        }
+
         int itemsInRow = 1;
 
             for (int i = 0; i < localDirectories.size(); i++) {

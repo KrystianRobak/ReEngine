@@ -18,6 +18,7 @@
 #include <thread>
 #include "EditorLayer.h"
 #include <sstream>
+#include <GuizmoLayer.h>
 
 
 inline  std::vector<std::string> splitBracedList(const std::string& input) {
@@ -138,6 +139,7 @@ int main(int argc, char** argv)
     engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED, [Application](Event& e) {
         ILayerManager* layerManager = Application->GetLayerManager();
         layerManager->AddLayer<EditorLayer>();
+		layerManager->AddLayer<GuizmoLayer>();
         });
 
 	Application->StartThreads();

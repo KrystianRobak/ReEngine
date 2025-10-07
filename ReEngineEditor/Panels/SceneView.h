@@ -34,4 +34,8 @@ public:
 private:
     uint64_t textureID;
     glm::vec2 size;
+
+	ImTextureID TranslateIcon;
+	ImTextureID RotateIcon;
+	ImTextureID ScaleIcon;
 };

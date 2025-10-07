@@ -15,6 +15,24 @@
 #include <iostream>
 #include <string>
 
+inline ImTextureID LoadTexture(const char* path)
+{
+    int w, h, channels;
+    unsigned char* data = stbi_load(path, &w, &h, &channels, 4);
+    if (data)
+    {
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+
+        return (ImTextureID)(intptr_t)tex;
+    }
+}
+
 class UIComponent
 {
 public:

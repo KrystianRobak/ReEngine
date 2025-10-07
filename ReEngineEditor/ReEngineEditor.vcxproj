@@ -143,6 +143,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Libs\Include\imgui\imgui.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\ImGuizmo.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_impl_glfw.cpp" />
@@ -152,6 +153,8 @@
     <ClCompile Include="ApplicationWrapper.cpp" />
     <ClCompile Include="CoordinatorWrapper.cpp" />
     <ClCompile Include="EditorLayer.cpp" />
+    <ClCompile Include="GuizmoLayer.cpp" />
+    <ClCompile Include="GuizmoPanel.cpp" />
     <ClCompile Include="Panels\AddingPanel.cpp" />
     <ClCompile Include="Panels\AnimationPanel.cpp" />
     <ClCompile Include="Panels\ControlPanel.cpp" />
@@ -162,10 +165,12 @@
     <ClCompile Include="Panels\SceneView.cpp" />
     <ClCompile Include="Panels\SystemsManagerPanel.cpp" />
     <ClCompile Include="ReEngineEditor.cpp" />
+    <ClCompile Include="SceneSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />
     <ClInclude Include="..\Libs\Include\imgui\imgui.h" />
+    <ClInclude Include="..\Libs\Include\imgui\ImGuizmo.h" />
     <ClInclude Include="..\Libs\Include\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3.h" />
     <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3_loader.h" />
@@ -177,6 +182,8 @@
     <ClInclude Include="ApplicationWrapper.h" />
     <ClInclude Include="CoordinatorWrapper.h" />
     <ClInclude Include="EditorLayer.h" />
+    <ClInclude Include="GuizmoLayer.h" />
+    <ClInclude Include="GuizmoPanel.h" />
     <ClInclude Include="Panels\AddingPanel.h" />
     <ClInclude Include="Panels\AnimationPanel.h" />
     <ClInclude Include="Panels\ControlPanel.h" />
@@ -186,6 +193,7 @@
     <ClInclude Include="Panels\PropertyPanel.h" />
     <ClInclude Include="Panels\SceneView.h" />
     <ClInclude Include="Panels\SystemsManagerPanel.h" />
+    <ClInclude Include="SceneSettings.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

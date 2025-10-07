@@ -7,6 +7,7 @@
 
 class Event;
 class System;
+class ReScene;
 
 namespace Editor
 {
@@ -40,11 +41,13 @@ namespace Editor
 
 		virtual void SwapComponentBuffers(const std::string& fullName) = 0;
 
-		virtual void AddEventListener(EventType eventType, std::function<void(Event&)> const& listener) = 0;
+		virtual void AddEventListener(EventType, std::function<void(Event&)> const& listener) = 0;
 
 		virtual void SendEvent(Event& event) = 0;
 
 		virtual void SendEvent(EventType eventType) = 0;
+
+		virtual ReScene* GetCurrentScene() = 0;
 
 		virtual void* GetComponent(Entity entity, const std::string& typeName) = 0;
 
