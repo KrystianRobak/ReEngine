@@ -20,6 +20,10 @@ public:
             {
                 this->SetTextureID(event.GetParam<uint64_t>("TextureId"));
             });
+
+        RotateIcon = LoadTexture("pngs/rotate.jpg");
+		TranslateIcon = LoadTexture("pngs/translate.jpg");
+		ScaleIcon = LoadTexture("pngs/scale.jpg");
 	}
 
     virtual void SetTextureID(uint64_t id)

@@ -58,7 +58,7 @@ void SceneView::Render()
         ImVec2 contentMax = ImGui::GetWindowContentRegionMax(); // relative to window
         ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
 
-        ImVec2 btnSize(15, 15);
+        ImVec2 btnSize(30, 30);
         float padding = 10.0f;
         float spacing = 5.0f;
 
@@ -66,28 +66,24 @@ void SceneView::Render()
         float startX = contentMax.x - (btnSize.x * 3 + spacing * 2) - padding;
         float startY = contentMin.y + padding;
 
-        // Set cursor relative to window for the first button
-        ImGui::SetCursorPosX(startX);
-        ImGui::SetCursorPosY(startY);
+        ImGui::SetCursorScreenPos(ImVec2(windowPos.x + startX, windowPos.y + startY));
 
-        // Transparent button styling
+        // Style
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1, 1, 1, 0.1f));
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1, 1, 1, 0.2f));
 
-        // Button 2: Rotate
+        // Button 1: Rotate
         if (ImGui::ImageButton((void*)(intptr_t)RotateIcon, btnSize))
             engineAPI->SendEvent(Events::Editor::Gizmo::ROTATE);
 
-        ImGui::SameLine(0, spacing); // horizontal spacing
+        ImGui::SameLine(0, spacing);
 
-
-
-        // Button 1: Translate
+        // Button 2: Translate
         if (ImGui::ImageButton((void*)(intptr_t)TranslateIcon, btnSize))
             engineAPI->SendEvent(Events::Editor::Gizmo::TRANSLATE);
 
-        ImGui::SameLine(0, spacing); // horizontal spacing
+        ImGui::SameLine(0, spacing);
 
         // Button 3: Scale
         if (ImGui::ImageButton((void*)(intptr_t)ScaleIcon, btnSize))
