@@ -53,11 +53,11 @@ using FuncPtr = void* (*)();
 
 int main(int argc, char** argv)
 {
-    std::string input;
-    std::cin >> input;
+    //std::string input;
+    //std::cin >> input;
 
-    ProjectBuilder builder(input);
-    //ProjectBuilder builder(argv[1]);
+    //ProjectBuilder builder(input);
+    ProjectBuilder builder(argv[1]);
 
 
 	LOGF_INFO("Loading Engine.dll");
