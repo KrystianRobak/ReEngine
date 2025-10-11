@@ -30,8 +30,7 @@
     <OutDir>$(SolutionDir)bin\Debug\</OutDir>
     <IntDir>$(SolutionDir)intermediate\Debug\</IntDir>
     <TargetName>$(ProjectName)</TargetName>
-    <LocalDebuggerEnvironment>PATH={{ engine_path }}/bin/Debug;%PATH%</LocalDebuggerEnvironment>
-
+    <LocalDebuggerEnvironment>PATH={{ engine_path }};%PATH%</LocalDebuggerEnvironment>
     <LocalDebuggerCommand>{{ editor_path }}</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>--game-dll= $(TargetPath)</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
@@ -97,6 +96,9 @@
       %(AdditionalDependencies)
       </AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>{{ engine_source_path }}\Tools\PyhtonCodeGen\.venv\Scripts\python.exe {{ engine_source_path }}\Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(MyIncludes)"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -112,12 +114,12 @@
         $(ProjectDir)Generated;
         $(ProjectDir)Source;
         {{ engine_path }}/include;
-        C:\Users\ragberr\Desktop\ReEngine\Libs\Include;
+        {{ engine_path }}\Libs\Include;
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         NDEBUG;
-        {% if project_type == 'Plugin' %}{{ project_name|upper }}_EXPORTS;{% else %}_CONSOLE;{% endif %}
+        _CONSOLE;
         ENGINE_RELEASE;
         %(PreprocessorDefinitions)
       </PreprocessorDefinitions>
@@ -126,24 +128,29 @@
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
-      <SubSystem>{% if project_type == 'Plugin' %}Windows{% else %}Console{% endif %}</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>
         ReEngine.lib;
-        {% if project_type != 'Plugin' %}ReEditor.lib;{% endif %}
+        ReEditor.lib;
         %(AdditionalDependencies)
       </AdditionalDependencies>
       <AdditionalLibraryDirectories>
         {{ engine_path }}/lib/Release;
-        C:\Users\ragberr\Desktop\ReEngine\Libs\Lib;
+        {{ engine_path }}\Libs\Lib;
         %(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
-
+  <PropertyGroup>
+    <MyIncludes>@(ClCompile->'%(AdditionalIncludeDirectories)')</MyIncludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
    <ItemGroup>
