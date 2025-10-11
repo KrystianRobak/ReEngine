@@ -25,8 +25,8 @@ public:
 	void MeasureTime();
 	void Init() override;
 
-	void StartThreads() override;
-
+	void StartGameThreads() override;
+	void StartEditorThreads() override;
 	void InitSystems() override;
 
 	void Update() override;

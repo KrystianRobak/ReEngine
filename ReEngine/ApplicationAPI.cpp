@@ -37,7 +37,7 @@ extern "C" {
 
     ENGINE_API void Application_StartThreads(void* app)
     {
-		static_cast<Application*>(app)->StartThreads();
+		static_cast<Application*>(app)->StartGameThreads();
     }
 
     ENGINE_API void Application_OnUpdateUI(void* app, FunctionDelegate function)

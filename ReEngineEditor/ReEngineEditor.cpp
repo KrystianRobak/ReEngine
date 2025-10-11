@@ -142,7 +142,7 @@ int main(int argc, char** argv)
 		layerManager->AddLayer<GuizmoLayer>();
         });
 
-	Application->StartThreads();
+	Application->StartEditorThreads();
 
 
 

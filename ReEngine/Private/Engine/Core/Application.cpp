@@ -59,7 +59,7 @@ void Application::Init()
 	
 }
 
-void Application::StartThreads()
+void Application::StartGameThreads()
 {
 	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
 	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
@@ -73,6 +73,18 @@ void Application::StartThreads()
 
 	//PhysicsThread->join();
 	LOGF_INFO("Physics Thread Joined");
+}
+
+void Application::StartEditorThreads()
+{
+	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
+	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
+
+	//GameThread->join();
+	LOGF_INFO("Game Thread Joined");
+
+	//RenderThread->join();
+	LOGF_INFO("Render Thread Joined");
 }
 
 void Application::InitSystems()
