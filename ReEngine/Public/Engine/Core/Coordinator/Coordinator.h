@@ -92,6 +92,8 @@ public:
 		mComponentManager->EntityDestroyed(entity);
 
 		mSystemManager->EntityDestroyed(entity);
+
+		mSceneManager->EntityDestroyed(entity);
 	}
 
 	std::uint32_t GetEntitiesAmount() override

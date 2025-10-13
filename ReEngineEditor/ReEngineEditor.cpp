@@ -53,10 +53,8 @@ using FuncPtr = void* (*)();
 
 int main(int argc, char** argv)
 {
-    //std::string input;
-    //std::cin >> input;
+    std::cout << argv[0] << std::endl;
 
-    //ProjectBuilder builder(input);
     ProjectBuilder builder(argv[1]);
 
 

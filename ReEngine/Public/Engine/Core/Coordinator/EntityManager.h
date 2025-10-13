@@ -92,4 +92,6 @@ private:
 	std::uint32_t mLivingEntityCount{};
 	std::uint32_t mLivingLightEntityCount{};
 	std::uint32_t selectedEntity = 0;
+
+	friend class SceneManager;
 };

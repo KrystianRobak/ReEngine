@@ -15,6 +15,8 @@ public:
 
 	Camera* GetDefaultCamera() const { return defaultCamera; }
 
+	std::string GetName() { return name_; };
+
 private:
 	std::string name_;
 	Camera* defaultCamera;

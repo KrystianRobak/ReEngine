@@ -8,9 +8,9 @@ import json
 from jinja2 import Environment, FileSystemLoader
 
 # Configuration - these should be set to your actual paths
-ENGINE_PATH = r"C:\Users\ragbe\Desktop\Inzynierka\ReEngine\bin\Debug"
-ENGINE_SOURCE_PATH = r"C:\Users\ragbe\Desktop\Inzynierka\ReEngine"
-EDITOR_PATH = r"C:\Users\ragbe\Desktop\Inzynierka\ReEngine\bin\Debug\ReEngineEditor.exe"
+ENGINE_PATH = r"D:\test\Inzynierka\ReEngine\bin\Debug"
+ENGINE_SOURCE_PATH = r"D:\test\Inzynierka\ReEngine"
+EDITOR_PATH = r"D:\test\Inzynierka\ReEngine\bin\Debug\ReEngineEditor.exe"
 CLANG_REFLECTION_SCRIPT = r"C:\Path\To\reflection_generator.py"
 # Template environment
 env = Environment(loader=FileSystemLoader("templates"))
