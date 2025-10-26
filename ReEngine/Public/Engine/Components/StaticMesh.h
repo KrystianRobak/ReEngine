@@ -28,6 +28,8 @@ struct PendingStaticMesh
 REFCOMPONENT()
 struct StaticMesh
 {
+    REFVARIABLE()
+    std::string AssetPath;
 	int StaticMeshId = 0;
 	std::shared_ptr<StaticMeshData> StaticMeshHandler;
 };

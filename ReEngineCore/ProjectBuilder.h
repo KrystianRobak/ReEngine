@@ -10,9 +10,10 @@
 class CORE_API ProjectBuilder
 {
 public:
-	ProjectBuilder(std::string ProjectPath)
+	ProjectBuilder(std::string ProjectPath, Editor::IEngineEditorApi* engine)
 	{
 		ProjectPath_ = ProjectPath;
+		engineAPI_ = engine;
 
 		if (checkAndRemovePrefix("--game-dll="))
 		{
@@ -24,7 +25,20 @@ public:
 		}
 	}
 
-	void ParseConfig(Editor::IEngineEditorApi* engine);
+	void SetLayerManager(ILayerManager* layerManager)
+	{
+		layerManager_ = layerManager;
+	}
+
+	void InjectLayerManager()
+	{
+		for(auto& System : SystemsLoaded_)
+		{
+			System->InjectLayerManager(layerManager_);
+		}
+	}
+
+	void ParseConfig();
 
 	System* LoadModule(const char* ModuleName);
 
@@ -42,6 +56,11 @@ public:
 	std::vector<const char*> ModulesToLoad_;
 	System* RendererSystem_;
 	System* PhysicsSystem_;
+	std::vector<System*> SystemsLoaded_;
+	Editor::IEngineEditorApi* engineAPI_ = nullptr;
+
+public:
+	ILayerManager* layerManager_ = nullptr;
 };
 
 

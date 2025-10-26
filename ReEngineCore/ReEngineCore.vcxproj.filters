@@ -37,6 +37,15 @@
     <Filter Include="Pliki źródłowe\LayerManager">
       <UniqueIdentifier>{13a668b9-539e-4407-a3b7-4f0c0402aaa7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Pliki źródłowe\MaterialSystem">
+      <UniqueIdentifier>{651929f9-853a-46be-a969-f1434cb98db8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pliki nagłówkowe\MaterialSystem">
+      <UniqueIdentifier>{a6c82373-5cf4-4733-af46-0c7f40e37cbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Pliki nagłówkowe\Graph">
+      <UniqueIdentifier>{7362e6bc-8f61-4146-a645-db3bad1b3f0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="System\System.cpp">
@@ -62,6 +71,9 @@
     </ClCompile>
     <ClCompile Include="ReScene.h">
       <Filter>Pliki nagłówkowe</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialSystem\Material.cpp">
+      <Filter>Pliki źródłowe\MaterialSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -118,6 +130,12 @@
     </ClInclude>
     <ClInclude Include="Event.h">
       <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialSystem\Material.h">
+      <Filter>Pliki nagłówkowe\MaterialSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Graph\Node.h">
+      <Filter>Pliki nagłówkowe\Graph</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

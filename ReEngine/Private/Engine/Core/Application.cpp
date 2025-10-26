@@ -139,8 +139,11 @@ void Application::Update()
 
 				std::shared_ptr<StaticMeshData> staticMesh = pending.future.get();
 
+
 				coordinator->AddComponent(pending.entity, "StaticMesh");
 				auto staticMeshComponent = static_cast<StaticMesh*>(coordinator->GetComponent(pending.entity, "StaticMesh"));
+
+				staticMeshComponent->AssetPath = staticMesh->path;
 
 				staticMeshComponent->StaticMeshHandler = staticMesh;
 
@@ -150,6 +153,10 @@ void Application::Update()
 				++it;
 			}
 		}
+
+		coordinator->GetEpochManager()->IncrementGameEpoch();
+
+		coordinator->ProcessPendingEntityDeletions();
 
 		auto end = clock::now(); // End timing
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -168,7 +175,7 @@ void Application::Render()
 
 	window = Renderer_->GetWindow();
 
-	window->Init(1280, 720, "Okno zycia", GetCoordinatorEditor());
+	window->Init(1920, 1080, "Okno zycia", GetCoordinatorEditor());
 	
 	Renderer_->InitApi(GetCoordinatorEditor() ,coordinator->GetAssetManager());
 	Renderer_->InitRenderContext(glfwGetCurrentContext());
@@ -193,6 +200,7 @@ void Application::Render()
 
 		LOGF_INFO("Render tick took %lld milliseconds", duration);
 		
+		coordinator->GetEpochManager()->IncrementRenderEpoch();
 
 		RenderUpdateThreadSemaphore.release();
 	}
@@ -212,6 +220,8 @@ void Application::PhysicsTick()
 		coordinator->SwapComponentBuffers("Transform");
 
 		//LOGF_INFO("Physics tick");
+
+		coordinator->GetEpochManager()->IncrementPhysicsEpoch();
 
 		auto endTime = clock::now();
 		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);

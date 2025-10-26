@@ -9,6 +9,7 @@
 #include "SystemManager.h"
 #include "AssetManager.h"
 #include "SceneManager.h"
+#include "EpochManager.h"
 
 #include "ReTypes.h"
 #include "Engine/Core/AnimationTypes.h"
@@ -23,13 +24,16 @@ class ENGINE_API Coordinator : public Editor::IEngineEditorApi
 {
 private:
 	std::shared_ptr<ComponentManager> mComponentManager;
-	std::unique_ptr<EntityManager> mEntityManager;
+	std::shared_ptr<EntityManager> mEntityManager;
 	std::unique_ptr<EventManager> mEventManager;
 	std::unique_ptr<SystemManager> mSystemManager;
 	std::shared_ptr<AssetManager> mAssetManager;
 	std::shared_ptr<SceneManager> mSceneManager;
+	std::shared_ptr<EpochManager> mEpochManager;
 
 	Camera MainCamera;
+
+	std::set<Entity> PendingEntityDeletions;
 
 	AnimationSequencer mReSequencer;
 	ReSequencer Sequencer;
@@ -41,6 +45,11 @@ public:
 	std::shared_ptr<AssetManagerApi> GetAssetManager() override
 	{
 		return std::static_pointer_cast<AssetManagerApi>(mAssetManager);
+	}
+
+	std::shared_ptr<EpochManager> GetEpochManager()
+	{
+		return mEpochManager;
 	}
 
 	static std::shared_ptr<Coordinator> GetCoordinator() 
@@ -59,11 +68,12 @@ public:
 	void Init()
 	{
 		mComponentManager = std::make_shared<ComponentManager>();
-		mEntityManager = std::make_unique<EntityManager>();
+		mEntityManager = std::make_shared<EntityManager>();
 		mEventManager = std::make_unique<EventManager>();
 		mSystemManager = std::make_unique<SystemManager>();
 		mAssetManager = std::make_shared<AssetManager>();
 		mSceneManager = std::make_shared<SceneManager>();
+		mEpochManager = std::make_shared<EpochManager>();
 	}
 
 	std::shared_ptr<ComponentManager> GetComponentManager()
@@ -83,6 +93,20 @@ public:
 		Entity entity = mEntityManager->CreateLightEntity();
 		SendEvent(Events::Application::LIGHT_ENTITY_ADDED);
 		return entity;
+	}
+
+	void ScheduleEntityDestruction(Entity entity)
+	{
+		PendingEntityDeletions.insert(entity);
+	}
+
+	void ProcessPendingEntityDeletions()
+	{
+		for (Entity entity : PendingEntityDeletions)
+		{
+			DestroyEntity(entity);
+		}
+		PendingEntityDeletions.clear();
 	}
 
 	void DestroyEntity(Entity entity) override
@@ -123,7 +147,7 @@ public:
 
 
 	// Component methods
-	void RegisterComponent(const Reflection::ClassInfo* classInfo, bool IsDoubleBuffered = false)
+	void RegisterComponent(const Reflection::ClassInfo* classInfo, bool IsDoubleBuffered = false) override
 	{
 		mComponentManager->RegisterComponent(classInfo, IsDoubleBuffered);
 	}
@@ -189,7 +213,7 @@ public:
 
 
 	// System methods
-	System* RegisterSystem(const Reflection::ClassInfo* classInfo)
+	System* RegisterSystem(const Reflection::ClassInfo* classInfo) override
 	{
 		// Directly forwards the reflection data to the SystemManager.
 		return mSystemManager->RegisterSystem(classInfo);
@@ -203,7 +227,7 @@ public:
 	}
 
 
-	void SetSystemSignature(const std::string& typeName, Signature signature)
+	void SetSystemSignature(const std::string& typeName, Signature signature) override
 	{
 		// Tells the SystemManager to set the signature for the named system.
 		mSystemManager->SetSignature(typeName, signature);
@@ -231,6 +255,16 @@ public:
 	ReScene* GetCurrentScene() override
 	{
 		return mSceneManager->currentScene_;
+	}
+
+	void OpenScene(const std::string& path) override
+	{
+		mSceneManager->LoadScene(path, mEntityManager, this);
+	}
+
+	void SaveScene(const std::string& path)
+	{
+		mSceneManager->SerializeScene(path, mEntityManager, this);
 	}
 
 	Camera* GetCamera()

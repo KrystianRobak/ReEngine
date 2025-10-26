@@ -17,6 +17,14 @@ void ItemsSelectionPanel::Render()
             {
                 engineAPI->SetSelectedEntity(entity);
             }
+            if (ImGui::BeginPopupContextWindow("EntityEditPopUp"))
+            {
+                if (ImGui::MenuItem("DeleteEntity"))
+                {
+					engineAPI->ScheduleEntityDestruction(entity);
+                }
+                ImGui::EndPopup();
+            }
         }
         for (int entity = 11; entity <= engineAPI->GetEntitiesAmount()+10; entity++)
         {
@@ -25,6 +33,14 @@ void ItemsSelectionPanel::Render()
             if (ImGui::IsItemClicked())
             {
                 engineAPI->SetSelectedEntity(entity);
+            }
+            if (ImGui::BeginPopupContextWindow("EntityEditPopUp"))
+            {
+                if (ImGui::MenuItem("DeleteEntity"))
+                {
+                    engineAPI->ScheduleEntityDestruction(entity);
+                }
+                ImGui::EndPopup();
             }
         }
         ImGui::EndChild();

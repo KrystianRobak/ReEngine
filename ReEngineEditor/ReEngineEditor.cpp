@@ -21,41 +21,13 @@
 #include <GuizmoLayer.h>
 
 
-inline  std::vector<std::string> splitBracedList(const std::string& input) {
-    std::vector<std::string> result;
-
-    // Remove the braces { }
-    std::string trimmed = input;
-    if (!trimmed.empty() && trimmed.front() == '{') trimmed.erase(trimmed.begin());
-    if (!trimmed.empty() && trimmed.back() == '}') trimmed.pop_back();
-
-    std::stringstream ss(trimmed);
-    std::string token;
-
-    // Split by comma
-    while (std::getline(ss, token, ',')) {
-        // Trim leading/trailing spaces
-        token.erase(token.begin(),
-            std::find_if(token.begin(), token.end(),
-                [](unsigned char ch) { return !std::isspace(ch); }));
-        token.erase(std::find_if(token.rbegin(), token.rend(),
-            [](unsigned char ch) { return !std::isspace(ch); }).base(),
-            token.end());
-
-        if (!token.empty())
-            result.push_back(token);
-    }
-
-    return result;
-}
-
 using FuncPtr = void* (*)();
 
 int main(int argc, char** argv)
 {
-    std::cout << argv[0] << std::endl;
+    std::cout << argv[1] << std::endl;
 
-    ProjectBuilder builder(argv[1]);
+    
 
 
 	LOGF_INFO("Loading Engine.dll");
@@ -78,8 +50,6 @@ int main(int argc, char** argv)
     CoordinatorWrapper coordinatorWrap;
     ApplicationWrapper applicationWrap;
 
-
-
     coordinatorWrap.LoadFunctions(engineDLL);
     applicationWrap.LoadFunctions(engineDLL);
 
@@ -92,52 +62,21 @@ int main(int argc, char** argv)
 
     Editor::IEngineEditorApi* engine = Application->GetCoordinatorEditor();
 
-    builder.ParseConfig(engine);
+    ProjectBuilder builder(argv[1], engine);
 
-    auto systems = Reflection::Registry::Instance().GetAllSystems();
-	auto components = Reflection::Registry::Instance().GetAllComponents();
+    builder.ParseConfig();
 
-    for (auto component : components)
-    {
-        coordinatorWrap.RegisterComponent(component);
-    }
-
-    for (auto system : systems)
-    {
-		System* registeredSystem = coordinatorWrap.RegisterSystem(system);
-
-		registeredSystem->InitApi(engine);
-
-        Signature signature;
-
-		LOGF_INFO("Setting up system: %s", system->fullName)
-
-        for (auto variable : system->variables)
-        {
-
-            if (std::strcmp(variable.name, "ComponentsToRegister") == 0)
-            {
-                std::vector<std::string> components = splitBracedList(variable.defaultValue);
-
-                for (std::string component : components)
-                {
-                    LOGF_INFO("Registered %s to %s", component.c_str(), system->fullName)
-                    signature.set(coordinatorWrap.GetComponentType(component));
-                }
-            }
-        }
-
-        coordinatorWrap.SetSystemSignature(system->fullName, signature);
-
-		LOGF_INFO("System %s setup complete", system->fullName)
-    }
 
 	Application->InitSystems();
 
-    engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED, [Application](Event& e) {
+    engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED, [Application, &builder](Event& e) {
         ILayerManager* layerManager = Application->GetLayerManager();
-        layerManager->AddLayer<EditorLayer>();
-		layerManager->AddLayer<GuizmoLayer>();
+
+		builder.SetLayerManager(layerManager);
+		builder.InjectLayerManager();
+
+        layerManager->AddLayerThreadSafe<EditorLayer>();
+		layerManager->AddLayerThreadSafe<GuizmoLayer>();
         });
 
 	Application->StartEditorThreads();

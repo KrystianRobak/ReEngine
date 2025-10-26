@@ -7,6 +7,7 @@
 #include "Api/EngineApi/CoordinatorEditorApi.h"
 #include "Engine/Core/Coordinator/EntityManager.h"
 
+#include <filesystem>
 #include "json/json.hpp"
 #include <fstream>
 #include <iostream>
@@ -22,10 +23,10 @@ public:
 		currentScene_ = new ReScene("DefaultScene", new Camera());
 	}
 
-	// Load a scene from "<name>.json"
-	ReScene LoadScene(std::string name, std::shared_ptr<EntityManager> manager, std::shared_ptr<Editor::IEngineEditorApi> engine)
+	// Load scene
+	ReScene LoadScene(std::string name, std::shared_ptr<EntityManager> manager, Editor::IEngineEditorApi* engine)
 	{
-		std::string filename = "content/" + name + ".json";
+		std::string filename = name;
 		std::ifstream in(filename);
 		if (!in.is_open())
 		{
@@ -43,7 +44,6 @@ public:
 		for (auto c : components)
 			componentMap[c->fullName] = c;
 
-		// iterate through entities (no id, order defines them)
 		for (auto& entityJson : sceneJson["entities"])
 		{
 			Entity entity = manager->CreateEntity();
@@ -64,16 +64,28 @@ public:
 					continue;
 				}
 
-				engine->AddComponent(entity, compType);
-				void* compPtr = engine->GetComponent(entity, compType);
-				if (!compPtr)
+				if (compType == "StaticMesh" && compJson["data"].contains("AssetPath"))
 				{
-					std::cerr << "[SceneManager] Failed to get component pointer for " << compType << "\n";
-					continue;
+					std::string path = compJson["data"]["AssetPath"].get<std::string>();
+					auto future = engine->GetAssetManager()->loadFBX(path);
+
+					engine->GetAssetManager()->AddPendingMesh(entity, std::move(future));
+				}
+				else
+				{
+					engine->AddComponent(entity, compType);
+					void* compPtr = engine->GetComponent(entity, compType);
+					if (!compPtr)
+					{
+						std::cerr << "[SceneManager] Failed to get component pointer for " << compType << "\n";
+						continue;
+					}
+
+					if (compJson.contains("data"))
+						FillStructFromJson(compInfo, compPtr, compJson["data"]);
 				}
 
-				if (compJson.contains("data"))
-					FillStructFromJson(compInfo, compPtr, compJson["data"]);
+
 			}
 		}
 
@@ -84,17 +96,21 @@ public:
 		return newScene;
 	}
 
-	// Save scene to "<name>.json"
-	bool SerializeScene(std::string name, std::shared_ptr<EntityManager> manager, std::shared_ptr<Editor::IEngineEditorApi> engine)
+	// Save scene
+	bool SerializeScene(std::string name, std::shared_ptr<EntityManager> manager, Editor::IEngineEditorApi* engine)
 	{
 		json sceneJson;
 		sceneJson["scene_name"] = name;
+		sceneJson["assets"] = json::array();
+
+		sceneJson["assets"].push_back(engine->GetAssetManager()->GetCachedPaths());
+
 		sceneJson["entities"] = json::array();
 
 		auto components = Reflection::Registry::Instance().GetAllComponents();
 		std::uint32_t entityCount = manager->GetEntityCount();
 
-		for (std::uint32_t i = 0; i < entityCount; ++i)
+		for (std::uint32_t i = 11; i < entityCount + 11; ++i)
 		{
 			Signature sig = manager->GetSignature(i);
 			json entityJson;
@@ -122,34 +138,38 @@ public:
 				}
 			}
 
-			// Only include entities that have at least one component
 			if (!entityJson["components"].empty())
 				sceneJson["entities"].push_back(entityJson);
 		}
 
-		std::string filename = "content/" + name + ".json";
+		std::string filename = name;
+		if (!filename.ends_with(".json"))
+			filename += ".json";
+
+		std::filesystem::path filepath(filename);
+		std::filesystem::create_directories(filepath.parent_path());
+
 		std::ofstream out(filename);
 		if (!out.is_open())
 		{
 			std::cerr << "[SceneManager] Failed to open " << filename << " for writing.\n";
 			return false;
 		}
+
 		out << sceneJson.dump(4);
 		out.close();
 
-		std::cout << "[SceneManager] Scene serialized successfully to " << filename << "\n";
+		std::cout << "[SceneManager] Scene serialized successfully to "
+			<< std::filesystem::absolute(filename) << "\n";
+
 		return true;
 	}
 
-	void EntityDestroyed(Entity entity)
-	{
-
-	}
+	void EntityDestroyed(Entity entity) {}
 
 	ReScene* currentScene_;
 
 private:
-	// Recursive serializer: writes fields of a struct/class described by classInfo into outJson
 	static void WriteStructToJson(const Reflection::ClassInfo* classInfo, void* basePtr, json& outJson)
 	{
 		for (const auto& var : classInfo->variables)
@@ -158,7 +178,10 @@ private:
 			void* fieldPtr = reinterpret_cast<char*>(basePtr) + var.offset;
 			std::string tname = t->name ? t->name : "";
 
-			// Primitive types
+			// Skip runtime-only pointers
+			if (tname.find("StaticMeshData") != std::string::npos)
+				continue;
+
 			if (tname == "float")
 				outJson[var.name] = *(float*)fieldPtr;
 			else if (tname == "double")
@@ -169,26 +192,25 @@ private:
 				outJson[var.name] = *(unsigned int*)fieldPtr;
 			else if (tname == "bool")
 				outJson[var.name] = *(bool*)fieldPtr;
-			else if (tname == "std::string" || tname == "string")
+			else if (tname == "std::string" || tname == "string" || tname == "std::basic_string<char>")
 				outJson[var.name] = *(std::string*)fieldPtr;
-
-			// --- GLM types ---
-			else if (tname == "glm::vec2" || tname == "vec2")
+			// glm types
+			else if (tname == "glm::vec2" || tname == "vec2" || tname == "glm::vec<2, float>")
 			{
 				glm::vec2 v = *(glm::vec2*)fieldPtr;
 				outJson[var.name] = { v.x, v.y };
 			}
-			else if (tname == "glm::vec3" || tname == "vec3")
+			else if (tname == "glm::vec3" || tname == "vec3" || tname == "glm::vec<3, float>")
 			{
 				glm::vec3 v = *(glm::vec3*)fieldPtr;
 				outJson[var.name] = { v.x, v.y, v.z };
 			}
-			else if (tname == "glm::vec4" || tname == "vec4")
+			else if (tname == "glm::vec4" || tname == "vec4" || tname == "glm::vec<4, float>")
 			{
 				glm::vec4 v = *(glm::vec4*)fieldPtr;
 				outJson[var.name] = { v.x, v.y, v.z, v.w };
 			}
-			else if (tname == "glm::mat4" || tname == "mat4")
+			else if (tname == "glm::mat4" || tname == "mat4" || tname == "glm::qua<float>")
 			{
 				glm::mat4 m = *(glm::mat4*)fieldPtr;
 				outJson[var.name] = json::array();
@@ -197,8 +219,6 @@ private:
 					outJson[var.name].push_back({ m[i][0], m[i][1], m[i][2], m[i][3] });
 				}
 			}
-
-			// --- Nested reflected structs/classes ---
 			else
 			{
 				const Reflection::ClassInfo* subClass = Reflection::Registry::Instance().FindClass(tname);
@@ -208,15 +228,10 @@ private:
 					WriteStructToJson(subClass, fieldPtr, subJson);
 					outJson[var.name] = subJson;
 				}
-				else
-				{
-					std::cerr << "[SceneManager] Unknown type '" << tname << "' for variable '" << var.name << "'\n";
-				}
 			}
 		}
 	}
 
-	// Recursive deserializer: fills fields of classInfo from inJson into basePtr
 	static void FillStructFromJson(const Reflection::ClassInfo* classInfo, void* basePtr, const json& inJson)
 	{
 		for (const auto& var : classInfo->variables)
@@ -230,7 +245,6 @@ private:
 
 			const json& val = inJson.at(var.name);
 
-			// Primitive types
 			if (tname == "float")
 				*(float*)fieldPtr = val.get<float>();
 			else if (tname == "double")
@@ -243,24 +257,22 @@ private:
 				*(bool*)fieldPtr = val.get<bool>();
 			else if (tname == "std::string" || tname == "string")
 				*(std::string*)fieldPtr = val.get<std::string>();
-
-			// --- GLM types ---
-			else if (tname == "glm::vec2" || tname == "vec2")
+			else if (tname == "glm::vec2" || tname == "vec2" || tname == "glm::vec<2, float>")
 			{
 				if (val.is_array() && val.size() == 2)
 					*(glm::vec2*)fieldPtr = glm::vec2(val[0].get<float>(), val[1].get<float>());
 			}
-			else if (tname == "glm::vec3" || tname == "vec3")
+			else if (tname == "glm::vec3" || tname == "vec3" || tname == "glm::vec<3, float>")
 			{
 				if (val.is_array() && val.size() == 3)
 					*(glm::vec3*)fieldPtr = glm::vec3(val[0].get<float>(), val[1].get<float>(), val[2].get<float>());
 			}
-			else if (tname == "glm::vec4" || tname == "vec4")
+			else if (tname == "glm::vec4" || tname == "vec4" || tname == "glm::vec<4, float>")
 			{
 				if (val.is_array() && val.size() == 4)
 					*(glm::vec4*)fieldPtr = glm::vec4(val[0].get<float>(), val[1].get<float>(), val[2].get<float>(), val[3].get<float>());
 			}
-			else if (tname == "glm::mat4" || tname == "mat4")
+			else if (tname == "glm::mat4" || tname == "mat4" || tname == "glm::qua<float>")
 			{
 				glm::mat4 m(1.0f);
 				if (val.is_array() && val.size() == 4)
@@ -269,26 +281,16 @@ private:
 					{
 						if (val[i].is_array() && val[i].size() == 4)
 						{
-							for (int j = 0; j < 4; ++j)
-								m[i][j] = val[i][j].get<float>();
+							for (int j = 0; j < 4; ++j) m[i][j] = val[i][j].get<float>();
 						}
 					}
-				}
-				*(glm::mat4*)fieldPtr = m;
+				} *(glm::mat4*)fieldPtr = m;
 			}
-
-			// --- Nested reflected structs/classes ---
 			else
 			{
 				const Reflection::ClassInfo* subClass = Reflection::Registry::Instance().FindClass(tname);
 				if (subClass && val.is_object())
-				{
 					FillStructFromJson(subClass, fieldPtr, val);
-				}
-				else
-				{
-					std::cerr << "[SceneManager] Unknown type '" << tname << "' for variable '" << var.name << "'\n";
-				}
 			}
 		}
 	}

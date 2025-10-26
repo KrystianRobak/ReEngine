@@ -32,15 +32,16 @@ void ControlPanel::Render()
         {
 
         }*/
-        if (ImGui::ImageButton((isPlaying ? (void*)(intptr_t)startIcon : (void*)(intptr_t)pauseIcon), ImVec2(20, 20)))
+        if (ImGui::ImageButton("##playButton", (isPlaying ? (void*)(intptr_t)startIcon : (void*)(intptr_t)pauseIcon), ImVec2(20, 20)))
         {
             isPlaying = !isPlaying;
         }
 			
         ImGui::SameLine();
-        if (ImGui::ImageButton((void*)(intptr_t)recompileIcon, ImVec2(20, 20)))
+
+        if (ImGui::ImageButton("recompileButton",(void*)(intptr_t)recompileIcon, ImVec2(20, 20)))
         {
-            // Handle start/pause logic
+			engineAPI->SaveScene("Assets/Scenes/AutoSaveScene.json");
         }
         ImGui::EndGroup();
     ImGui::End();

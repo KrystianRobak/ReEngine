@@ -52,7 +52,7 @@ public:
 
         // Ensure both buffers are big enough
         if ((newIndex + 1) * mComponentSize > currentWriteBuffer->size()) {
-            mComponentData.resize((newIndex + 1) * mComponentSize);
+            mComponentData.resize((newIndex + 20) * mComponentSize);
             if (mIsDoubleBuffered) {
                 mComponentDataSecond.resize((newIndex + 1) * mComponentSize);
             }

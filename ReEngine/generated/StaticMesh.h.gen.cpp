@@ -6,6 +6,7 @@
 namespace ReflectionGenerated {
 
 
+static std::vector<Reflection::ReflectedVariable> StaticMesh_Variables;
 struct StaticMesh_AutoRegister {
     StaticMesh_AutoRegister() {
         Reflection::ClassInfo ci;
@@ -18,6 +19,18 @@ struct StaticMesh_AutoRegister {
         ci.isStruct = true;
         ci.construct = []() -> void* { return new StaticMesh(); };
         ci.destruct = [](void* p) { delete static_cast<StaticMesh*>(p); };
+        StaticMesh_Variables.clear();
+        auto* vType = Reflection::Registry::Instance().GetOrCreateType("std::basic_string<char>");
+        {
+            Reflection::ReflectedVariable rv = {
+                "AssetPath", "public",
+                false,
+                offsetof(StaticMesh, AssetPath),
+                vType
+            };
+            StaticMesh_Variables.push_back(std::move(rv));
+        }
+        ci.variables = StaticMesh_Variables;
         Reflection::Registry::Instance().RegisterComponent(std::move(ci));
     }
 };

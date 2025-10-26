@@ -34,6 +34,8 @@ public:
 
     void AddPendingMesh(Entity entity, std::future<std::shared_ptr<StaticMeshData>> future) override;
 
+    std::vector<std::string> GetCachedPaths();
+
     void shutdown();
 
 private:

@@ -68,6 +68,7 @@ private:
 	float dt = 0.0f;
 	bool running = true;
 
+
 	std::unique_ptr<std::thread> GameThread;
 	std::unique_ptr<std::thread> RenderThread;
 	std::unique_ptr<std::thread> PhysicsThread;

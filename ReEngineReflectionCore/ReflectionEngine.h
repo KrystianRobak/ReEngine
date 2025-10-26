@@ -94,6 +94,10 @@ namespace Reflection {
     public:
         static Registry& Instance();
 
+        void RegisterClassInstance(const std::string& className, void* instance);
+
+        void RegisterVariableInstance(const std::string& className, const std::string& variableName, void* instance);
+
         // Register a class produced by generated code.
         void RegisterClass(ClassInfo&& info);
         void RegisterComponent(ClassInfo&& info);

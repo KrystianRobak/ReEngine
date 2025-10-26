@@ -9,7 +9,35 @@
 
 typedef System* (*CreateSystemFunc)();
 
-void ProjectBuilder::ParseConfig(Editor::IEngineEditorApi* engine) {
+inline  std::vector<std::string> splitBracedList(const std::string& input) {
+    std::vector<std::string> result;
+
+    // Remove the braces { }
+    std::string trimmed = input;
+    if (!trimmed.empty() && trimmed.front() == '{') trimmed.erase(trimmed.begin());
+    if (!trimmed.empty() && trimmed.back() == '}') trimmed.pop_back();
+
+    std::stringstream ss(trimmed);
+    std::string token;
+
+    // Split by comma
+    while (std::getline(ss, token, ',')) {
+        // Trim leading/trailing spaces
+        token.erase(token.begin(),
+            std::find_if(token.begin(), token.end(),
+                [](unsigned char ch) { return !std::isspace(ch); }));
+        token.erase(std::find_if(token.rbegin(), token.rend(),
+            [](unsigned char ch) { return !std::isspace(ch); }).base(),
+            token.end());
+
+        if (!token.empty())
+            result.push_back(token);
+    }
+
+    return result;
+}
+
+void ProjectBuilder::ParseConfig() {
     namespace fs = std::filesystem;
 
     fs::path projectPath(ProjectPath_);
@@ -71,6 +99,53 @@ void ProjectBuilder::ParseConfig(Editor::IEngineEditorApi* engine) {
         std::string physicsDll = "Systems/" + config["Physics"].get<std::string>() + ".dll";
         LOGF_INFO("Loading module: %s", physicsDll.c_str());
         PhysicsSystem_ = LoadModule(physicsDll.c_str());
+    }
+
+    if(config.contains("ModulesToLoad")) {
+        for (const auto& module : config["ModulesToLoad"]) {
+            std::string moduleDll = "Systems/" + module.get<std::string>() + ".dll";
+            LOGF_INFO("Loading module: %s", moduleDll.c_str());
+            System* system = LoadModule(moduleDll.c_str());
+        }
+	}
+
+
+    auto systems = Reflection::Registry::Instance().GetAllSystems();
+    auto components = Reflection::Registry::Instance().GetAllComponents();
+
+    for (auto component : components)
+    {
+        engineAPI_->RegisterComponent(component);
+    }
+
+    for (auto system : systems)
+    {
+        System* registeredSystem = engineAPI_->RegisterSystem(system);
+		SystemsLoaded_.push_back(registeredSystem);
+        registeredSystem->InitApi(engineAPI_);
+
+        Signature signature;
+
+        LOGF_INFO("Setting up system: %s", system->fullName)
+
+            for (auto variable : system->variables)
+            {
+
+                if (std::strcmp(variable.name, "ComponentsToRegister") == 0)
+                {
+                    std::vector<std::string> components = splitBracedList(variable.defaultValue);
+
+                    for (std::string component : components)
+                    {
+                        LOGF_INFO("Registered %s to %s", component.c_str(), system->fullName)
+                            signature.set(engineAPI_->GetComponentType(component));
+                    }
+                }
+            }
+
+        engineAPI_->SetSystemSignature(system->fullName, signature);
+
+        LOGF_INFO("System %s setup complete", system->fullName)
     }
 
     LOGF_INFO("Config parsing complete");

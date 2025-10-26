@@ -41,7 +41,7 @@ void FileBrowser::FindFiles(std::string folderPath, bool direction)
             }
             else if(!entry.is_directory()) {
                 auto extension = entry.path().extension();
-                if (extension == ".jpg" || extension == ".png" || extension == ".obj" || extension == ".fbx" || extension == ".fs" || extension == ".vs" || extension == ".cpp") {
+                if (extension == ".jpg" || extension == ".png" || extension == ".obj" || extension == ".fbx" || extension == ".fs" || extension == ".vs" || extension == ".cpp" || extension == ".json") {
                     files.push_back(entry);
                 }
             }
@@ -87,6 +87,16 @@ void FileBrowser::RenderFile(GLuint textureID, float itemWidth, float itemSpacin
     }
 
     ImGui::EndGroup();
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+        selectedFile = entry;
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            std::string path = entry.path().string();
+            if (entry.path().extension() == ".json") {
+				engineAPI->OpenScene(path);
+            }
+        }
+    }
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         selectedFile = entry;

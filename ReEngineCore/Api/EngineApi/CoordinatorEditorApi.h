@@ -8,6 +8,11 @@
 class Event;
 class System;
 class ReScene;
+namespace Reflection
+{
+	class ClassInfo;
+}
+
 
 namespace Editor
 {
@@ -20,6 +25,8 @@ namespace Editor
 		virtual Entity CreateEntity() = 0;
 
 		virtual Entity CreateLightEntity() = 0;
+
+		virtual void ScheduleEntityDestruction(Entity entity) = 0;
 
 		virtual void DestroyEntity(Entity entity) = 0;
 
@@ -49,12 +56,20 @@ namespace Editor
 
 		virtual ReScene* GetCurrentScene() = 0;
 
+		virtual void OpenScene(const std::string& path) = 0;
+
+		virtual void SaveScene(const std::string& path) = 0;
+
 		virtual void* GetComponent(Entity entity, const std::string& typeName) = 0;
 
 		virtual System* GetSystem(const std::string& typeName) = 0;
 
 		virtual ComponentType GetComponentType(const std::string& typeName) = 0;
 
-		
+		virtual void RegisterComponent(const Reflection::ClassInfo* classInfo, bool IsDoubleBuffered = false) = 0;
+
+		virtual System* RegisterSystem(const Reflection::ClassInfo* classInfo) = 0;
+
+		virtual void SetSystemSignature(const std::string& typeName, Signature signature) = 0;
 	};
 }

@@ -99,6 +99,12 @@
     <ClCompile Include="..\Libs\Include\imgui\ImGuizmo.cpp">
       <Filter>Source Files\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Panels\MaterialGraphPanel.cpp">
+      <Filter>Source Files\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Libs\Include\imgui\imnodes.cpp">
+      <Filter>Source Files\ImGui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h">
@@ -177,6 +183,15 @@
       <Filter>Header Files\Panels</Filter>
     </ClInclude>
     <ClInclude Include="..\Libs\Include\imgui\ImGuizmo.h">
+      <Filter>Source Files\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Panels\MaterialGraphPanel.h">
+      <Filter>Header Files\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libs\Include\imgui\imnodes.h">
+      <Filter>Source Files\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Libs\Include\imgui\imnodes_internal.h">
       <Filter>Source Files\ImGui</Filter>
     </ClInclude>
   </ItemGroup>

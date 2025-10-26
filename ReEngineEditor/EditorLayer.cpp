@@ -10,6 +10,7 @@
 #include "Panels/SceneView.h"
 #include "Panels/SystemsManagerPanel.h"
 #include "SceneSettings.h"
+#include <Panels/MaterialGraphPanel.h>
 
 EditorLayer::EditorLayer()
 {
@@ -21,6 +22,7 @@ EditorLayer::EditorLayer()
     uiComponents.push_back(std::make_unique<FileBrowser>());
     uiComponents.push_back(std::make_unique<AddingPanel>());
     uiComponents.push_back(std::make_unique<SceneSettings>());
+    uiComponents.push_back(std::make_unique<MaterialGraphPanel>());
     name = "EditorLayer";
 }
 

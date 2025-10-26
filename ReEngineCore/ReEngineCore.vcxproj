@@ -140,6 +140,7 @@
     <ClCompile Include="Event.cpp" />
     <ClCompile Include="ILayerManager.cpp" />
     <ClCompile Include="ILayerManager.h" />
+    <ClCompile Include="MaterialSystem\Material.cpp" />
     <ClCompile Include="ProjectBuilder.cpp" />
     <ClCompile Include="ReScene.h" />
     <ClCompile Include="Shader.cpp" />
@@ -150,11 +151,13 @@
     <ClInclude Include="Api\EngineApi\CoordinatorEditorApi.h" />
     <ClInclude Include="Api\SystemApi\CoordinatorSystemApi.h" />
     <ClInclude Include="Event.h" />
+    <ClInclude Include="Graph\Node.h" />
     <ClInclude Include="IApplicationApi.h" />
     <ClInclude Include="BaseApi.h" />
     <ClInclude Include="CoreExport.h" />
     <ClInclude Include="ILayer.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="MaterialSystem\Material.h" />
     <ClInclude Include="ProjectBuilder.h" />
     <ClInclude Include="RenderInterface.h" />
     <ClInclude Include="RenderSystem.h" />

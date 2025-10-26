@@ -10,6 +10,25 @@ Registry& Registry::Instance() {
     return inst;
 }
 
+void Reflection::Registry::RegisterClassInstance(const std::string& className, void* instance)
+{
+    auto it = systems_.find(className);
+    if (it != systems_.end()) {
+
+    }
+}
+
+void Reflection::Registry::RegisterVariableInstance(const std::string& className, const std::string& variableName, void* instance)
+{
+    auto it = classes_.find(className);
+    if (it != classes_.end()) {
+        for (auto var : it->second.variables)
+        {
+
+        }
+    }
+}
+
 void Registry::RegisterClass(ClassInfo&& info) {
     std::string key = sizeof(info.module) > 0 ? (std::string(info.module) + "." + info.name) : info.name;
     classes_.emplace(key, std::move(info));

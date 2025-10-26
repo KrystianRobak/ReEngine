@@ -14,5 +14,7 @@ public:
 
 	virtual void AddPendingMesh(Entity entity, std::future<std::shared_ptr<StaticMeshData>> future) = 0;
 
+	virtual std::vector<std::string> GetCachedPaths() = 0;
+
 	virtual std::vector<PendingStaticMesh>& GetPendingMeshes() = 0;
 };

@@ -10,4 +10,5 @@ struct StaticMeshData {
     std::vector<MeshData> meshes;
     glm::vec3 aabbMin;
     glm::vec3 aabbMax;
+    std::string path;
 };

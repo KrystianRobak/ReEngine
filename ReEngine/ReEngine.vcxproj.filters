@@ -189,6 +189,9 @@
     <ClCompile Include="Private\SceneManager.cpp">
       <Filter>Source Files\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Private\EpochManager.cpp">
+      <Filter>Source Files\Private</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Public\Engine\Core\AnimationTypes.h">
@@ -305,9 +308,6 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h">
       <Filter>Source Files\ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="StaticMesh.h">
-      <Filter>Source Files\Public\Engine\Components</Filter>
-    </ClInclude>
     <ClInclude Include="RawImageData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -327,6 +327,12 @@
       <Filter>Source Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="Public\SceneManager.h">
+      <Filter>Source Files\Public</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Components\StaticMesh.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\EpochManager.h">
       <Filter>Source Files\Public</Filter>
     </ClInclude>
   </ItemGroup>

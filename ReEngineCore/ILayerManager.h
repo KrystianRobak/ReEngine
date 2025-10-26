@@ -28,6 +28,13 @@ public:
     }
 
     template<typename LayerTemplate>
+    void AddLayerThreadSafe()
+    {
+        std::lock_guard lock(pendingMutex);
+        pendingOps.push_back([this] { AddLayer<LayerTemplate>(); });
+    }
+
+    template<typename LayerTemplate>
         requires(std::is_base_of_v<ILayer, LayerTemplate>)
     void AddLayer()
     {
@@ -52,6 +59,18 @@ public:
             LayerStack_.push_back(std::move(newLayer));
         }
 
+    }
+
+    void ProcessPendingOps()
+    {
+        std::vector<std::function<void()>> ops;
+        {
+            std::lock_guard lock(pendingMutex);
+            std::swap(ops, pendingOps);
+        }
+
+        for (auto& op : ops)
+            op();
     }
 
     template<typename LayerTemplate>
@@ -87,6 +106,9 @@ public:
 private:
     std::vector<std::unique_ptr<ILayer>> LayerStack_;
     Editor::IEngineEditorApi* EngineApi_ = nullptr;
+
+    std::vector<std::function<void()>> pendingOps;
+    std::mutex pendingMutex;
 
 	ImGuiContext* context = nullptr;
 

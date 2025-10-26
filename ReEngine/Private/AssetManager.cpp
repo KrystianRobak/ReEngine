@@ -22,6 +22,17 @@ void AssetManager::AddPendingMesh(Entity entity, std::future<std::shared_ptr<Sta
 	pendingMeshes.emplace_back(std::move(Pending));
 }
 
+inline std::vector<std::string> AssetManager::GetCachedPaths()
+{
+    std::lock_guard<std::mutex> lock(cacheMutex);
+    std::vector<std::string> paths;
+    for (auto& [path, weak] : cache)
+        if (!weak.expired())
+            paths.push_back(path);
+    return paths;
+}
+
+
 void AssetManager::shutdown() {
     pool.shutdown();
 }
@@ -48,6 +59,8 @@ void AssetManager::shutdown() {
         }
 
         auto staticMesh = std::make_shared<StaticMeshData>();
+
+		staticMesh->path = path;
 
         processNode(scene->mRootNode, scene, *staticMesh.get());
 

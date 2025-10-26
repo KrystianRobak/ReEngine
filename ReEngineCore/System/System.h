@@ -10,6 +10,7 @@
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
+#include "ILayerManager.h"
 
 
 
@@ -31,6 +32,11 @@ public:
 		commander_ = commander;
 	}
 
+	void InjectLayerManager(ILayerManager* layerManager)
+	{
+		layerManager_ = layerManager;
+	}
+
 	std::set<Entity>& GetEntities()
 	{
 		return this->mEntities;
@@ -41,4 +47,5 @@ protected:
 	Editor::IEngineEditorApi* engine_;
 	std::shared_ptr<Commander> commander_;
 	std::shared_ptr<AssetManagerApi> assetManager_;
+	ILayerManager* layerManager_ = nullptr;
 };
