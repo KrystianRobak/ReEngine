@@ -6,7 +6,7 @@ class EditorLayer : public ILayer
 public:
 	EditorLayer();
 	
-
+	virtual void OnInit() override;
 	virtual void OnAttach() override;
 	virtual void OnDetach() override;
 	virtual void OnUpdate(float deltaTime) override;

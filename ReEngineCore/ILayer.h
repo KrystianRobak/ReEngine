@@ -9,11 +9,17 @@ public:
 	void InitEngineApi(Editor::IEngineEditorApi* engineAPI)
 	{
 		this->EngineApi_ = engineAPI;
+		OnInit();
 	}
 
 	void InitImGuiContext(ImGuiContext* imguiContext)
 	{
 		ImGui::SetCurrentContext(imguiContext);
+	}
+
+	virtual void OnInit() 
+	{
+	
 	}
 
 	virtual void OnAttach()

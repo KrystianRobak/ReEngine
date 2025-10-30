@@ -15,8 +15,10 @@
 
 class ENGINE_API ThreadPool {
 public:
-	ThreadPool(size_t threads = std::thread::hardware_concurrency());
+	ThreadPool() {}
 	~ThreadPool();
+
+	void Init(size_t threads = std::thread::hardware_concurrency());
 
 	template<class F, class... Args>
 	auto submit(F&& f, Args&&... args) -> std::future<std::invoke_result_t<F, Args...>> {

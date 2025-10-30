@@ -52,8 +52,8 @@ void Application::MeasureTime()
 void Application::Init() 
 {
 	coordinator = Coordinator::GetCoordinator();
-
-	coordinator->Init();
+	threadPool.Init();
+	coordinator->Init(&threadPool);
 
 	Commander_.Init(32);
 	
@@ -263,5 +263,5 @@ void Application::CreateCoordinator()
 {
 	coordinator = Coordinator::GetCoordinator();
 
-	coordinator->Init();
+	coordinator->Init(&threadPool);
 }

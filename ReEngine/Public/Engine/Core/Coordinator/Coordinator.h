@@ -65,13 +65,13 @@ public:
 	}
 
 
-	void Init()
+	void Init(ThreadPool* pool)
 	{
 		mComponentManager = std::make_shared<ComponentManager>();
 		mEntityManager = std::make_shared<EntityManager>();
 		mEventManager = std::make_unique<EventManager>();
 		mSystemManager = std::make_unique<SystemManager>();
-		mAssetManager = std::make_shared<AssetManager>();
+		mAssetManager = std::make_shared<AssetManager>(pool);
 		mSceneManager = std::make_shared<SceneManager>();
 		mEpochManager = std::make_shared<EpochManager>();
 	}

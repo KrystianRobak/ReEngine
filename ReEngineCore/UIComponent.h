@@ -10,6 +10,7 @@
 #include "ReflectionEngine.h"
 #include "Api/EngineApi/CoordinatorEditorApi.h"
 #include "ReTypes.h"
+#include "Event.h"
 
 #include <vector>
 #include <iostream>

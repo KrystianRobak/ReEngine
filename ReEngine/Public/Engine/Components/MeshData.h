@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "TextureData.h"
 #include <string>
 #include <vector>
 
@@ -15,15 +16,6 @@ struct Vertex {
     glm::vec2 TexCoords;
     glm::vec3 Tangent;
     glm::vec3 Bitangent;
-};
-
-struct TextureData {
-    int width = 0;
-    int height = 0;
-    int channels = 0;
-    std::vector<unsigned char> pixels;
-    std::string type;
-    std::string path;
 };
 
 struct MeshData {

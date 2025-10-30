@@ -22,8 +22,21 @@ EditorLayer::EditorLayer()
     uiComponents.push_back(std::make_unique<FileBrowser>());
     uiComponents.push_back(std::make_unique<AddingPanel>());
     uiComponents.push_back(std::make_unique<SceneSettings>());
-    uiComponents.push_back(std::make_unique<MaterialGraphPanel>());
     name = "EditorLayer";
+}
+
+void EditorLayer::OnInit()
+{
+    EngineApi_->AddEventListener(Events::Editor::MaterialSystem::OPEN_MATERIAL_FILE, [&](Event& event) {
+        std::unique_ptr MatherialGraph = std::make_unique<MaterialGraphPanel>();
+        MatherialGraph->Init(EngineApi_);
+
+		std::string path = event.GetParam<std::string>("PATH");
+
+		MatherialGraph->LoadMaterial(path);
+
+        uiComponents.push_back(std::move(MatherialGraph));
+        });
 }
 
 void EditorLayer::OnAttach()

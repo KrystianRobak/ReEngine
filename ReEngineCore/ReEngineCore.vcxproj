@@ -164,6 +164,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="System\System.h" />
     <ClInclude Include="ReTypes.h" />
+    <ClInclude Include="TextureData.h" />
     <ClInclude Include="UIComponent.h" />
     <ClInclude Include="Window\FrameBuffer.h" />
     <ClInclude Include="Window\IWindow.h" />

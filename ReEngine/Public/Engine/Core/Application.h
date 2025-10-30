@@ -81,6 +81,8 @@ private:
 
 	Commander Commander_;
 
+	ThreadPool threadPool;
+
 	FunctionDelegate OnUpdateUI;
 	FunctionDelegate OnPostUpdateUI;
 	FunctionDelegate OnPreUpdateUI;

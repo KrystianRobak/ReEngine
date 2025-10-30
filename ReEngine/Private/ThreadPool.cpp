@@ -1,7 +1,11 @@
 #include "ThreadPool.h"
 
+ThreadPool::~ThreadPool() {
+	shutdown();
+}
 
-ThreadPool::ThreadPool(size_t threads) {
+void ThreadPool::Init(size_t threads)
+{
 	if (threads == 0) threads = 1;
 	for (size_t i = 0; i < threads; ++i) {
 		workers.emplace_back([this]() {
@@ -18,11 +22,6 @@ ThreadPool::ThreadPool(size_t threads) {
 			}
 			});
 	}
-}
-
-
-ThreadPool::~ThreadPool() {
-	shutdown();
 }
 
 

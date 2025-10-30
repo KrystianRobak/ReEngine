@@ -137,5 +137,8 @@
     <ClInclude Include="Graph\Node.h">
       <Filter>Pliki nagłówkowe\Graph</Filter>
     </ClInclude>
+    <ClInclude Include="TextureData.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

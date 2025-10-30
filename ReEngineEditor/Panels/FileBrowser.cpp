@@ -2,6 +2,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
+#include "Event.h"
+#include <fstream>
+
+#include "json/json.hpp"
+
+using json = nlohmann::json;
+
 static std::string getLastElementAfterSplit(const std::string str, char delimiter) {
     std::vector<std::string> tokens;
     std::istringstream iss(str);
@@ -41,7 +48,7 @@ void FileBrowser::FindFiles(std::string folderPath, bool direction)
             }
             else if(!entry.is_directory()) {
                 auto extension = entry.path().extension();
-                if (extension == ".jpg" || extension == ".png" || extension == ".obj" || extension == ".fbx" || extension == ".fs" || extension == ".vs" || extension == ".cpp" || extension == ".json") {
+                if (extension == ".jpg" || extension == ".png" || extension == ".obj" || extension == ".fbx" || extension == ".fs" || extension == ".vs" || extension == ".cpp" || extension == ".json" || extension == ".material") {
                     files.push_back(entry);
                 }
             }
@@ -94,6 +101,19 @@ void FileBrowser::RenderFile(GLuint textureID, float itemWidth, float itemSpacin
             std::string path = entry.path().string();
             if (entry.path().extension() == ".json") {
 				engineAPI->OpenScene(path);
+            }
+        }
+    }
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+        selectedFile = entry;
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            std::string path = entry.path().string();
+            if (entry.path().extension() == ".material") {
+                Event event(Events::Editor::MaterialSystem::OPEN_MATERIAL_FILE);
+                event.SetParam<std::string>("PATH", path);
+
+                engineAPI->SendEvent(event);
             }
         }
     }
@@ -162,6 +182,45 @@ void FileBrowser::Render()
             if (ImGui::MenuItem("Create Scene"))
             {
 
+            }
+            if (ImGui::MenuItem("Create Material"))
+            {
+                std::string fileName = "NewMaterial.material";
+                std::filesystem::path filePath = std::filesystem::path(currentPath) / fileName;
+
+                // Ensure the file name is unique
+                int counter = 1;
+                while (std::filesystem::exists(filePath))
+                {
+                    fileName = "NewMaterial_" + std::to_string(counter++) + ".material";
+                    filePath = std::filesystem::path(currentPath) / fileName;
+                }
+
+                // --- Create an empty Material JSON structure ---
+                json j;
+                j["id"] = 1;
+                j["name"] = fileName;
+                j["path"] = filePath.string();
+                j["nodes"] = json::array();
+                j["links"] = json::array();
+
+                // Write JSON to file
+                std::ofstream file(filePath);
+                if (file.is_open())
+                {
+                    file << j.dump(4); // Pretty print
+                    file.close();
+                    std::cout << "? Created material file: " << filePath << std::endl;
+                }
+                else
+                {
+                    std::cerr << "? Failed to create file: " << filePath << std::endl;
+                }
+
+                // Notify the engine/editor
+                Event event(Events::Editor::MaterialSystem::CREATE_MATERIAL_FILE);
+                event.SetParam<std::string>("PATH", filePath.string());
+                engineAPI->SendEvent(event);
             }
             ImGui::EndPopup();
         }

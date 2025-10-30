@@ -219,3 +219,8 @@ namespace Events::Editor::Gizmo {
     constexpr inline EventType ROTATE = "Events::Editor::Gizmo::ROTATE";
     constexpr inline EventType SCALE = "Events::Editor::Gizmo::SCALE";
 }
+
+namespace Events::Editor::MaterialSystem {
+    constexpr inline EventType CREATE_MATERIAL_FILE = "Events::Editor::MaterialSystem::CREATE_MATERIAL_FILE";
+    constexpr inline EventType OPEN_MATERIAL_FILE = "Events::Editor::MaterialSystem::OPEN_MATERIAL_FILE";
+}

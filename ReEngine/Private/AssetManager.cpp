@@ -5,11 +5,44 @@
 
 
 std::future<std::shared_ptr<StaticMeshData>> AssetManager::loadFBX(const std::string& path) {
-    return pool.submit([this, path]() {
+    return pool->submit([this, path]() {
 		auto mesh = this->importFBX(path);
 
         return mesh;
         });
+}
+
+std::future<std::shared_ptr<TextureData>> AssetManager::loadTexture(const std::string& path)
+{
+    return pool->submit([this, path]() {
+        // cache check
+        {
+            std::lock_guard<std::mutex> lock(textureCacheMutex);
+            if (auto cached = textureCache[path].lock())
+                return cached;
+        }
+        int width, height, channels;
+        unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+        if (!data) {
+            throw std::runtime_error("Failed to load texture: " + path);
+        }
+		auto textureData = std::make_shared<TextureData>(width, height, channels, data);
+        {
+            std::lock_guard<std::mutex> lock(textureCacheMutex);
+            textureCache[path] = textureData;
+        }
+        return textureData;
+		});
+}
+
+void AssetManager::unloadTexture(const std::string& path)
+{
+    std::lock_guard<std::mutex> lock(textureCacheMutex);
+	textureCache.erase(path);
+}
+
+void AssetManager::unloadMesh(const std::string& path)
+{
 }
 
 void AssetManager::AddPendingMesh(Entity entity, std::future<std::shared_ptr<StaticMeshData>> future)
@@ -34,7 +67,7 @@ inline std::vector<std::string> AssetManager::GetCachedPaths()
 
 
 void AssetManager::shutdown() {
-    pool.shutdown();
+    
 }
 
     std::shared_ptr<StaticMeshData> AssetManager::importFBX(const std::string& path) {
