@@ -12,6 +12,7 @@
 #include "ReTypes.h"
 #include "Event.h"
 
+#include <memory>
 #include <vector>
 #include <iostream>
 #include <string>

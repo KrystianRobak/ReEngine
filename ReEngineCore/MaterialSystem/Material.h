@@ -51,6 +51,7 @@ public:
 
     ~Material()
     {
+        // This destructor is correct and handles deleting the raw BaseNode pointers.
         for (auto node : m_Nodes)
             delete node;
         m_Nodes.clear();
@@ -73,22 +74,39 @@ public:
 
     void RemoveNode(int nodeId)
     {
-        m_Nodes.erase(std::remove_if(m_Nodes.begin(), m_Nodes.end(),
-            [nodeId](BaseNode* n) { return n->id == nodeId; }),
-            m_Nodes.end());
+        // Find and delete the node before removing the pointer from the vector
+        auto it = std::remove_if(m_Nodes.begin(), m_Nodes.end(),
+            [nodeId](BaseNode* n) {
+                if (n->id == nodeId) {
+                    delete n; // IMPORTANT: Delete the node memory
+                    return true;
+                }
+                return false;
+            });
+        m_Nodes.erase(it, m_Nodes.end());
     }
 
     void SetNodes(const std::vector<BaseNode*>& nodes)
     {
+        // Delete the *old* nodes before replacing the vector
         for (auto node : m_Nodes)
             delete node;
         m_Nodes = nodes;
-	}
+
+        // Recalculate next ID after setting the nodes
+        m_NextNodeID = 1;
+        for (auto node : m_Nodes)
+            m_NextNodeID = std::max(m_NextNodeID, node->id + 1);
+    }
 
     void SetLinks(const std::vector<Link>& links)
     {
-		m_Links = links;
-	}
+        m_Links = links;
+        // Recalculate next ID after setting the links
+        m_NextLinkID = 1;
+        for (const auto& link : m_Links)
+            m_NextLinkID = std::max(m_NextLinkID, link.id + 1);
+    }
 
     void Evaluate()
     {
@@ -109,10 +127,10 @@ public:
             shaderBody += node->GenerateShaderCode(m_Links, m_Nodes);
         }
 
-        // Minimal Shader Template
+        // Minimal Shader Template (Vertex remains the same)
         result.VertexShaderCode = R"(
         #version 460 core
-        #version 330 core
+        // #version 330 core -- Removed redundancy
 
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec3 aNormal;
@@ -133,23 +151,24 @@ public:
             gl_Position = Projection * View * Model * vec4(aPos, 1.0);
             TexCoords = aTexCoords;
         }
-    )";
+        )";
 
+        // Fragment Shader Template (Cleaned up output variable)
         result.FragmentShaderCode =
             "#version 460 core\n"
             "in vec2 TexCoords;\n"
             "in vec3 FragPos; \n"
             "in vec3 Normal; \n"
             "\n"
-            "out vec4 FragOutColor;\n"
+            + GenerateUniforms() +
             "\n"
-            + GenerateUniforms();
-            + "\n"
-            "out vec4 FragColor;\n"
+            "out vec4 FragColor;\n" // Consistent output variable name
             "void main()\n"
             "{\n"
             + shaderBody +
-            "    FragColor = finalColor;\n"
+            // The last line is now handled by the OutputNode's code (FragColor = vec4(finalColor, opacity);)
+            // The original template had an issue here; this line is redundant/incorrect if OutputNode handles it.
+            // Since OutputNode produces the final FragColor, we *remove* the redundant line.
             "}\n";
 
         return result;
@@ -163,8 +182,8 @@ public:
         {
             for (auto& pin : node->Inputpins)
             {
-                if(pin.isUniform)
-					result += "uniform vec4 " + pin.label + ";\n";
+                if (pin.isUniform)
+                    result += "uniform vec4 " + pin.label + ";\n";
             }
         }
         return result;
@@ -200,8 +219,14 @@ public:
         name = j["name"];
         path = j["path"];
 
+        // Delete existing nodes before loading new ones
+        for (auto node : m_Nodes)
+            delete node;
         m_Nodes.clear();
         m_Links.clear();
+        m_NextNodeID = 1;
+        m_NextLinkID = 1;
+
 
         // --- Rebuild nodes ---
         for (const auto& nodeData : j["nodes"])
@@ -213,23 +238,30 @@ public:
                 node = new ConstantNode(nodeData["id"]);
             else if (type == "AddNode")
                 node = new AdderNode(nodeData["id"]);
+            else if (type == "TextureSampleNode") // ADDED
+                node = new TextureSampleNode(nodeData["id"]);
+            else if (type == "OutputNode") // ADDED
+                node = new OutputNode(nodeData["id"]);
             // Add other node types here
 
             if (node)
             {
                 node->Deserialize(nodeData);
                 m_Nodes.push_back(node);
+                m_NextNodeID = std::max(m_NextNodeID, node->id + 1);
             }
         }
 
         // --- Rebuild links ---
         for (const auto& linkData : j["links"])
         {
-            m_Links.push_back({
+            Link newLink = {
                 linkData["id"],
                 linkData["start"],
                 linkData["end"]
-                });
+            };
+            m_Links.push_back(newLink);
+            m_NextLinkID = std::max(m_NextLinkID, newLink.id + 1);
         }
     }
 
@@ -237,7 +269,7 @@ public:
     {
         // Capture latest positions before saving
         for (auto* node : m_Nodes)
-            node->position = ImNodes::GetNodeEditorSpacePos(node->id);
+            ImNodes::SetNodeEditorSpacePos(node->id, node->position); // Use the current position
 
         json j = Serialize();
         std::ofstream file(filepath);
@@ -249,27 +281,39 @@ public:
 
     bool LoadFromFile(const std::string& filepath)
     {
+        path = filepath; // Set the path before deserializing
         std::ifstream file(filepath);
         if (!file.is_open()) return false;
         json j;
-        file >> j;
-        Deserialize(j);
-
-        return true;
+        try {
+            file >> j;
+            Deserialize(j);
+            return true;
+        }
+        catch (const nlohmann::json::exception& e) {
+            std::cerr << "JSON deserialization error: " << e.what() << std::endl;
+            return false;
+        }
     }
 
 
     // --- Getters ---
+    // The const version returns a const reference, but we need to return a non-const 
+    // reference to allow the MaterialGraphPanel to 'swap' the contents out safely in LoadMaterial.
+    std::vector<BaseNode*>& GetNodes() { return m_Nodes; }
     const std::vector<BaseNode*>& GetNodes() const { return m_Nodes; }
+
+    std::vector<Link>& GetLinks() { return m_Links; }
     const std::vector<Link>& GetLinks() const { return m_Links; }
-	const std::string& GetFilePath() const { return path; }
+
+    const std::string& GetFilePath() const { return path; }
 
 private:
     int id;
     std::string name;
     std::string path;
 
-    std::vector<BaseNode*> m_Nodes;
+    std::vector<BaseNode*> m_Nodes; // Owned memory: raw pointers are deleted in dtor/SetNodes
     std::vector<Link> m_Links;
     int m_NextNodeID = 1;
     int m_NextLinkID = 1;

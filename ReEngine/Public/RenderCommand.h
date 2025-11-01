@@ -1,7 +1,7 @@
 #pragma once
 
+#include "ReICommand.h"
 #include "Transform.h"
-
 #include "ReTypes.h"
 #include <cstdint>
 
@@ -12,25 +12,9 @@ struct RenderPrimitive {
     uint32_t material_id;
 };
 
-class RenderCommand
+
+struct RenderCommand : public Command
 {
-private:
-    
-    uint32_t CommandId;
-	RenderPrimitive Primitive;
-
-
-public:
-    
-    RenderCommand(uint32_t Id, RenderPrimitive primitive)
-    {
-        CommandId = Id;
-        Primitive = primitive;
-    }
-
-	uint32_t GetCommandId() const { return CommandId; }
-    
-	RenderPrimitive GetRenderPrimitive() const { return Primitive; }
-
+    RenderPrimitive Primitive;
 };
 

@@ -42,6 +42,12 @@ struct Pin
         else if constexpr (std::is_same_v<T, glm::vec4>)
             data_type = Color;
     }
+
+    Pin(int _id, const std::string& _label, ImNodesPinShape _shape, Type _type,
+        DataType _dtype = Float, bool _isUniform = false)
+        : id(_id), label(_label), shape(_shape), isUniform(_isUniform),
+        type(_type), data_type(_dtype) {
+    }
 };
 
 struct Link
@@ -432,8 +438,14 @@ struct OutputNode : public BaseNode
         // are used here to get the variable name that is connected to them.
 
         // Note: WorldPosition is unused in this simplified model, so we skip index 0.
+        // BaseColor: Assume connected variable is a float/vec3/vec4. Use .rgb to be safe.
+        // BaseColor is input pin index 1.
         auto baseColorVar = GetConnectedVariableName(Inputpins[1], links, nodes);
+
+        // Emissive is input pin index 2.
         auto emissiveVar = GetConnectedVariableName(Inputpins[2], links, nodes);
+
+        // Opacity is input pin index 3.
         auto opacityVar = GetConnectedVariableName(Inputpins[3], links, nodes);
 
         std::string code = "";
@@ -442,24 +454,21 @@ struct OutputNode : public BaseNode
         // This is where you need to be type-aware. Since we don't have a GLSL type system here, 
         // we make assumptions for this example:
 
-        // BaseColor: Assume connected variable is a float/vec3/vec4. Use .rgb to be safe.
+        // Use a temporary variable to hold the output, assuming it's a variable or a constant
         code += "    vec3 base = " + baseColorVar + ".rgb;\n";
 
         // Emissive: Assume connected variable is a float/vec3/vec4. Use .rgb.
         code += "    vec3 emissive = " + emissiveVar + ".rgb;\n";
 
-        // Opacity: Assume connected variable is a float.
-        // If the variable is a vec4 (e.g. from TextureSample), GetConnectedVariableName will return
-        // the variable name, and you need to append .a, .r, or .g etc. here.
-        // For *this* example, let's assume `GetConnectedVariableName` returns a component
-        // (float) if connected to a float-producing pin, and we manually clamp it:
+        // Opacity: Assume connected variable is a float or a component of a vecX.
         code += "    float opacity = clamp(" + opacityVar + ", 0.0, 1.0);\n";
 
 
         // Final composition
         code += "    vec3 finalColor = base + emissive;\n";
         code += "    finalColor = max(finalColor, 0.0);\n";
-        code += "    FragColor = vec4(finalColor, opacity);\n";
+        // Final line to assign to the main output variable, FragColor
+        code += "    FragColor = vec4(finalColor, opacity);\n"; // FIX: This line now correctly assigns to FragColor
 
         return code;
     }

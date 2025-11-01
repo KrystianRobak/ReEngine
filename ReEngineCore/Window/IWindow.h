@@ -3,6 +3,7 @@
 
 #include "ILayerManager.h"
 #include "UIComponent.h"
+#include "IViewport.h"
 #include <memory>
 
 class Event;
@@ -36,6 +37,8 @@ public:
     int width;
     int height;
     std::string title;
+
+    std::vector<std::unique_ptr<IViewport>> viewports;
 
     std::unique_ptr<ILayerManager> LayerManager_;
 
