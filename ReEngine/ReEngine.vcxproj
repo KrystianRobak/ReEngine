@@ -162,7 +162,6 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ApplicationAPI.cpp" />
     <ClCompile Include="Private\AssetManager.cpp" />
-    <ClCompile Include="Private\Commander.cpp" />
     <ClCompile Include="Private\EpochManager.cpp" />
     <ClCompile Include="Private\SceneManager.cpp" />
     <ClCompile Include="Private\ThreadPool.cpp" />
@@ -195,7 +194,6 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="ApplicationAPI.h" />
     <ClInclude Include="Public\AssetManager.h" />
-    <ClInclude Include="Public\Commander.h" />
     <ClInclude Include="Public\Engine\Components\StaticMesh.h" />
     <ClInclude Include="Public\EpochManager.h" />
     <ClInclude Include="Public\ReEngineExport.h" />

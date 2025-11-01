@@ -176,35 +176,54 @@ void Application::Render()
 	window = Renderer_->GetWindow();
 
 	window->Init(1920, 1080, "Okno zycia", GetCoordinatorEditor());
-	
-	Renderer_->InitApi(GetCoordinatorEditor() ,coordinator->GetAssetManager());
-	Renderer_->InitRenderContext(glfwGetCurrentContext());
 
+	// SET THE CAMERA FOR THE MAIN VIEWPORT
+	// We assume the scene and default camera are created before this
+	// You might need to move this to after the scene is loaded
+	if (coordinator->GetCurrentScene())
+	{
+		window->SetCamera(coordinator->GetCurrentScene()->GetDefaultCamera());
+	}
+
+	Renderer_->InitApi(GetCoordinatorEditor(), coordinator->GetAssetManager());
+	Renderer_->InitRenderContext(glfwGetCurrentContext());
 
 	while (true)
 	{
 		GameUpdateThreadSemaphore.acquire();
-
 		auto start = clock::now();
 
-		window->PreRender();
-	
-		Renderer_->Update(dt);
+		window->Render(Renderer_);
 
+		// 3. Render all SUB-viewports (e.g., editor panels)
+		//    These will render to their own FBOs
+		for (auto& viewport : window->viewports)
+		{
+			if (viewport && viewport->GetCamera() && viewport->GetCommander())
+			{
+				// This will call:
+				//  - viewport->PreRender() (binds FBO)
+				//  - Renderer_->RenderViewport(...) (draws to FBO)
+				//  - viewport->PostRender() (unbinds FBO)
+				viewport->Render(Renderer_);
+			}
+		}
+
+		// 4. Render the UI
+		//    (This should render ImGui, which can now use textures from sub-viewports)
 		window->Render();
 
+		// 5. End the main window frame
+		//    (This should swap buffers and end the ImGui frame)
 		window->PostRender();
 
 		auto end = clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
 		LOGF_INFO("Render tick took %lld milliseconds", duration);
-		
-		coordinator->GetEpochManager()->IncrementRenderEpoch();
 
+		coordinator->GetEpochManager()->IncrementRenderEpoch();
 		RenderUpdateThreadSemaphore.release();
 	}
-		
 }
 
 void Application::PhysicsTick()

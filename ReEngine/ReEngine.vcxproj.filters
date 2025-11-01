@@ -180,9 +180,6 @@
     <ClCompile Include="Private\AssetManager.cpp">
       <Filter>Source Files\Private</Filter>
     </ClCompile>
-    <ClCompile Include="Private\Commander.cpp">
-      <Filter>Source Files\Private</Filter>
-    </ClCompile>
     <ClCompile Include="Private\ThreadPool.cpp">
       <Filter>Source Files\Private</Filter>
     </ClCompile>
@@ -312,9 +309,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Public\AssetManager.h">
-      <Filter>Source Files\Public</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Commander.h">
       <Filter>Source Files\Public</Filter>
     </ClInclude>
     <ClInclude Include="Public\RenderCommand.h">

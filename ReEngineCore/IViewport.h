@@ -1,23 +1,27 @@
 #pragma once
 
-#include "Window/FrameBuffer.h""
+#include "Window/FrameBuffer.h"
 #include "RenderSystem.h"
+#include "Commander.h" // <-- ADDED include for std::unique_ptr<Commander>
 #include <memory>
 
-class Commander;
-class ReCamera;
+struct Camera;
 
 class IViewport
 {
 public:
-	IViewport(int width, int height) = delete;
+    virtual ~IViewport() = default; // Added virtual destructor for base class
 
-    void SetCamera(ReCamera* cam) { camera = cam; }
+    // IViewport(int width, int height) = delete; // <-- REMOVED deleted constructor
+
+    void SetCamera(Camera* cam) { camera = cam; }
     int32_t GetTexture() const { return framebuffer->get_texture(); }
+    Commander* GetCommander() const { return commander.get(); }
 
-	Commander* GetCommander() const { return commander; }
+    int GetWidth() const { return width; }
+    int GetHeight() const { return height; }
 
-    virtual void PreRender() 
+    virtual void PreRender()
     {
         framebuffer->bind();
     }
@@ -25,20 +29,32 @@ public:
     void Render(RenderSystem* renderer)
     {
         PreRender();
-
-        renderer->RenderViewport(camera, commander);
-
+        renderer->RenderViewport(camera, commander.get());
         PostRender();
     }
 
     virtual void PostRender()
     {
-		framebuffer->unbind();
+        framebuffer->unbind();
     }
 
-private:
-    int width, height;
+    // Added virtual Init for derived classes to call
+    virtual void Init(int w, int h)
+    {
+        this->width = w;
+        this->height = h;
+        framebuffer = std::make_unique<FrameBuffer>(width, height);
+        commander = std::make_unique<Commander>();
+        commander->Init(1024); // Assuming a default queue size
+    }
+
+protected:
+    IViewport() = default; // <-- ADDED protected default constructor
+
+    // Members moved to protected
+    int width = 0;
+    int height = 0;
     std::unique_ptr<FrameBuffer> framebuffer;
-    ReCamera* camera = nullptr;
-	Commander* commander = nullptr;
+    Camera* camera = nullptr;
+    std::unique_ptr<Commander> commander; // <-- CHANGED to unique_ptr
 };
