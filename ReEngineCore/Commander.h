@@ -1,11 +1,12 @@
 #pragma once
 
+#include "CoreExport.h"
 #include "RenderCommand.h"
 #include <vector>
 #include <memory>
 
 
-class Commander
+class CORE_API Commander
 {
 private:
 

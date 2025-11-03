@@ -39,11 +39,11 @@ public:
     }
 
     // Added virtual Init for derived classes to call
-    virtual void Init(int w, int h)
+    virtual void Init(int w, int h, RenderSystem* renderer)
     {
         this->width = w;
         this->height = h;
-        framebuffer = std::make_unique<FrameBuffer>(width, height);
+        framebuffer = renderer->CreateFramebuffer(width, height);
         commander = std::make_unique<Commander>();
         commander->Init(1024); // Assuming a default queue size
     }
@@ -54,7 +54,7 @@ protected:
     // Members moved to protected
     int width = 0;
     int height = 0;
-    std::unique_ptr<FrameBuffer> framebuffer;
+    FrameBuffer* framebuffer = nullptr;
     Camera* camera = nullptr;
     std::unique_ptr<Commander> commander; // <-- CHANGED to unique_ptr
 };

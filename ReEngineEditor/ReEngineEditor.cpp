@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 	Application->InitSystems();
 
     engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED, [Application, &builder](Event& e) {
-        ILayerManager* layerManager = Application->GetLayerManager();
+        ILayerManager* layerManager = Application->GetLayerManager("MainWindow");
 
 		builder.SetLayerManager(layerManager);
 		builder.InjectLayerManager();

@@ -7,14 +7,15 @@
 #include <memory>
 #include <vector> // <-- ADDED for std::vector
 
+
 class Event;
 
 // Editor::IEngineEditorApi is not defined, forward-declaring
 namespace Editor { class IEngineEditorApi; }
 // MenuType is not defined, assuming enum
-enum class MenuType { BaseMenu };
+//enum MenuType { BaseMenu, Animation, Free };
 
-class IWindow : public IViewport // <-- ADDED inheritance
+class IWindow : protected IViewport // <-- ADDED inheritance
 {
 public:
     // Add protected constructor to chain to IViewport's constructor
@@ -34,7 +35,7 @@ public:
 
     // Overriding base class methods
     virtual void PreRender() override = 0;
-    virtual void Render() = 0; // This is the window's main render loop
+    virtual void Render(RenderSystem* renderer) = 0; // This is the window's main render loop
     virtual void PostRender() override = 0;
 
     virtual void on_mode_Changed(Event& event) = 0;

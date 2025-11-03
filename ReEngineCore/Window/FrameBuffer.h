@@ -5,8 +5,8 @@
 class FrameBuffer
 {
 public:
-    FrameBuffer() : mFBO{ 0 }, mDepthId{ 0 }
-    {}
+
+    FrameBuffer() = default;
 
     virtual void create_buffers(int32_t width, int32_t height) = 0;
 

@@ -3,6 +3,11 @@
 
 struct Command 
 {
-	uint32_t CommandId;
+	Command(int id) 
+	{
+		commandId = id;
+	}
+
+	int commandId;
 
 };

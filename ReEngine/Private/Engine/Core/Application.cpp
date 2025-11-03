@@ -115,8 +115,11 @@ void Application::Update()
 				auto RenderSystem = coordinator->GetSystem(system->fullName);
 				for (Entity entity : RenderSystem->GetEntities())
 				{
-					if(coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
-						Commander_.IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 3, 5 }));
+					if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
+					{
+						RenderCommand command___ = RenderCommand(i , entity, *(mTransform*)coordinator->GetComponent(entity, "Transform"), 3, 5 );
+						Commander_.IssueCommand(command___);
+					}
 				}
 			}
 			else if (std::strcmp(system->fullName, "Physics3D") == 0)
@@ -173,16 +176,16 @@ void Application::Render()
 {
 	using clock = std::chrono::steady_clock;
 
-	window = Renderer_->GetWindow();
+	mWindows["MainWindow"] = Renderer_->GetWindow();
 
-	window->Init(1920, 1080, "Okno zycia", GetCoordinatorEditor());
+	mWindows["MainWindow"]->Init(1920, 1080, "Okno zycia", GetCoordinatorEditor());
 
 	// SET THE CAMERA FOR THE MAIN VIEWPORT
 	// We assume the scene and default camera are created before this
 	// You might need to move this to after the scene is loaded
 	if (coordinator->GetCurrentScene())
 	{
-		window->SetCamera(coordinator->GetCurrentScene()->GetDefaultCamera());
+		mWindows["MainWindow"]->SetCamera(coordinator->GetCurrentScene()->GetDefaultCamera());
 	}
 
 	Renderer_->InitApi(GetCoordinatorEditor(), coordinator->GetAssetManager());
@@ -193,29 +196,14 @@ void Application::Render()
 		GameUpdateThreadSemaphore.acquire();
 		auto start = clock::now();
 
-		window->Render(Renderer_);
+		mWindows["MainWindow"]->Render(Renderer_);
 
 		// 3. Render all SUB-viewports (e.g., editor panels)
 		//    These will render to their own FBOs
-		for (auto& viewport : window->viewports)
+		for (auto& viewport : mWindows["MainWindow"]->viewports)
 		{
-			if (viewport && viewport->GetCamera() && viewport->GetCommander())
-			{
-				// This will call:
-				//  - viewport->PreRender() (binds FBO)
-				//  - Renderer_->RenderViewport(...) (draws to FBO)
-				//  - viewport->PostRender() (unbinds FBO)
-				viewport->Render(Renderer_);
-			}
+			viewport->Render(Renderer_);
 		}
-
-		// 4. Render the UI
-		//    (This should render ImGui, which can now use textures from sub-viewports)
-		window->Render();
-
-		// 5. End the main window frame
-		//    (This should swap buffers and end the ImGui frame)
-		window->PostRender();
 
 		auto end = clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();

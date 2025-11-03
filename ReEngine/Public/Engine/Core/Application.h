@@ -33,9 +33,9 @@ public:
 	void Render() override;
 	void PhysicsTick();
 
-	ILayerManager* GetLayerManager() override
+	ILayerManager* GetLayerManager(std::string key) override
 	{
-		return window->GetLayerManager();
+		return mWindows[key]->GetLayerManager();
 	}
 
 	void SetPostUpdateUI(FunctionDelegate fun) override;
@@ -77,7 +77,7 @@ private:
 	RenderSystem* Renderer_;
 	System* PhysicsSystem_;
 
-	IWindow* window;
+	std::map<std::string, IWindow*> mWindows;
 
 	Commander Commander_;
 

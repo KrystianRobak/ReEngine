@@ -21,7 +21,7 @@ public:
     virtual void InitSystems() = 0;
     virtual void StartGameThreads() = 0;
 	virtual void StartEditorThreads() = 0;
-	virtual ILayerManager* GetLayerManager() = 0;
+	virtual ILayerManager* GetLayerManager(std::string key) = 0;
     virtual Editor::IEngineEditorApi* GetCoordinatorEditor() = 0;
     virtual void SetUpdateUI(FunctionDelegate function) = 0;
     virtual void SetPostUpdateUI(FunctionDelegate function) = 0;

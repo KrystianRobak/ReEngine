@@ -164,6 +164,7 @@
     <ClInclude Include="MaterialSystem\Material.h" />
     <ClInclude Include="ProjectBuilder.h" />
     <ClInclude Include="ReICommand.h" />
+    <ClInclude Include="RenderCommand.h" />
     <ClInclude Include="RenderInterface.h" />
     <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="Shader.h" />

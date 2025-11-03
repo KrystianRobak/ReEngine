@@ -311,9 +311,6 @@
     <ClInclude Include="Public\AssetManager.h">
       <Filter>Source Files\Public</Filter>
     </ClInclude>
-    <ClInclude Include="Public\RenderCommand.h">
-      <Filter>Source Files\Public</Filter>
-    </ClInclude>
     <ClInclude Include="Public\ThreadPool.h">
       <Filter>Source Files\Public</Filter>
     </ClInclude>

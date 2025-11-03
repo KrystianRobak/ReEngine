@@ -197,7 +197,6 @@
     <ClInclude Include="Public\Engine\Components\StaticMesh.h" />
     <ClInclude Include="Public\EpochManager.h" />
     <ClInclude Include="Public\ReEngineExport.h" />
-    <ClInclude Include="Public\RenderCommand.h" />
     <ClInclude Include="Public\SceneManager.h" />
     <ClInclude Include="Public\ThreadPool.h" />
     <ClInclude Include="RawImageData.h" />
