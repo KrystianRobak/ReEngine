@@ -12,9 +12,6 @@
 
 #include "ProjectBuilder.h"
 
-#include "CoordinatorWrapper.h"
-#include "ApplicationWrapper.h"
-
 #include <thread>
 #include "EditorLayer.h"
 #include <sstream>
@@ -46,17 +43,6 @@ int main(int argc, char** argv)
     LOGF_INFO("Engine loaded successfully");
 
     IApplicationApi* Application = static_cast<IApplicationApi*>(createFunc());
-
-    CoordinatorWrapper coordinatorWrap;
-    ApplicationWrapper applicationWrap;
-
-    coordinatorWrap.LoadFunctions(engineDLL);
-    applicationWrap.LoadFunctions(engineDLL);
-
-    if (!applicationWrap.IsProperlyLoaded() && !coordinatorWrap.IsProperlyLoaded()) {
-        FreeLibrary(engineDLL);
-        return -1;
-    }
 
     Application->Init();
 

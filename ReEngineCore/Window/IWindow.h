@@ -3,14 +3,20 @@
 
 #include "ILayerManager.h"
 #include "UIComponent.h"
-#include "IViewport.h"
 #include <memory>
+#include <map>
 
 class Event;
+class IViewport;
 
 class IWindow
 {
 public:
+
+    void AddViewport(const std::string& name, IViewport* viewport)
+    {
+        viewports[name] = viewport;
+	}
 
     virtual void* get_native_window() = 0;
 
@@ -22,7 +28,7 @@ public:
 
 	ILayerManager* GetLayerManager() { return LayerManager_.get(); }
 
-    virtual bool Init(int width, int height, const std::string& title, Editor::IEngineEditorApi* EngineApi) = 0;
+    virtual bool Init(int width, int height, const std::string& title, Editor::IEngineEditorApi* EngineApi, IApplicationApi* ApplicationApi) = 0;
 
     virtual void PreRender() = 0;
 
@@ -34,15 +40,18 @@ public:
 
     virtual bool is_running() { return true; }
 
+public:
+
     int width;
     int height;
     std::string title;
 
-    std::vector<std::unique_ptr<IViewport>> viewports;
+    std::map<std::string, IViewport*> viewports;
 
     std::unique_ptr<ILayerManager> LayerManager_;
 
     MenuType CurrentMode = MenuType::BaseMenu;
 
     Editor::IEngineEditorApi* EngineApi_ = nullptr;
+    IApplicationApi* ApplicationApi_ = nullptr;
 };

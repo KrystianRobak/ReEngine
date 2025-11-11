@@ -1,18 +1,17 @@
 #pragma once
 
-#include "Window/FrameBuffer.h""
+#include "Window/FrameBuffer.h"
 #include "RenderSystem.h"
 #include <memory>
 
 class Commander;
-class ReCamera;
+class Camera;
 
 class IViewport
 {
 public:
-	IViewport(int width, int height) = delete;
 
-    void SetCamera(ReCamera* cam) { camera = cam; }
+    void SetCamera(Camera* cam) { camera = cam; }
     int32_t GetTexture() const { return framebuffer->get_texture(); }
 
 	Commander* GetCommander() const { return commander; }
@@ -36,9 +35,10 @@ public:
 		framebuffer->unbind();
     }
 
-private:
+protected:
+    std::string name;
     int width, height;
     std::unique_ptr<FrameBuffer> framebuffer;
-    ReCamera* camera = nullptr;
+    Camera* camera = nullptr;
 	Commander* commander = nullptr;
 };

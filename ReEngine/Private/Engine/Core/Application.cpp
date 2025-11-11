@@ -52,11 +52,15 @@ void Application::MeasureTime()
 void Application::Init() 
 {
 	coordinator = Coordinator::GetCoordinator();
+
+	GameThread = std::make_unique<std::thread>();
+	RenderThread = std::make_unique<std::thread>();
+	PhysicsThread = std::make_unique<std::thread>();
+
+
+
 	threadPool.Init();
 	coordinator->Init(&threadPool);
-
-	Commander_.Init(32);
-	
 }
 
 void Application::StartGameThreads()
@@ -90,15 +94,26 @@ void Application::StartEditorThreads()
 void Application::InitSystems()
 {
 	Renderer_ = reinterpret_cast<RenderSystem*>(coordinator->GetSystem("RenderOpenGL"));
-	Renderer_->InjectCommander(std::make_shared<Commander>(Commander_));
 	PhysicsSystem_ = coordinator->GetSystem("Physics3D");
-	//PhysicsSystem_->InjectCommander(Commander_);
+}
+
+IViewport* Application::CreateNewViewport(std::string name)
+{
+	IViewport* mainViewport = Renderer_->CreateViewport();
+
+	window->AddViewport(name, mainViewport);
+
+	return mainViewport;
 }
 
 void Application::Update()
 {
 	using clock = std::chrono::steady_clock;
 
+	{
+		std::unique_lock<std::mutex> lock(initMutex);
+		initCondition.wait(lock, [&]() { return renderInitialized; });
+	}
 
 	int i = 0;
 	while (true)
@@ -115,8 +130,10 @@ void Application::Update()
 				auto RenderSystem = coordinator->GetSystem(system->fullName);
 				for (Entity entity : RenderSystem->GetEntities())
 				{
-					if(coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
-						Commander_.IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 3, 5 }));
+					if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
+					{
+						window->viewports["SceneViewport"]->GetCommander()->IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 1, 5 }));
+					}
 				}
 			}
 			else if (std::strcmp(system->fullName, "Physics3D") == 0)
@@ -175,10 +192,21 @@ void Application::Render()
 
 	window = Renderer_->GetWindow();
 
-	window->Init(1920, 1080, "Okno zycia", GetCoordinatorEditor());
+	window->Init(1920, 1080, "Okno zycia", GetCoordinatorEditor(), this);
 	
 	Renderer_->InitApi(GetCoordinatorEditor() ,coordinator->GetAssetManager());
-	Renderer_->InitRenderContext(glfwGetCurrentContext());
+	Renderer_->InitRenderContext(window);
+
+	coordinator->SendEvent(Events::Engine::LayerManager::INITIALIZED);
+
+	{
+		std::lock_guard<std::mutex> lock(initMutex);
+		renderInitialized = true;
+	}
+	initCondition.notify_all();
+
+	const std::chrono::milliseconds fixedDelta(200);
+	std::this_thread::sleep_for(fixedDelta); // Give some time for other threads to initialize
 
 
 	while (true)
@@ -188,8 +216,11 @@ void Application::Render()
 		auto start = clock::now();
 
 		window->PreRender();
-	
-		Renderer_->Update(dt);
+
+		for(auto& [name, viewport] : window->viewports)
+		{
+			viewport->Render(Renderer_);
+		}
 
 		window->Render();
 

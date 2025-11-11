@@ -44,10 +44,14 @@ public:
 
 	std::vector<RenderCommand> ConsumeRenderCommands()
 	{
-		CommandQueueRead.swap(this->CommandQueueWrite);
-		CommandQueueRead->clear();
+		// Swap so Write becomes Read
+		CommandQueueRead.swap(CommandQueueWrite);
 
-		return *CommandQueueWrite;
+		// Clear the new Write queue (previously Read)
+		CommandQueueWrite->clear();
+
+		// Return the commands that were issued since last call
+		return *CommandQueueRead;
 	}
 };
 

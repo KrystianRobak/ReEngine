@@ -101,9 +101,6 @@
     <ClInclude Include="Shader.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
-    <ClInclude Include="IApplicationApi.h">
-      <Filter>Pliki nagłówkowe</Filter>
-    </ClInclude>
     <ClInclude Include="UIComponent.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
@@ -148,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="ReICommand.h">
       <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="Api\IApplicationApi.h">
+      <Filter>Pliki nagłówkowe\Api</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

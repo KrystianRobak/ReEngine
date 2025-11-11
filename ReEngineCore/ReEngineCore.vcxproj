@@ -150,10 +150,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Api\EngineApi\CoordinatorEditorApi.h" />
+    <ClInclude Include="Api\IApplicationApi.h" />
     <ClInclude Include="Api\SystemApi\CoordinatorSystemApi.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="Graph\Node.h" />
-    <ClInclude Include="IApplicationApi.h" />
     <ClInclude Include="BaseApi.h" />
     <ClInclude Include="CoreExport.h" />
     <ClInclude Include="ILayer.h" />

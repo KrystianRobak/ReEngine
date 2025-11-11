@@ -29,7 +29,7 @@ void EditorLayer::OnInit()
 {
     EngineApi_->AddEventListener(Events::Editor::MaterialSystem::OPEN_MATERIAL_FILE, [&](Event& event) {
         std::unique_ptr MatherialGraph = std::make_unique<MaterialGraphPanel>();
-        MatherialGraph->Init(EngineApi_);
+        MatherialGraph->Init(EngineApi_, EngineApp_);
 
 		std::string path = event.GetParam<std::string>("PATH");
 

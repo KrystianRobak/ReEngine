@@ -6,9 +6,10 @@
 class ILayer
 {
 public:
-	void InitEngineApi(Editor::IEngineEditorApi* engineAPI)
+	void InitEngineApi(Editor::IEngineEditorApi* engineAPI, IApplicationApi* EngineApp)
 	{
 		this->EngineApi_ = engineAPI;
+		this->EngineApp_ = EngineApp;
 		OnInit();
 	}
 
@@ -26,7 +27,7 @@ public:
 	{
 		for (auto& component : uiComponents)
 		{
-			component->Init(EngineApi_);
+			component->Init(EngineApi_, EngineApp_);
 		}
 	}
 
@@ -39,8 +40,25 @@ public:
 	{
 		for (auto& component : uiComponents)
 		{
-			component->Render();
+			if (!component->IsClosed())
+				component->Render();
 		}
+
+		// Remove closed components safely
+		uiComponents.erase(
+			std::remove_if(uiComponents.begin(), uiComponents.end(),
+				[](const std::unique_ptr<UIComponent>& comp)
+				{
+					return comp->pendingRemove;
+				}),
+			uiComponents.end()
+		);
+	}
+
+	void AddUIComponent(std::unique_ptr<UIComponent> cmp)
+	{
+		cmp->SetLayer(this);
+		uiComponents.push_back(std::move(cmp));
 	}
 
 	virtual void OnEvent(class Event& event) = 0;
@@ -53,4 +71,5 @@ public:
 
 	std::vector<std::unique_ptr<UIComponent>> uiComponents;
 	Editor::IEngineEditorApi* EngineApi_ = nullptr;
+	IApplicationApi* EngineApp_ = nullptr;
 };

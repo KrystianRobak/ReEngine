@@ -4,6 +4,7 @@
 
 #include "Engine/Core/Coordinator/Coordinator.h"
 #include "Window/IWindow.h"
+#include "IViewport.h"
 
 #include "AssetManager.h"
 
@@ -28,6 +29,8 @@ public:
 	void StartGameThreads() override;
 	void StartEditorThreads() override;
 	void InitSystems() override;
+
+	IViewport* CreateNewViewport(std::string name) override;
 
 	void Update() override;
 	void Render() override;
@@ -68,6 +71,9 @@ private:
 	float dt = 0.0f;
 	bool running = true;
 
+	std::mutex initMutex;
+	std::condition_variable initCondition;
+	bool renderInitialized = false;
 
 	std::unique_ptr<std::thread> GameThread;
 	std::unique_ptr<std::thread> RenderThread;

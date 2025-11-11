@@ -1,22 +1,21 @@
 #pragma once
 
-#include "Window/IWindow.h"
 #include "System/System.h"
 
-class ReCamera;
+class Camera;
 class Commander;
+class IWindow;
+class IViewport;
 
 class RenderSystem : public System
 {
-
-
 public:
-	virtual void InitRenderContext(GLFWwindow* window) = 0;
+	virtual void InitRenderContext(IWindow* window) = 0;
 
 	virtual IWindow* GetWindow() = 0;
 
-	virtual void RenderViewport(ReCamera* camera, Commander* commander) = 0;
+	virtual IViewport* CreateViewport() = 0;
 
-public:
-	GLFWwindow* renderContext = nullptr;
+	virtual void RenderViewport(Camera* camera, Commander* commander) = 0;
+
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Api/EngineApi/CoordinatorEditorApi.h"
+#include "Api/IApplicationApi.h"
 #include "ILayer.h"
 #include "ReTypes.h"
 #include "Logger.h"
@@ -15,9 +16,10 @@
 class ILayerManager
 {
 public:
-    void Init(Editor::IEngineEditorApi* engineAPI, ImGuiContext* imguiContext)
+    void Init(Editor::IEngineEditorApi* engineAPI, IApplicationApi* EngineApp, ImGuiContext* imguiContext)
     {
         EngineApi_ = engineAPI;
+		EngineApp_ = EngineApp;
 		context = imguiContext;
 
 		ImGui::SetCurrentContext(context);
@@ -51,7 +53,7 @@ public:
         // initialize outside lock
         newLayer = std::make_unique<LayerTemplate>();
 		newLayer->InitImGuiContext(context);
-        newLayer->InitEngineApi(EngineApi_);
+        newLayer->InitEngineApi(EngineApi_, EngineApp_);
         newLayer->OnAttach();
 
         {
@@ -106,6 +108,7 @@ public:
 private:
     std::vector<std::unique_ptr<ILayer>> LayerStack_;
     Editor::IEngineEditorApi* EngineApi_ = nullptr;
+	IApplicationApi* EngineApp_ = nullptr;
 
     std::vector<std::function<void()>> pendingOps;
     std::mutex pendingMutex;

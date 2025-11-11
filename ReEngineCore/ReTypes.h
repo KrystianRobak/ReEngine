@@ -22,6 +22,8 @@ using Signature = std::bitset<MAX_COMPONENTS>;
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+constexpr const char* MAIN_WINDOW_NAME = "ReEngineEditor";
+
 
 // Input
 enum class InputButtons {

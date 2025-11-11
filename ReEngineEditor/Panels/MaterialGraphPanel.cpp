@@ -8,6 +8,7 @@
 
 void MaterialGraphPanel::OnInit()
 {
+    viewport = engineApp->CreateNewViewport("MaterialGraphViewport");
     // Initialize ImNodes context
     ImNodes::CreateContext();
 }
@@ -28,6 +29,12 @@ void MaterialGraphPanel::Render()
 
     ImGui::Begin("Material Graph", nullptr, ImGuiWindowFlags_MenuBar);
 
+    if (!RenderWindowTopBar())
+    {
+        ImGui::End();
+        return;
+    }
+
     // Menu bar
     if (ImGui::BeginMenuBar())
     {
@@ -43,7 +50,7 @@ void MaterialGraphPanel::Render()
                 currentlySelectedMaterial->SaveToFile(currentlySelectedMaterial->GetFilePath());
                 CompiledMaterial mat = currentlySelectedMaterial->Compile(); // Compile saves the result inside the Material object
 
-                m_CompiledMaterial = mat;
+                m_CompiledMaterial = &mat;
 
                 ImGui::Text("Compiled and Applied!");
             }

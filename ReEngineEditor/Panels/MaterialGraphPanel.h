@@ -3,19 +3,15 @@
 #include "UIComponent.h"
 #include "imgui/imnodes.h"
 #include "Graph/Node.h"
+#include "IViewport.h"
 #include <MaterialSystem/Material.h>
 
 class MaterialGraphPanel : public UIComponent
 {
 public:
+	MaterialGraphPanel() = default;
+
     virtual void OnInit() override;
-    // Don't need a virtual destructor here since it's an inherited class,
-    // but the nodes/links are owned by the currentlySelectedMaterial when loaded.
-    // If the panel owns the nodes while a material is NOT loaded, a destructor is needed.
-    // However, since it only holds them while editing, and the Material class is responsible 
-    // for cleanup in Save/Load, we must manually delete any nodes *not* owned by the Material
-    // or ensure we correctly transfer ownership/deletion responsibility.
-    // The current setup is slightly risky, but we'll manage it through LoadMaterial/SetNodes.
 
     virtual void Render() override;
 
@@ -27,8 +23,10 @@ private:
     int m_NextNodeID = 1;
     int m_NextLinkID = 1;
 
+    IViewport* viewport = nullptr;
+
     std::shared_ptr<Material> currentlySelectedMaterial;
-	CompiledMaterial m_CompiledMaterial;
+	CompiledMaterial* m_CompiledMaterial;
 
     // Helper to generate unique pin IDs based on Node ID and a local pin index
     int GetPinID(int node_id, int pin_index) const { return node_id * 1000 + pin_index; }

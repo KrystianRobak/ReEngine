@@ -15,6 +15,12 @@ struct RenderPrimitive {
 
 struct RenderCommand : public Command
 {
+    RenderCommand(uint32_t id, const RenderPrimitive& primitive)
+    {
+        commandId = id;
+        Primitive = primitive;
+	}
+
     RenderPrimitive Primitive;
 };
 

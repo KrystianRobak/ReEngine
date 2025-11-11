@@ -2,6 +2,7 @@
 
 #include "UIComponent.h"
 #include "Event.h"
+#include "IViewport.h"
 
 #include <filesystem>
 #include <string>
@@ -16,28 +17,22 @@ public:
 
     virtual void OnInit() override
     {
-        engineAPI->AddEventListener(Events::Engine::Renderer::RENDER_FINISHED, [&](Event& event)
-            {
-                this->SetTextureID(event.GetParam<uint64_t>("TextureId"));
-            });
+		viewport = engineApp->CreateNewViewport("SceneViewport");
+
 
         RotateIcon = LoadTexture("pngs/rotate.jpg");
 		TranslateIcon = LoadTexture("pngs/translate.jpg");
 		ScaleIcon = LoadTexture("pngs/scale.jpg");
 	}
 
-    virtual void SetTextureID(uint64_t id)
-    {
-        this->textureID = id;
-    }
-
     void resize(int32_t width, int32_t height);
 
     void Render() override;
 
 private:
-    uint64_t textureID;
     glm::vec2 size;
+
+	IViewport* viewport = nullptr;
 
 	ImTextureID TranslateIcon;
 	ImTextureID RotateIcon;
