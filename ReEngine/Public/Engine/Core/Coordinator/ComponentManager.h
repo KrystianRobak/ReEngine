@@ -36,6 +36,11 @@ public:
         ++mNextComponentType;
     }
 
+    void* GetComponentForWrite(Entity entity, const std::string& typeName)
+    {
+        return GetComponentArray(typeName)->GetDataForWrite(entity);
+    }
+
     void SwapComponentBuffers(const std::string& typeName)
     {
         assert(mComponentTypes.find(typeName.c_str()) != mComponentTypes.end() && "Component not registered before use.");

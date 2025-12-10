@@ -149,5 +149,8 @@
     <ClInclude Include="Api\IApplicationApi.h">
       <Filter>Pliki nagłówkowe\Api</Filter>
     </ClInclude>
+    <ClInclude Include="Api\AssetManagerApi.h">
+      <Filter>Pliki nagłówkowe\Api</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

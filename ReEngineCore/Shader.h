@@ -16,6 +16,7 @@ class CORE_API Shader
 {
 public:
 	Shader(const char* vertexPath, const char* fragmentPath);
+    Shader(const char* vertexCode, const char* fragmentCode, bool IsCode);
 
     void ChangeShaderDefineStatus(uint32_t amount);
     void Use();

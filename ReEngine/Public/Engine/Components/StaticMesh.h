@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <future>
+#include <atomic>
 #include "ReTypes.h"
 
 class StaticMeshData;
@@ -30,6 +31,12 @@ struct StaticMesh
 {
     REFVARIABLE()
     std::string AssetPath;
-	int StaticMeshId = 0;
+
+    REFVARIABLE()
+    int MaterialId = -1;
+
+    uint64_t MeshResourceId = 0;
+
 	std::shared_ptr<StaticMeshData> StaticMeshHandler;
+    std::atomic<bool> NeedsUpload{ false };
 };

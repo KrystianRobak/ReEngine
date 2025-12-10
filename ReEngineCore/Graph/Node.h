@@ -7,8 +7,12 @@
 #include <string>
 #include <glm/glm.hpp>
 #include "json/json.hpp"
+#include "Api/AssetManagerApi.h"
+#include "TextureData.h"
 
 using json = nlohmann::json;
+
+
 
 struct Pin
 {
@@ -57,7 +61,28 @@ struct Link
     int end_pin_id;
 };
 
+inline const char* GLSLType(Pin::DataType type) {
+    switch (type) {
+    case Pin::Float: return "float";
+    case Pin::Vec2:  return "vec2";
+    case Pin::Vec3:  return "vec3";
+    case Pin::Color: return "vec4";
+    }
+    return "float";
+}
 
+inline std::string GetDefaultValueForInput(const Pin& pin)
+{
+    if (pin.label == "BaseColor")  return "vec3(1.0)";
+    if (pin.label == "Emissive")   return "vec3(0.0)";
+    if (pin.label == "Opacity")    return "1.0";
+    if (pin.label == "Metallic")   return "0.0";
+    if (pin.label == "Roughness")  return "1.0";
+    if (pin.label == "Normal")     return "vec3(0.0, 0.0, 1.0)";
+    if (pin.label == "WorldPosition") return "FragPos"; // Safe fallback
+
+    return "0.0"; // generic float fallback
+}
 
 struct BaseNode
 {
@@ -141,26 +166,46 @@ inline std::string GetConnectedVariableName(const Pin& inputPin,
     const std::vector<Link>& links,
     const std::vector<BaseNode*>& nodes)
 {
-    for (const auto& link : links)
+    for (auto& l : links)
     {
-        if (link.end_pin_id == inputPin.id) // Input side
+        if (l.end_pin_id == inputPin.id)
         {
-            int outputPinId = link.start_pin_id;
-
-            // Find the node that owns this pin
-            for (auto* node : nodes)
+            for (auto* n : nodes)
             {
-                for (auto& pin : node->Outputpins)
+                for (auto& op : n->Outputpins)
                 {
-                    if (pin.id == outputPinId)
-                        return pin.label; // The GLSL variable name
+                    if (op.id == l.start_pin_id)
+                        return op.label;
                 }
             }
         }
     }
 
-    // No link ? use the fallback uniform label
-    return inputPin.label;
+    // No link ? return default value for this pin
+    return GetDefaultValueForInput(inputPin);
+}
+
+inline Pin::DataType PromoteType(Pin::DataType a, Pin::DataType b)
+{
+    return (a > b) ? a : b;
+}
+
+template<typename T>
+T ZeroValue();
+
+template<> inline float ZeroValue<float>() { return 0.0f; }
+template<> inline glm::vec2 ZeroValue<glm::vec2>() { return glm::vec2(0.0f); }
+template<> inline glm::vec3 ZeroValue<glm::vec3>() { return glm::vec3(0.0f); }
+template<> inline glm::vec4 ZeroValue<glm::vec4>() { return glm::vec4(0.0f); }
+
+template<typename T>
+T GetConnectedValue(const Pin& pin,
+    const std::vector<Link>& links,
+    std::vector<BaseNode*>& nodes)
+{
+    if (Pin* p = FindLinkedPin(pin.id, links, nodes))
+        return p->Get<T>();
+    return ZeroValue<T>();
 }
 
 struct AdderNode : public BaseNode
@@ -276,10 +321,15 @@ struct TextureSampleNode : public BaseNode
     std::string texturePath;
     unsigned int textureId = 0;  // OpenGL texture handle (if loaded)
     bool textureLoaded = false;
-
+    AssetManagerApi* assetManager;
     // Simulated outputs
     glm::vec4 colorValue = glm::vec4(1.0f);
     bool showChannels = true;
+
+    void Init(AssetManagerApi* am)
+    {
+        assetManager = am;
+	}
 
     TextureSampleNode(int nodeId)
     {
@@ -312,20 +362,99 @@ struct TextureSampleNode : public BaseNode
 
     void DrawNodeContents() override
     {
-        // Section: texture asset
+        // --------------------------
+        // Texture Picker (with Thumbnail)
+        // --------------------------
         ImGui::Text("Texture:");
         ImGui::SameLine();
 
-        char buf[256];
-        strncpy_s(buf, texturePath.c_str(), sizeof(buf));
+        std::vector<std::string> cached = assetManager->GetCachedTexturesPaths();
+        const char* previewName = texturePath.empty() ? "<None>" : texturePath.c_str();
+
         ImGui::SetNextItemWidth(160);
-        if (ImGui::InputText("##TexPath", buf, sizeof(buf)))
+        if (ImGui::BeginCombo("##TexturePicker", previewName))
         {
-            texturePath = buf;
-            textureLoaded = false;
+            for (const std::string& path : cached)
+            {
+                bool selected = (texturePath == path);
+                ImGui::PushID(path.c_str());
+
+                ImGui::BeginGroup();
+
+                // Get texture resource for thumbnail
+                TextureResource* res = assetManager->GetTextureResource(path);
+
+                // Clickable whole row
+                ImGui::Selectable("##sel", selected, 0, ImVec2(0, 48));
+                ImGui::SameLine();
+
+                if (res && res->uploaded && res->id != 0)
+                {
+                    ImGui::Image((ImTextureID)(intptr_t)res->id,
+                        ImVec2(48, 48), ImVec2(0, 1), ImVec2(1, 0));
+                }
+                else
+                {
+                    ImGui::Dummy(ImVec2(48, 48));
+                }
+
+                ImGui::SameLine();
+                std::string displayName = path;
+
+                // 1. Find the last path separator (supports both / and \)
+                size_t lastSlash = path.find_last_of("/\\");
+                if (lastSlash != std::string::npos) {
+                    // Extract the filename (everything after the last slash)
+                    displayName = path.substr(lastSlash + 1);
+                }
+
+                // 2. Find the last dot in the extracted filename
+                size_t lastDot = displayName.find_last_of('.');
+                if (lastDot != std::string::npos) {
+                    // Remove the extension
+                    displayName = displayName.substr(0, lastDot);
+                }
+
+                ImGui::Text("%s", displayName.c_str());
+
+                ImGui::EndGroup();
+
+                if (ImGui::IsItemClicked())
+                {
+                    texturePath = path;
+                    textureLoaded = false;
+                }
+
+                if (selected)
+                    ImGui::SetItemDefaultFocus();
+
+                ImGui::PopID();
+            }
+
+            ImGui::EndCombo();
         }
 
-        // Texture preview like Unreal
+        // --------------------------
+        // Load + Retrieve GPU texture
+        // --------------------------
+        if (!textureLoaded && !texturePath.empty())
+        {
+            TextureResource* res = assetManager->GetTextureResource(texturePath);
+            if (res && res->uploaded)
+            {
+                textureId = res->id;
+                textureLoaded = true;
+            }
+            else
+            {
+                // Request async load
+                assetManager->loadTexture(texturePath);
+            }
+        }
+
+        // --------------------------
+        // Preview
+        // --------------------------
         ImVec2 previewSize(96, 96);
         if (textureLoaded && textureId != 0)
         {
@@ -338,22 +467,26 @@ struct TextureSampleNode : public BaseNode
             ImGui::TextDisabled("[No Texture]");
         }
 
-        // Show color output (simulated)
+        // --------------------------
+        // Color Preview (fake for now)
+        // --------------------------
         glm::vec4 c = Outputpins[0].Get<glm::vec4>();
         ImGui::Text("Preview:");
         ImGui::SameLine();
-        ImGui::ColorButton("ColorPreview", ImVec4(c.r, c.g, c.b, c.a),
-            ImGuiColorEditFlags_NoTooltip, ImVec2(30, 30));
+        ImGui::ColorButton("ColorPreview",
+            ImVec4(c.r, c.g, c.b, c.a),
+            ImGuiColorEditFlags_NoTooltip,
+            ImVec2(30, 30));
     }
 
     void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
     {
         // Unreal would sample based on UV input
         Pin* uvPin = FindLinkedPin(Inputpins[0].id, links, nodes);
-        glm::vec3 uv = uvPin ? uvPin->Get<glm::vec3>() : glm::vec3(0.0f);
+        glm::vec2 uv = uvPin ? uvPin->Get<glm::vec2>() : glm::vec2(0.0f);
 
         // For now, we simulate a "texture sample" by hashing UV + path
-        float seed = uv.x + uv.y + uv.z;
+        float seed = uv.x + uv.y;
         float hash = 0.0f;
         for (char c : texturePath)
             hash += (float)c * 0.002f;
@@ -371,14 +504,24 @@ struct TextureSampleNode : public BaseNode
         Outputpins[4].Set<float>(fakeColor.a);
     }
 
-    std::string GenerateShaderCode(const std::vector<Link>& links, const std::vector<BaseNode*>& nodes) override
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
     {
-        glm::vec4 v = std::get<glm::vec4>(Outputpins[0].value);
-        return "    vec4 " + Outputpins[0].label + " = vec4("
-            + std::to_string(v.x) + ", "
-            + std::to_string(v.y) + ", "
-            + std::to_string(v.z) + ", "
-            + std::to_string(v.w) + ");\n";
+        std::string uv = GetConnectedVariableName(Inputpins[0], links, nodes);
+
+        std::string samplerName = Outputpins[0].label + "_Tex";
+
+        std::string code;
+        code += "    vec4 " + Outputpins[0].label +
+            " = texture(" + samplerName + ", " + uv + " );\n";
+
+        // scalar channels
+        code += "    float " + Outputpins[1].label + " = " + Outputpins[0].label + ".r;\n";
+        code += "    float " + Outputpins[2].label + " = " + Outputpins[0].label + ".g;\n";
+        code += "    float " + Outputpins[3].label + " = " + Outputpins[0].label + ".b;\n";
+        code += "    float " + Outputpins[4].label + " = " + Outputpins[0].label + ".a;\n";
+
+        return code;
     }
 
     json Serialize() const override
@@ -434,41 +577,15 @@ struct OutputNode : public BaseNode
     std::string GenerateShaderCode(const std::vector<Link>& links,
         const std::vector<BaseNode*>& nodes) override
     {
-        // The input pin *labels* for the final output (e.g., BaseColor)
-        // are used here to get the variable name that is connected to them.
+        auto baseColor = GetConnectedVariableName(Inputpins[1], links, nodes);
+        auto emissive = GetConnectedVariableName(Inputpins[2], links, nodes);
+        auto opacity = GetConnectedVariableName(Inputpins[3], links, nodes);
 
-        // Note: WorldPosition is unused in this simplified model, so we skip index 0.
-        // BaseColor: Assume connected variable is a float/vec3/vec4. Use .rgb to be safe.
-        // BaseColor is input pin index 1.
-        auto baseColorVar = GetConnectedVariableName(Inputpins[1], links, nodes);
-
-        // Emissive is input pin index 2.
-        auto emissiveVar = GetConnectedVariableName(Inputpins[2], links, nodes);
-
-        // Opacity is input pin index 3.
-        auto opacityVar = GetConnectedVariableName(Inputpins[3], links, nodes);
-
-        std::string code = "";
-
-        // Simplistic PBR-ish composition, assuming the inputs are floats or vec4s/vec3s as needed
-        // This is where you need to be type-aware. Since we don't have a GLSL type system here, 
-        // we make assumptions for this example:
-
-        // Use a temporary variable to hold the output, assuming it's a variable or a constant
-        code += "    vec3 base = " + baseColorVar + ".rgb;\n";
-
-        // Emissive: Assume connected variable is a float/vec3/vec4. Use .rgb.
-        code += "    vec3 emissive = " + emissiveVar + ".rgb;\n";
-
-        // Opacity: Assume connected variable is a float or a component of a vecX.
-        code += "    float opacity = clamp(" + opacityVar + ", 0.0, 1.0);\n";
-
-
-        // Final composition
-        code += "    vec3 finalColor = base + emissive;\n";
-        code += "    finalColor = max(finalColor, 0.0);\n";
-        // Final line to assign to the main output variable, FragColor
-        code += "    FragColor = vec4(finalColor, opacity);\n"; // FIX: This line now correctly assigns to FragColor
+        std::string code;
+        code += "    vec3 base = " + baseColor + (".rgb") + ";\n";
+        code += "    vec3 eme  = " + emissive + (".rgb") + ";\n";
+        code += "    float op  = clamp(" + opacity + ", 0.0, 1.0);\n";
+        code += "    FragColor = vec4(base + eme, op);\n";
 
         return code;
     }
@@ -486,5 +603,630 @@ struct OutputNode : public BaseNode
     {
         id = data["id"];
         position = ImVec2(data["position"][0], data["position"][1]);
+    }
+};
+
+struct AddNode : public BaseNode
+{
+    AddNode(int nodeId)
+    {
+        id = nodeId;
+        title = "Add";
+        color = ImVec4(0.45f, 0.75f, 0.45f, 1.0f);
+        titleColor = ImVec4(0.15f, 0.45f, 0.15f, 1.0f);
+
+        Inputpins.push_back({ id * 100 + 1, "A", ImNodesPinShape_Circle, Pin::Input, Pin::Float });
+        Inputpins.push_back({ id * 100 + 2, "B", ImNodesPinShape_Circle, Pin::Input, Pin::Float });
+
+        // Output — initially float, may change dynamically
+        std::string outLabel = "Add_R" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 3, outLabel, ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+    }
+
+    // Detect connected pin type
+    Pin::DataType ResolveType(const std::vector<Link>& links, std::vector<BaseNode*>& nodes)
+    {
+        Pin* a = FindLinkedPin(Inputpins[0].id, links, nodes);
+        Pin* b = FindLinkedPin(Inputpins[1].id, links, nodes);
+
+        Pin::DataType tA = a ? a->data_type : Inputpins[0].data_type;
+        Pin::DataType tB = b ? b->data_type : Inputpins[1].data_type;
+
+        return (tA > tB) ? tA : tB; // promote smaller ? larger
+    }
+
+    void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
+    {
+        Pin::DataType outType = ResolveType(links, nodes);
+
+        if (outType == Pin::Float)
+        {
+            float a = GetConnectedValue<float>(Inputpins[0], links, nodes);
+            float b = GetConnectedValue<float>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<float>(a + b);
+        }
+        else if (outType == Pin::Vec2)
+        {
+            glm::vec2 a = GetConnectedValue<glm::vec2>(Inputpins[0], links, nodes);
+            glm::vec2 b = GetConnectedValue<glm::vec2>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<glm::vec2>(a + b);
+        }
+        else if (outType == Pin::Vec3)
+        {
+            glm::vec3 a = GetConnectedValue<glm::vec3>(Inputpins[0], links, nodes);
+            glm::vec3 b = GetConnectedValue<glm::vec3>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<glm::vec3>(a + b);
+        }
+        else // Vec4
+        {
+            glm::vec4 a = GetConnectedValue<glm::vec4>(Inputpins[0], links, nodes);
+            glm::vec4 b = GetConnectedValue<glm::vec4>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<glm::vec4>(a + b);
+        }
+
+        Outputpins[0].data_type = outType;
+    }
+
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
+    {
+        Pin::DataType dtype = ResolveType(links, (std::vector<BaseNode*>&)nodes);
+
+        std::string typeStr = GLSLType(dtype);
+        std::string a = GetConnectedVariableName(Inputpins[0], links, nodes);
+        std::string b = GetConnectedVariableName(Inputpins[1], links, nodes);
+
+        return "    " + typeStr + " " + Outputpins[0].label + " = " + a + " + " + b + ";\n";
+    }
+
+    template<typename T>
+    T GetConnectedValue(const Pin& pin,
+        const std::vector<Link>& links,
+        std::vector<BaseNode*>& nodes)
+    {
+        if (Pin* p = FindLinkedPin(pin.id, links, nodes))
+            return p->Get<T>();
+        return T{ 0 };
+    }
+
+    void DrawNodeContents() override
+    {
+        ImGui::Text("Add (%s)", GLSLType(Outputpins[0].data_type));
+    }
+
+    json Serialize() const override
+    {
+        json j;
+        j["type"] = "AddNode";
+        j["id"] = id;
+        j["position"] = { position.x, position.y };
+        return j;
+    }
+
+    void Deserialize(const json& data) override
+    {
+        id = data["id"];
+        position = ImVec2(data["position"][0], data["position"][1]);
+    }
+};
+
+struct ConstantVec2Node : public BaseNode
+{
+    ConstantVec2Node(int nodeId)
+    {
+        id = nodeId;
+        title = "Vec2 Constant";
+        color = ImVec4(0.4f, 0.7f, 0.9f, 1.0f);
+        titleColor = ImVec4(0.1f, 0.4f, 0.7f, 1.0f);
+
+        std::string oName = "ConstV2_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 1, oName, ImNodesPinShape_Circle, Pin::Output, Pin::Vec2 });
+        Outputpins[0].Set<glm::vec2>(glm::vec2(0.0f));
+    }
+
+    void DrawNodeContents() override
+    {
+        glm::vec2 v = Outputpins[0].Get<glm::vec2>();
+        if (ImGui::DragFloat2("Value", (float*)&v, 0.01f))
+            Outputpins[0].Set<glm::vec2>(v);
+    }
+
+    void Evaluate(std::vector<Link>&, std::vector<BaseNode*>&) override {}
+
+    std::string GenerateShaderCode(const std::vector<Link>&, const std::vector<BaseNode*>&) override
+    {
+        glm::vec2 v = Outputpins[0].Get<glm::vec2>();
+        return "    vec2 " + Outputpins[0].label +
+            " = vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ");\n";
+    }
+
+    json Serialize() const override
+    {
+        glm::vec2 v = Outputpins[0].Get<glm::vec2>();
+        return {
+            {"type","ConstantVec2Node"},
+            {"id",id},
+            {"value",{v.x, v.y}},
+            {"position",{position.x,position.y}}
+        };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+        Outputpins[0].Set<glm::vec2>({ j["value"][0], j["value"][1] });
+    }
+};
+
+struct ConstantVec3Node : public BaseNode
+{
+    ConstantVec3Node(int nodeId)
+    {
+        id = nodeId;
+        title = "Vec3 Constant";
+        color = ImVec4(0.4f, 0.7f, 0.9f, 1.0f);
+        titleColor = ImVec4(0.1f, 0.4f, 0.7f, 1.0f);
+
+        std::string oName = "ConstV3_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 1, oName, ImNodesPinShape_Circle, Pin::Output, Pin::Vec3 });
+        Outputpins[0].Set<glm::vec3>(glm::vec3(0.0f));
+    }
+
+    void DrawNodeContents() override
+    {
+        glm::vec3 v = Outputpins[0].Get<glm::vec3>();
+        if (ImGui::ColorEdit3("Value", (float*)&v))
+            Outputpins[0].Set<glm::vec3>(v);
+    }
+
+    void Evaluate(std::vector<Link>&, std::vector<BaseNode*>&) override {}
+
+    std::string GenerateShaderCode(const std::vector<Link>&, const std::vector<BaseNode*>&) override
+    {
+        glm::vec3 v = Outputpins[0].Get<glm::vec3>();
+        return "    vec3 " + Outputpins[0].label +
+            " = vec3(" + std::to_string(v.x) + ", " +
+            std::to_string(v.y) + ", " +
+            std::to_string(v.z) + ");\n";
+    }
+
+    json Serialize() const override
+    {
+        glm::vec3 v = Outputpins[0].Get<glm::vec3>();
+        return {
+            {"type","ConstantVec3Node"},
+            {"id",id},
+            {"value",{v.x, v.y, v.z}},
+            {"position",{position.x,position.y}}
+        };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+        Outputpins[0].Set<glm::vec3>({ j["value"][0], j["value"][1], j["value"][2] });
+    }
+};
+
+struct MultiplyNode : public BaseNode
+{
+    MultiplyNode(int nodeId)
+    {
+        id = nodeId;
+        title = "Multiply";
+        color = ImVec4(0.4f, 0.7f, 0.4f, 1.0f);
+        titleColor = ImVec4(0.15f, 0.45f, 0.15f, 1.0f);
+
+        Inputpins.push_back({ id * 100 + 1, "A", ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 2, "B", ImNodesPinShape_Circle, Pin::Input });
+
+        std::string oName = "Mul_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 3, oName, ImNodesPinShape_Circle, Pin::Output });
+    }
+
+    Pin::DataType ResolveType(const std::vector<Link>& links, std::vector<BaseNode*>& nodes)
+    {
+        Pin* a = FindLinkedPin(Inputpins[0].id, links, nodes);
+        Pin* b = FindLinkedPin(Inputpins[1].id, links, nodes);
+        return PromoteType(a ? a->data_type : Pin::Float,
+            b ? b->data_type : Pin::Float);
+    }
+
+    void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
+    {
+        Pin::DataType t = ResolveType(links, nodes);
+        if (t == Pin::Float)
+            Outputpins[0].Set<float>(GetConnectedValue<float>(Inputpins[0], links, nodes) *
+                GetConnectedValue<float>(Inputpins[1], links, nodes));
+        else if (t == Pin::Vec2)
+            Outputpins[0].Set<glm::vec2>(GetConnectedValue<glm::vec2>(Inputpins[0], links, nodes) *
+                GetConnectedValue<glm::vec2>(Inputpins[1], links, nodes));
+        else if (t == Pin::Vec3)
+            Outputpins[0].Set<glm::vec3>(GetConnectedValue<glm::vec3>(Inputpins[0], links, nodes) *
+                GetConnectedValue<glm::vec3>(Inputpins[1], links, nodes));
+        else
+            Outputpins[0].Set<glm::vec4>(GetConnectedValue<glm::vec4>(Inputpins[0], links, nodes) *
+                GetConnectedValue<glm::vec4>(Inputpins[1], links, nodes));
+
+        Outputpins[0].data_type = t;
+    }
+
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
+    {
+        Pin::DataType t = ResolveType(links, (std::vector<BaseNode*>&)nodes);
+        std::string typeStr = GLSLType(t);
+
+        std::string a = GetConnectedVariableName(Inputpins[0], links, nodes);
+        std::string b = GetConnectedVariableName(Inputpins[1], links, nodes);
+
+        return "    " + typeStr + " " + Outputpins[0].label + " = " + a + " * " + b + ";\n";
+    }
+
+    void DrawNodeContents() override
+    {
+        ImGui::Text("Multiply (%s)", GLSLType(Outputpins[0].data_type));
+    }
+
+    json Serialize() const override
+    {
+        return {
+            {"type","MultiplyNode"},
+            {"id",id},
+            {"position",{position.x,position.y}}
+        };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+    }
+};
+
+struct DotNode : public BaseNode
+{
+    DotNode(int nodeId)
+    {
+        id = nodeId;
+        title = "Dot";
+        color = ImVec4(0.5f, 0.5f, 0.8f, 1.0f);
+
+        Inputpins.push_back({ id * 100 + 1, "A", ImNodesPinShape_Circle, Pin::Input, Pin::Vec3 });
+        Inputpins.push_back({ id * 100 + 2, "B", ImNodesPinShape_Circle, Pin::Input, Pin::Vec3 });
+
+        std::string oName = "Dot_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 3, oName, ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+    }
+
+    void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
+    {
+        glm::vec3 a = GetConnectedValue<glm::vec3>(Inputpins[0], links, nodes);
+        glm::vec3 b = GetConnectedValue<glm::vec3>(Inputpins[1], links, nodes);
+        Outputpins[0].Set<float>(glm::dot(a, b));
+    }
+
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
+    {
+        std::string a = GetConnectedVariableName(Inputpins[0], links, nodes);
+        std::string b = GetConnectedVariableName(Inputpins[1], links, nodes);
+        return "    float " + Outputpins[0].label + " = dot(" + a + ", " + b + ");\n";
+    }
+
+    void DrawNodeContents() override
+    {
+    }
+
+    json Serialize() const override
+    {
+        return {
+            {"type","DotNode"},
+            {"id",id},
+            {"position",{position.x,position.y}}
+        };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+    }
+};
+
+struct LerpNode : public BaseNode
+{
+    LerpNode(int nodeId)
+    {
+        id = nodeId;
+        title = "Lerp";
+        color = ImVec4(0.6f, 0.45f, 0.35f, 1.0f);
+
+        Inputpins.push_back({ id * 100 + 1, "A", ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 2, "B", ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 3, "T", ImNodesPinShape_Circle, Pin::Input, Pin::Float });
+
+        std::string oName = "Lerp_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 4, oName, ImNodesPinShape_Circle, Pin::Output });
+    }
+    void DrawNodeContents() override
+    {
+    }
+    Pin::DataType ResolveType(const std::vector<Link>& links, std::vector<BaseNode*>& nodes)
+    {
+        Pin* a = FindLinkedPin(Inputpins[0].id, links, nodes);
+        Pin* b = FindLinkedPin(Inputpins[1].id, links, nodes);
+        return PromoteType(a ? a->data_type : Pin::Float,
+            b ? b->data_type : Pin::Float);
+    }
+
+    void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
+    {
+        float t = GetConnectedValue<float>(Inputpins[2], links, nodes);
+
+        Pin::DataType type = ResolveType(links, nodes);
+
+        if (type == Pin::Float)
+        {
+            float a = GetConnectedValue<float>(Inputpins[0], links, nodes);
+            float b = GetConnectedValue<float>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<float>(a * (1.0f - t) + b * t);
+        }
+        else if (type == Pin::Vec2)
+        {
+            glm::vec2 a = GetConnectedValue<glm::vec2>(Inputpins[0], links, nodes);
+            glm::vec2 b = GetConnectedValue<glm::vec2>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<glm::vec2>(a * (1.0f - t) + b * t);
+        }
+        else if (type == Pin::Vec3)
+        {
+            glm::vec3 a = GetConnectedValue<glm::vec3>(Inputpins[0], links, nodes);
+            glm::vec3 b = GetConnectedValue<glm::vec3>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<glm::vec3>(a * (1.0f - t) + b * t);
+        }
+        else
+        {
+            glm::vec4 a = GetConnectedValue<glm::vec4>(Inputpins[0], links, nodes);
+            glm::vec4 b = GetConnectedValue<glm::vec4>(Inputpins[1], links, nodes);
+            Outputpins[0].Set<glm::vec4>(a * (1.0f - t) + b * t);
+        }
+
+        Outputpins[0].data_type = type;
+    }
+
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
+    {
+        Pin::DataType t = ResolveType(links, (std::vector<BaseNode*>&)nodes);
+
+        std::string typeStr = GLSLType(t);
+        std::string a = GetConnectedVariableName(Inputpins[0], links, nodes);
+        std::string b = GetConnectedVariableName(Inputpins[1], links, nodes);
+        std::string factor = GetConnectedVariableName(Inputpins[2], links, nodes);
+
+        return "    " + typeStr + " " + Outputpins[0].label +
+            " = mix(" + a + ", " + b + ", " + factor + ");\n";
+    }
+
+    json Serialize() const override
+    {
+        return { {"type","LerpNode"},{"id",id},{"position",{position.x,position.y}} };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+    }
+};
+
+
+struct CrossNode : public BaseNode
+{
+    CrossNode(int nodeId)
+    {
+        id = nodeId;
+        title = "Cross";
+        color = ImVec4(0.7f, 0.4f, 0.4f, 1.0f);
+
+        Inputpins.push_back({ id * 100 + 1, "A", ImNodesPinShape_Circle, Pin::Input, Pin::Vec3 });
+        Inputpins.push_back({ id * 100 + 2, "B", ImNodesPinShape_Circle, Pin::Input, Pin::Vec3 });
+
+        std::string oName = "Cross_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 3, oName, ImNodesPinShape_Circle, Pin::Output, Pin::Vec3 });
+    }
+
+    void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
+    {
+        glm::vec3 a = GetConnectedValue<glm::vec3>(Inputpins[0], links, nodes);
+        glm::vec3 b = GetConnectedValue<glm::vec3>(Inputpins[1], links, nodes);
+        Outputpins[0].Set<glm::vec3>(glm::cross(a, b));
+    }
+    void DrawNodeContents() override
+    {
+    }
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
+    {
+        std::string a = GetConnectedVariableName(Inputpins[0], links, nodes);
+        std::string b = GetConnectedVariableName(Inputpins[1], links, nodes);
+        return "    vec3 " + Outputpins[0].label + " = cross(" + a + ", " + b + ");\n";
+    }
+
+    json Serialize() const override
+    {
+        return { {"type","CrossNode"},{"id",id},{"position",{position.x,position.y}} };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+    }
+};
+
+struct NormalizeNode : public BaseNode
+{
+    NormalizeNode(int nodeId)
+    {
+        id = nodeId;
+        title = "Normalize";
+        color = ImVec4(0.4f, 0.6f, 0.9f, 1.0f);
+
+        Inputpins.push_back({ id * 100 + 1, "Value", ImNodesPinShape_Circle, Pin::Input, Pin::Vec3 });
+
+        std::string oName = "Norm_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 2, oName, ImNodesPinShape_Circle, Pin::Output, Pin::Vec3 });
+    }
+
+    void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
+    {
+        glm::vec3 v = GetConnectedValue<glm::vec3>(Inputpins[0], links, nodes);
+        Outputpins[0].Set<glm::vec3>(glm::normalize(v));
+    }
+    void DrawNodeContents() override
+    {
+    }
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
+    {
+        std::string v = GetConnectedVariableName(Inputpins[0], links, nodes);
+        return "    vec3 " + Outputpins[0].label + " = normalize(" + v + ");\n";
+    }
+
+    json Serialize() const override
+    {
+        return { {"type","NormalizeNode"},{"id",id},{"position",{position.x,position.y}} };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+    }
+};
+
+struct TextureCoordsNode : public BaseNode
+{
+    // Node properties for UI controls
+    glm::vec2 Tiling = glm::vec2(1.0f, 1.0f);
+    glm::vec2 Offset = glm::vec2(0.0f, 0.0f);
+
+    // Toggles for R, G, B pins for outputting custom values (like a ComponentMask)
+    // For UVs, we mostly just expose U and V.
+    bool ExposeU = false;
+    bool ExposeV = false;
+    bool TilingUniform = false;
+    bool OffsetUniform = false;
+
+
+    TextureCoordsNode(int nodeId)
+    {
+        id = nodeId;
+        title = "TexCoord";
+        color = ImVec4(0.3f, 0.7f, 0.75f, 1.0f);
+        titleColor = ImVec4(0.1f, 0.4f, 0.6f, 1.0f);
+
+        // Main Output Pin (Vec2 for UV)
+        std::string outLabel = "UV_" + std::to_string(id);
+        Outputpins.push_back({ id * 100 + 1, outLabel, ImNodesPinShape_Circle, Pin::Output, Pin::Vec2 });
+
+        // Output pins for individual components
+        Outputpins.push_back({ id * 100 + 2, "U", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+        Outputpins.push_back({ id * 100 + 3, "V", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+
+        // Default evaluation result (initial value for preview)
+        Outputpins[0].Set<glm::vec2>(glm::vec2(0.0f, 0.0f));
+        Outputpins[1].Set<float>(0.0f);
+        Outputpins[2].Set<float>(0.0f);
+    }
+
+    void DrawNodeContents() override
+    {
+        // 1. Tiling/Scale Control
+        ImGui::Text("Tiling (X/Y)");
+        ImGui::SetNextItemWidth(120);
+        if (ImGui::DragFloat2("##Tiling", (float*)&Tiling, 0.01f, -10.0f, 10.0f))
+            Tiling = glm::max(Tiling, glm::vec2(0.01f)); // Prevent zero scaling
+
+        ImGui::SameLine();
+        ImGui::Checkbox("Uniform Tiling", &TilingUniform); // Toggle to use uniform
+
+        // 2. Offset Control
+        ImGui::Text("Offset (X/Y)");
+        ImGui::SetNextItemWidth(120);
+        ImGui::DragFloat2("##Offset", (float*)&Offset, 0.01f, -10.0f, 10.0f);
+
+        ImGui::SameLine();
+        ImGui::Checkbox("Uniform Offset", &OffsetUniform); // Toggle to use uniform
+
+        // 3. Status/Toggles (if needed)
+        // You can add logic here to dynamically enable/disable the U/V pins in the future.
+    }
+
+    void Evaluate(std::vector<Link>&, std::vector<BaseNode*>&) override
+    {
+        // In the editor, for evaluation, we just set the default UV (0,0) or (0.5, 0.5) 
+        // to show a predictable preview value, as runtime UVs depend on the mesh geometry (TexCoords input).
+        glm::vec2 previewUV = glm::vec2(0.5f, 0.5f) * Tiling + Offset;
+
+        Outputpins[0].Set<glm::vec2>(previewUV);
+        Outputpins[1].Set<float>(previewUV.x);
+        Outputpins[2].Set<float>(previewUV.y);
+    }
+
+    std::string GenerateShaderCode(const std::vector<Link>& links,
+        const std::vector<BaseNode*>& nodes) override
+    {
+        std::string code;
+        std::string uvVar = "TexCoords"; // Built-in varying from Vertex Shader
+
+        // 1. Uniforms (Declarations handled by Material::GenerateUniforms, but logic is here)
+        // You need to ensure the uniforms are exposed to the Material system if toggled.
+        // For simplicity, we hardcode the output variable based on engine inputs (TexCoords).
+
+        std::string tileX = std::to_string(Tiling.x);
+        std::string tileY = std::to_string(Tiling.y);
+        std::string offsetX = std::to_string(Offset.x);
+        std::string offsetY = std::to_string(Offset.y);
+
+        // If uniforms were enabled, we'd use their names instead of hardcoded values:
+        // if (TilingUniform) tileX = tileY = "TilingUniform_X";
+
+        // 2. Main UV Calculation
+        // GLSL: vec2 final_uv = TexCoords * Tiling + Offset;
+        std::string finalUV = Outputpins[0].label;
+
+        code += "    // Texture Coordinates Node " + std::to_string(id) + "\n";
+        code += "    vec2 " + finalUV + " = " + uvVar + " * vec2(" + tileX + ", " + tileY + ") + vec2(" + offsetX + ", " + offsetY + ");\n";
+
+        // 3. Component Outputs
+        code += "    float " + Outputpins[1].label + " = " + finalUV + ".x;\n"; // U
+        code += "    float " + Outputpins[2].label + " = " + finalUV + ".y;\n"; // V
+
+        return code;
+    }
+
+    json Serialize() const override
+    {
+        return {
+            {"type","TextureCoordsNode"},
+            {"id",id},
+            {"tiling",{Tiling.x, Tiling.y}},
+            {"offset",{Offset.x, Offset.y}},
+            {"position",{position.x, position.y}}
+        };
+    }
+
+    void Deserialize(const json& j) override
+    {
+        id = j["id"];
+        position = ImVec2(j["position"][0], j["position"][1]);
+        if (j.contains("tiling"))
+            Tiling = { j["tiling"][0], j["tiling"][1] };
+        if (j.contains("offset"))
+            Offset = { j["offset"][0], j["offset"][1] };
     }
 };

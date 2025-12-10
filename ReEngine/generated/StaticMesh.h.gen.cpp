@@ -30,6 +30,17 @@ struct StaticMesh_AutoRegister {
             };
             StaticMesh_Variables.push_back(std::move(rv));
         }
+         vType = Reflection::Registry::Instance().GetOrCreateType("int");
+        {
+            Reflection::ReflectedVariable rv = {
+                "MaterialId", "public",
+                false,
+                offsetof(StaticMesh, MaterialId),
+                vType,
+                "-, 1"
+            };
+            StaticMesh_Variables.push_back(std::move(rv));
+        }
         ci.variables = StaticMesh_Variables;
         Reflection::Registry::Instance().RegisterComponent(std::move(ci));
     }

@@ -4,7 +4,8 @@
 #include "imgui/imnodes.h"
 #include "Graph/Node.h"
 #include "IViewport.h"
-#include <MaterialSystem/Material.h>
+#include "MaterialSystem/Material.h"
+#include "Commander.h"
 
 class MaterialGraphPanel : public UIComponent
 {
@@ -26,7 +27,7 @@ private:
     IViewport* viewport = nullptr;
 
     std::shared_ptr<Material> currentlySelectedMaterial;
-	CompiledMaterial* m_CompiledMaterial;
+	CompiledMaterial* m_CompiledMaterialPtr;
 
     // Helper to generate unique pin IDs based on Node ID and a local pin index
     int GetPinID(int node_id, int pin_index) const { return node_id * 1000 + pin_index; }

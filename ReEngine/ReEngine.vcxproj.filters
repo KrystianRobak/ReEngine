@@ -335,5 +335,11 @@
     <ClInclude Include="Public\EpochManager.h">
       <Filter>Source Files\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Public\Engine\Components\SkeletalMeshData.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Components\SkeletalMeshComponent.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

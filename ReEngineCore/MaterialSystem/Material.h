@@ -1,24 +1,51 @@
 #pragma once
 
+#include <iostream>
 #include <fstream>
 #include <string>
 #include "Graph/Node.h"
 #include <vector>
 #include <unordered_map>
 #include "glm/glm.hpp"
-
+#include "Shader.h"
+#include <unordered_set>
+#include "TextureData.h"
+#include "Api/AssetManagerApi.h"
 
 class CompiledMaterial
 {
 public:
+	CompiledMaterial() = default;
+
     int id = 0;
     std::string name;
     std::string path;
 
     std::string VertexShaderCode;
     std::string FragmentShaderCode;
+    
+    Shader* GLShader = nullptr;
+    
+    void SetId(int NewId) {
+		id = NewId;
+    }
 
+    void BuildGLShader()
+    {
+        if (GLShader)
+            delete GLShader;
+
+        GLShader = new Shader(VertexShaderCode.c_str(), FragmentShaderCode.c_str(), true);
+    }
+
+    std::unordered_map<std::string, TextureResource*> textures;
     std::unordered_map<std::string, glm::vec4> m_Parameters;
+
+    void SetTexture(const std::string& sampler, TextureResource* tex)
+    {
+        textures[sampler] = tex;
+    }
+
     CompiledMaterial(std::string name, std::string path)
     {
         this->name = name;
@@ -49,13 +76,7 @@ public:
         id = s_GlobalMaterialID++;
     }
 
-    ~Material()
-    {
-        // This destructor is correct and handles deleting the raw BaseNode pointers.
-        for (auto node : m_Nodes)
-            delete node;
-        m_Nodes.clear();
-    }
+    ~Material() = default;
 
     // --- Node management ---
     template<typename T, typename... Args>
@@ -77,20 +98,13 @@ public:
         // Find and delete the node before removing the pointer from the vector
         auto it = std::remove_if(m_Nodes.begin(), m_Nodes.end(),
             [nodeId](BaseNode* n) {
-                if (n->id == nodeId) {
-                    delete n; // IMPORTANT: Delete the node memory
-                    return true;
-                }
-                return false;
+                return (n->id == nodeId);
             });
         m_Nodes.erase(it, m_Nodes.end());
     }
 
     void SetNodes(const std::vector<BaseNode*>& nodes)
     {
-        // Delete the *old* nodes before replacing the vector
-        for (auto node : m_Nodes)
-            delete node;
         m_Nodes = nodes;
 
         // Recalculate next ID after setting the nodes
@@ -115,16 +129,84 @@ public:
             node->Evaluate(m_Links, m_Nodes);
     }
 
-    CompiledMaterial Compile()
+    BaseNode* FindNodeByPin(int pinId)
+    {
+        for (auto* n : m_Nodes)
+        {
+            for (auto& in : n->Inputpins)
+                if (in.id == pinId) return n;
+            for (auto& out : n->Outputpins)
+                if (out.id == pinId) return n;
+        }
+        return nullptr;
+    }
+
+    std::vector<BaseNode*> TopologicalSort()
+    {
+        std::vector<BaseNode*> sorted;
+        std::unordered_set<BaseNode*> visited;
+
+        std::function<void(BaseNode*)> dfs = [&](BaseNode* n)
+            {
+                if (visited.count(n)) return;
+                visited.insert(n);
+
+                // find outgoing links
+                for (auto& out : n->Outputpins)
+                {
+                    for (auto& link : m_Links)
+                    {
+                        if (link.start_pin_id == out.id)
+                        {
+                            BaseNode* dst = FindNodeByPin(link.end_pin_id);
+                            if (dst) dfs(dst);
+                        }
+                    }
+                }
+                sorted.push_back(n);
+            };
+
+        for (auto* n : m_Nodes)
+            dfs(n);
+
+        std::reverse(sorted.begin(), sorted.end());
+
+        return sorted;
+    }
+
+    CompiledMaterial Compile(AssetManagerApi* assetManager)
     {
         CompiledMaterial result(name, path);
 
         Evaluate();
 
         std::string shaderBody;
-        for (auto node : m_Nodes)
-        {
+
+        auto orderedNodes = TopologicalSort();
+
+        for (auto* node : orderedNodes)
             shaderBody += node->GenerateShaderCode(m_Links, m_Nodes);
+
+        for (auto* node : m_Nodes)
+        {
+            // Check if this node is a TextureSampleNode
+            if (auto* texNode = dynamic_cast<TextureSampleNode*>(node))
+            {
+                if (texNode->texturePath.empty()) continue;
+
+                // Ask AssetManager for the GPU resource
+                TextureResource* texRes = assetManager->GetTextureResource(texNode->texturePath);
+
+                if (texRes)
+                {
+                    // MUST match the name generated in TextureSampleNode::GenerateShaderCode
+                    // logic: Outputpins[0].label + "_Tex"
+                    std::string samplerName = texNode->Outputpins[0].label + "_Tex";
+
+                    // Store it in the compiled material
+                    result.SetTexture(samplerName, texRes);
+                }
+            }
         }
 
         // Minimal Shader Template (Vertex remains the same)
@@ -182,7 +264,12 @@ public:
         {
             for (auto& pin : node->Inputpins)
             {
-                if (pin.isUniform)
+                if (auto* texNode = dynamic_cast<TextureSampleNode*>(node))
+                {
+                    std::string samplerName = texNode->Outputpins[0].label + "_Tex";
+                    result += "uniform sampler2D " + samplerName + ";\n";
+                }
+                else if (pin.isUniform)
                     result += "uniform vec4 " + pin.label + ";\n";
             }
         }
@@ -219,9 +306,7 @@ public:
         name = j["name"];
         path = j["path"];
 
-        // Delete existing nodes before loading new ones
-        for (auto node : m_Nodes)
-            delete node;
+ 
         m_Nodes.clear();
         m_Links.clear();
         m_NextNodeID = 1;

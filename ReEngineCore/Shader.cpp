@@ -60,6 +60,37 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     std::cout << "SHADER::COMPILED_SUCCESFULLY" << std::endl;
 }
 
+Shader::Shader(const char* vertexCode, const char* fragmentCode, bool IsCode)
+{
+    // 1. Compile shaders
+    unsigned int vertex, fragment;
+
+    // Vertex shader
+    vertex = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex, 1, &vertexCode, NULL);
+    glCompileShader(vertex);
+    CheckCompileErrors(vertex, "VERTEX");
+
+    // Fragment shader
+    fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment, 1, &fragmentCode, NULL);
+    glCompileShader(fragment);
+    CheckCompileErrors(fragment, "FRAGMENT");
+
+    // Shader Program
+    ID = glCreateProgram();
+    glAttachShader(ID, vertex);
+    glAttachShader(ID, fragment);
+    glLinkProgram(ID);
+    CheckCompileErrors(ID, "PROGRAM");
+
+    // Delete shaders (no longer needed after linking)
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+
+    std::cout << "SHADER::COMPILED_SUCCESSFULLY" << std::endl;
+}
+
 
 void Shader::ChangeShaderDefineStatus(uint32_t amount)
 {

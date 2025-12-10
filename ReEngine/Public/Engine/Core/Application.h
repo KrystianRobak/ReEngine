@@ -17,11 +17,17 @@
 #include "ReEngineExport.h"
 #include <semaphore>
 #include <RenderSystem.h>
+#include <functional>
+#include <barrier>
 
 
 class ENGINE_API Application : public IApplicationApi
 {
 public:
+	Application()
+	{
+	}
+
 	void StartClock();
 	void MeasureTime();
 	void Init() override;
@@ -30,7 +36,7 @@ public:
 	void StartEditorThreads() override;
 	void InitSystems() override;
 
-	IViewport* CreateNewViewport(std::string name) override;
+	IViewport* CreateNewViewport(std::string name, int width, int height) override;
 
 	void Update() override;
 	void Render() override;
@@ -68,8 +74,20 @@ public:
 		return running;
 	}
 private:
+	void SwapAllBuffersAndNotify() noexcept;
+
+private:
+	struct BarrierCompletion
+	{
+		Application* self; // WskaŸnik 'this'
+
+		void operator()() noexcept {
+			self->SwapAllBuffersAndNotify();
+		}
+	};
+
 	float dt = 0.0f;
-	bool running = true;
+	std::atomic<bool> running{ true };
 
 	std::mutex initMutex;
 	std::condition_variable initCondition;
@@ -95,9 +113,11 @@ private:
 
 	FunctionDelegate CreateUiPanels;
 
-	std::binary_semaphore RenderUpdateThreadSemaphore{ 1 };
+	std::unique_ptr<std::barrier<BarrierCompletion>> mSyncBarrier;
 
-	std::binary_semaphore GameUpdateThreadSemaphore{ 0 };
+
+	const int mSyncThreadCount = 2;
+
 
 	bool HasRenderUpdateThreadFinished = false;
 

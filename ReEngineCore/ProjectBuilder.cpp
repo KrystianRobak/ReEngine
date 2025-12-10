@@ -3,9 +3,10 @@
 #include <Windows.h>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 
 #include <Logger.h>
-#include "json/json.hpp"
+
 
 typedef System* (*CreateSystemFunc)();
 
@@ -38,8 +39,7 @@ inline  std::vector<std::string> splitBracedList(const std::string& input) {
 }
 
 void ProjectBuilder::ParseConfig() {
-    namespace fs = std::filesystem;
-
+    
     fs::path projectPath(ProjectPath_);
 
     // 1. Remove "bin/debug" if present
@@ -109,13 +109,17 @@ void ProjectBuilder::ParseConfig() {
         }
 	}
 
+	LoadTextures(config, projectPath);
 
     auto systems = Reflection::Registry::Instance().GetAllSystems();
     auto components = Reflection::Registry::Instance().GetAllComponents();
 
     for (auto component : components)
     {
-        engineAPI_->RegisterComponent(component);
+        if(std::strcmp(component->name, "Transform"))
+            engineAPI_->RegisterComponent(component, true);
+        else
+			engineAPI_->RegisterComponent(component, false);
     }
 
     for (auto system : systems)
@@ -167,4 +171,48 @@ System* ProjectBuilder::LoadModule(const char* ModuleName)
 
     LOGF_INFO("Module loaded successfully: %s", ModuleName);
     return createFunc();
+}
+
+void ProjectBuilder::LoadTextures(nlohmann::json& config, fs::path projectPath)
+{
+    namespace fs = std::filesystem;
+    if (config.contains("TexturesFolders")) {
+
+        if (auto* assetManager = engineAPI_->GetAssetManager().get()) {
+
+            for (const auto& folderEntry : config["TexturesFolders"]) {
+                std::string folderName = folderEntry.get<std::string>();
+                fs::path textureFolderPath = projectPath / folderName;
+
+                if (fs::exists(textureFolderPath) && fs::is_directory(textureFolderPath)) {
+                    LOGF_INFO("Scanning asset folder (Recursive): %s", textureFolderPath.string().c_str());
+
+                    // --- THE CHANGE IS HERE ---
+                    // Use recursive_directory_iterator to traverse all subfolders
+                    for (const auto& entry : fs::recursive_directory_iterator(textureFolderPath)) {
+
+                        // Check if the entry is a regular file (not a subdirectory)
+                        if (entry.is_regular_file()) {
+                            // ... (Rest of file extension check logic remains the same) ...
+                            std::string ext = entry.path().extension().string();
+                            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+                            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".bmp") {
+                                std::string assetPath = entry.path().string();
+                                LOGF_INFO("Pre-loading texture: %s", assetPath.c_str());
+
+                                assetManager->loadTexture(assetPath);
+                            }
+                        }
+                    }
+                }
+                else {
+                    LOGF_ERROR("Configured texture folder does not exist: %s", textureFolderPath.string().c_str());
+                }
+            }
+        }
+        else {
+            LOGF_ERROR("Failed to acquire AssetManager during Project Setup.");
+        }
+    }
 }

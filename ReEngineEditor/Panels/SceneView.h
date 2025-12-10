@@ -17,7 +17,7 @@ public:
 
     virtual void OnInit() override
     {
-		viewport = engineApp->CreateNewViewport("SceneViewport");
+		viewport = engineApp->CreateNewViewport("SceneViewport", 1920, 1080);
 
 
         RotateIcon = LoadTexture("pngs/rotate.jpg");

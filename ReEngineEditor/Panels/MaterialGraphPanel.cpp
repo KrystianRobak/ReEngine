@@ -1,6 +1,8 @@
 #include "MaterialGraphPanel.h"
 #include <algorithm>
 #include <iostream> // For error checking
+#include "Transform.h"
+#include "ReCamera.h"
 
 // --- Local Data Structures ---
 
@@ -8,7 +10,23 @@
 
 void MaterialGraphPanel::OnInit()
 {
-    viewport = engineApp->CreateNewViewport("MaterialGraphViewport");
+    viewport = engineApp->CreateNewViewport("MaterialGraphViewport", 256, 256);
+
+    Camera* camera = new Camera();
+
+    // Set camera position
+    camera->CameraTransform.position = glm::vec3(0.0f, 0.0f, 5.0f);
+
+    // Make camera look at (0,0,0)
+    camera->cameraFront = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - camera->CameraTransform.position);
+    camera->cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    // Set projection
+    camera->fov = 45.0f;
+    camera->aspectRatio = 1.0f;
+
+    viewport->SetCamera(camera);
+
     // Initialize ImNodes context
     ImNodes::CreateContext();
 }
@@ -38,6 +56,22 @@ void MaterialGraphPanel::Render()
     // Menu bar
     if (ImGui::BeginMenuBar())
     {
+        if (ImGui::Button("Save"))
+        {
+            if (currentlySelectedMaterial)
+            {
+                // Update material object with current graph state
+                currentlySelectedMaterial->SetNodes(m_Nodes);
+                currentlySelectedMaterial->SetLinks(m_Links);
+                // Save
+                currentlySelectedMaterial->SaveToFile(currentlySelectedMaterial->GetFilePath());
+                ImGui::Text("Saved!");
+            }
+            else
+            {
+                ImGui::Text("Error: No material selected to save.");
+			}
+        }
         if (ImGui::Button("Apply"))
         {
             if (currentlySelectedMaterial)
@@ -46,11 +80,13 @@ void MaterialGraphPanel::Render()
                 currentlySelectedMaterial->SetNodes(m_Nodes);
                 currentlySelectedMaterial->SetLinks(m_Links);
 
-                // Save and Compile
-                currentlySelectedMaterial->SaveToFile(currentlySelectedMaterial->GetFilePath());
-                CompiledMaterial mat = currentlySelectedMaterial->Compile(); // Compile saves the result inside the Material object
+				CompiledMaterial compiledMat = currentlySelectedMaterial->Compile(engineAPI->GetAssetManager().get());
 
-                m_CompiledMaterial = &mat;
+				engineAPI->GetAssetManager()->addMaterial(compiledMat.id, compiledMat);
+
+                m_CompiledMaterialPtr = engineAPI->GetAssetManager()->GetMaterial(compiledMat.id);
+
+				m_CompiledMaterialPtr->BuildGLShader();
 
                 ImGui::Text("Compiled and Applied!");
             }
@@ -78,7 +114,94 @@ void MaterialGraphPanel::Render()
         ImGui::EndMenuBar();
     }
 
+    if (viewport)
+    {
+        for (int i = -10; i < 30; i++) {
+            if (m_CompiledMaterialPtr)
+            {
+                Transform tempTransform;
+                tempTransform.position = glm::vec3(i, i, i);
+                tempTransform.rotation = glm::quat(glm::vec3(0.0f, 0.0f, 0.0f));
+                tempTransform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
 
+                RenderPrimitive primitive;
+                primitive.ModelMatrix = ReCamera::GetModelMatrix(tempTransform);
+                primitive.MeshResourceId = 1; // Placeholder mesh resource ID
+                primitive.Entity = 0; // No specific entity
+                primitive.MaterialId = m_CompiledMaterialPtr->id;
+
+                viewport->GetCommander()->IssueCommand(RenderCommand((uint32_t)1, primitive));
+            }
+            else
+            {
+                Transform tempTransform;
+                tempTransform.position = glm::vec3(i, i, i);
+                tempTransform.rotation = glm::quat(glm::vec3(0.0f, 0.0f, 0.0f));
+                tempTransform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+
+                RenderPrimitive primitive;
+                primitive.ModelMatrix = ReCamera::GetModelMatrix(tempTransform);
+                primitive.MeshResourceId = 1; // Placeholder mesh resource ID
+                primitive.Entity = 0; // No specific entity
+                primitive.MaterialId = 1200;
+
+                viewport->GetCommander()->IssueCommand(RenderCommand((uint32_t)1200, primitive));
+            }
+            
+        }
+    }
+
+    // --- NEW LAYOUT ---
+
+    // Define a width for the left panel and the square preview
+    const float leftPanelWidth = 256.0f;
+    const float previewSquareSize = 256.0f;
+
+    // 1. --- LEFT PANEL (Preview + Properties) ---
+    // Create a child window to act as our left-side column
+    // ImVec2(leftPanelWidth, 0) means fixed width, and fill remaining vertical space
+    ImGui::BeginChild("LeftPanel", ImVec2(leftPanelWidth, 0), true);
+
+    // A. Viewport Preview (Top-Left, Square)
+    ImGui::Text("Preview");
+    ImGui::Separator();
+    if (viewport)
+    {
+        // Use the square size for the ImGui::Image
+        ImVec2 paneSize(previewSquareSize, previewSquareSize);
+
+        // Display the viewport's texture, flipped vertically
+        ImGui::Image((void*)(intptr_t)viewport->GetTexture(), paneSize, ImVec2(0, 1), ImVec2(1, 0));
+    }
+    else
+    {
+        // Draw a dummy placeholder if the viewport isn't ready
+        ImGui::Dummy(ImVec2(previewSquareSize, previewSquareSize));
+        ImGui::Text("Preview viewport not initialized.");
+    }
+
+    ImGui::Separator();
+
+    // B. Properties Area (Fills rest of Left Panel)
+    ImGui::Text("Properties");
+    ImGui::Separator();
+    // Create another child to fill the remaining space *within* the left panel
+    ImGui::BeginChild("PropertiesArea", ImVec2(0, 0), false, ImGuiWindowFlags_None);
+    {
+        ImGui::Text("Your properties will go here.");
+        // TODO: Add your ImGui property widgets here
+        // (e.g., ImGui::Float, ImGui::ColorEdit3, etc.)
+    }
+    ImGui::EndChild(); // End PropertiesArea
+
+    ImGui::EndChild(); // End LeftPanel
+
+    // --- END OF LEFT PANEL ---
+
+
+    // 2. --- RIGHT PANEL (Node Editor) ---
+    // Use ImGui::SameLine() to place the next item to the right of the previous one
+    ImGui::SameLine();
    
 
     ImNodes::BeginNodeEditor();
@@ -93,24 +216,83 @@ void MaterialGraphPanel::Render()
     {
         ImVec2 clickPos = ImGui::GetMousePosOnOpeningCurrentPopup();
 
-        if (ImGui::MenuItem("Constant Node"))
+
+        // ---------------------------
+        // CONSTANTS
+        // ---------------------------
+        if (ImGui::MenuItem("Constant Float"))
         {
             m_Nodes.push_back(CreateNode<ConstantNode>(m_NextNodeID, clickPos));
         }
+        if (ImGui::MenuItem("Constant Vec2"))
+        {
+            m_Nodes.push_back(CreateNode<ConstantVec2Node>(m_NextNodeID, clickPos));
+        }
+        if (ImGui::MenuItem("Constant Vec3"))
+        {
+            m_Nodes.push_back(CreateNode<ConstantVec3Node>(m_NextNodeID, clickPos));
+        }
+
+        // ---------------------------
+        // MATH NODES
+        // ---------------------------
         if (ImGui::MenuItem("Add Node"))
         {
             m_Nodes.push_back(CreateNode<AdderNode>(m_NextNodeID, clickPos));
         }
+
+        if (ImGui::MenuItem("Multiply Node"))
+        {
+            m_Nodes.push_back(CreateNode<MultiplyNode>(m_NextNodeID, clickPos));
+        }
+
+        if (ImGui::MenuItem("Dot Node"))
+        {
+            m_Nodes.push_back(CreateNode<DotNode>(m_NextNodeID, clickPos));
+        }
+
+        if (ImGui::MenuItem("Normalize Node"))
+        {
+            m_Nodes.push_back(CreateNode<NormalizeNode>(m_NextNodeID, clickPos));
+        }
+
+        if (ImGui::MenuItem("Lerp Node"))
+        {
+            m_Nodes.push_back(CreateNode<LerpNode>(m_NextNodeID, clickPos));
+        }
+
+        if (ImGui::MenuItem("Cross Product Node"))
+        {
+            m_Nodes.push_back(CreateNode<CrossNode>(m_NextNodeID, clickPos));
+        }
+
+        // ---------------------------
+        // TEXTURE / MATERIAL NODES
+        // ---------------------------
+        if (ImGui::MenuItem("Texture Coordinates"))
+        {
+            // --- NEW: Add Texture Coordinates Node ---
+            m_Nodes.push_back(CreateNode<TextureCoordsNode>(m_NextNodeID, clickPos));
+        }
         if (ImGui::MenuItem("Texture Sample Node"))
         {
             m_Nodes.push_back(CreateNode<TextureSampleNode>(m_NextNodeID, clickPos));
+
+            // Rzutowanie surowego wskaünika i inicjalizacja AssetManager
+            if (auto* texNode = dynamic_cast<TextureSampleNode*>(m_Nodes.back()))
+            {
+                texNode->Init(engineAPI->GetAssetManager().get());
+            }
         }
+
+        // ---------------------------
+        // OUTPUT NODE
+        // ---------------------------
         if (ImGui::MenuItem("Output Node"))
         {
-            // OutputNode is typically unique and its position is often fixed/special
-            // For now, allow multiple, but a real system would only allow one.
             m_Nodes.push_back(CreateNode<OutputNode>(m_NextNodeID, clickPos));
         }
+
 
         ImGui::Separator();
 

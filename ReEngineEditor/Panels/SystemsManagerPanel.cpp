@@ -30,7 +30,7 @@ void SystemsManagerPanel::Render()
 
                     if (type->category == Reflection::TypeCategory::Unknown)
                     {
-                        if (strcmp(type->name, "int") == 0)
+                        if (strcmp(type->name, "int") == 0 || strcmp(type->name, "uint32_t") == 0 || strcmp(type->name, "Entity") == 0)
                         {
                             int val = cache[i].empty() ? 0 : std::stoi(cache[i]);
                             if (ImGui::InputInt(label.c_str(), &val))
@@ -76,7 +76,7 @@ void SystemsManagerPanel::Render()
                     for (size_t i = 0; i < func.paramTypes.size(); ++i)
                     {
                         auto* type = func.paramTypes[i];
-                        if (strcmp(type->name, "int") == 0)
+                        if (strcmp(type->name, "int") == 0 || strcmp(type->name, "uint32_t") == 0 || strcmp(type->name, "Entity") == 0)
                         {
                             intArgs.push_back(std::stoi(cache[i]));
                             args[i] = &intArgs.back();

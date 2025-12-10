@@ -62,6 +62,33 @@ public:
     bool IsMinimized() const { return minimized; }
 
 protected:
+    ImTextureID GetTexture(const std::string& path)
+    {
+        if (!engineAPI) return (ImTextureID)0;
+
+        auto assetManager = engineAPI->GetAssetManager();
+        if (!assetManager) return (ImTextureID)0;
+
+        // 1. Check if the GPU already has this texture ready
+        // We cast to TextureResource because AssetManagerApi might return a base type, 
+        // but based on your code, GetTextureResource returns the resource struct.
+        auto* resource = assetManager->GetTextureResource(path);
+
+        if (resource && resource->uploaded)
+        {
+            // Success: Return the OpenGL ID cast to ImTextureID
+            return (ImTextureID)(intptr_t)resource->id;
+        }
+
+        // 2. If not found, request it to be loaded async
+        // The AssetManager::loadTexture implementation checks its own cache,
+        // so calling this repeatedly is safer than calling stbi_load repeatedly.
+        assetManager->loadTexture(path);
+
+        // 3. Return 0 (or a default "loading" icon ID) while waiting for async load
+        return (ImTextureID)0;
+    }
+
     bool RenderWindowTopBar()
     {
         // Check if window is docked
@@ -90,8 +117,7 @@ protected:
         if (ImGui::Button("X"))
         {
             closed = true;
-            if (parentLayer)
-                pendingRemove = true;
+            pendingRemove = true;
 
             return false;
         }

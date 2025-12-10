@@ -6,6 +6,9 @@
 
 #include "System/System.h"
 #include "Logger.h"
+#include "json/json.hpp"
+
+namespace fs = std::filesystem;
 
 class CORE_API ProjectBuilder
 {
@@ -41,6 +44,8 @@ public:
 	void ParseConfig();
 
 	System* LoadModule(const char* ModuleName);
+
+	void LoadTextures(nlohmann::json& config, fs::path projectPath);
 
 	bool checkAndRemovePrefix(const std::string& prefix) {
 		// 1. Check if ProjectPath_ begins with the prefix

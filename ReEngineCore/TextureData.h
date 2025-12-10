@@ -16,3 +16,11 @@ struct TextureData {
 		pixels.assign(d, d + (w * h * c));
 	}
 };
+
+struct TextureResource
+{
+	unsigned int id = 0;
+	int width = 0;
+	int height = 0;
+	bool uploaded = false;
+};

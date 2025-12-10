@@ -1,11 +1,12 @@
 #pragma once
 
+#include "ReEngineExport.h"
 #include "RenderCommand.h"
 #include <vector>
 #include <memory>
 
 
-class Commander
+class ENGINE_API Commander
 {
 private:
 

@@ -24,7 +24,7 @@ public:
     virtual void StartGameThreads() = 0;
 	virtual void StartEditorThreads() = 0;
 
-    virtual IViewport* CreateNewViewport(std::string name) = 0;
+    virtual IViewport* CreateNewViewport(std::string name, int width, int height) = 0;
 
 	virtual ILayerManager* GetLayerManager() = 0;
     virtual Editor::IEngineEditorApi* GetCoordinatorEditor() = 0;

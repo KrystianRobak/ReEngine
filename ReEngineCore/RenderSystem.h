@@ -14,7 +14,7 @@ public:
 
 	virtual IWindow* GetWindow() = 0;
 
-	virtual IViewport* CreateViewport() = 0;
+	virtual IViewport* CreateViewport(int width, int height) = 0;
 
 	virtual void RenderViewport(Camera* camera, Commander* commander) = 0;
 

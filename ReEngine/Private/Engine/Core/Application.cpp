@@ -13,37 +13,38 @@
 
 
 
-void Application::StartClock() 
+void Application::StartClock()
 {
-	// Measure frame start time
-	std::chrono::high_resolution_clock::now();
+	frameStartTime = std::chrono::steady_clock::now();
 }
 
 void Application::MeasureTime()
 {
-	// Measure frame end time
-	auto frameEndTime = std::chrono::high_resolution_clock::now();
+	auto frameEndTime = std::chrono::steady_clock::now();
 	dt = std::chrono::duration<float>(frameEndTime - frameStartTime).count();
 
-	// Sleep to maintain target frame rate
+	// Sleep to maintain target frame rate (if we are faster than target)
 	float sleepDuration = targetFrameDuration - dt;
-	if (sleepDuration > 0)
+	if (sleepDuration > 0.0f)
 	{
 		std::this_thread::sleep_for(std::chrono::duration<float>(sleepDuration));
 	}
 
-	// Recalculate frame end time to include sleep
-	auto finalFrameEndTime = std::chrono::high_resolution_clock::now();
+	// New end time after sleep (accurate frame time)
+	auto finalFrameEndTime = std::chrono::steady_clock::now();
 	dt = std::chrono::duration<float>(finalFrameEndTime - frameStartTime).count();
 
-	// Accumulate frame time for FPS calculation
+	// prepare for next frame
+	frameStartTime = finalFrameEndTime;
+
+	// FPS accumulator: display every 1.0 second
 	frameTimeAccumulator += dt;
 	frameCount++;
-
-	// Calculate and display FPS every second
-	if (frameTimeAccumulator >= 0.1f)
+	if (frameTimeAccumulator >= 1.0f)
 	{
-		float fps = frameCount / frameTimeAccumulator;
+		float fps = static_cast<float>(frameCount) / frameTimeAccumulator;
+		// Use your logger to print FPS
+		LOGF_INFO("FPS: %.2f", fps);
 		frameTimeAccumulator = 0.0f;
 		frameCount = 0;
 	}
@@ -53,42 +54,46 @@ void Application::Init()
 {
 	coordinator = Coordinator::GetCoordinator();
 
-	GameThread = std::make_unique<std::thread>();
-	RenderThread = std::make_unique<std::thread>();
-	PhysicsThread = std::make_unique<std::thread>();
-
-
-
 	threadPool.Init();
 	coordinator->Init(&threadPool);
+
+	{
+		std::lock_guard<std::mutex> lock(initMutex);
+		renderInitialized = false;
+	}
 }
 
 void Application::StartGameThreads()
 {
+	const int participantCount = 3;
+	mSyncBarrier = std::make_unique<std::barrier<BarrierCompletion>>(
+		participantCount,
+		BarrierCompletion{ this }
+	);
+
+	running.store(true);
+
 	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
 	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
 	PhysicsThread = std::make_unique<std::thread>(std::thread(&Application::PhysicsTick, this));
 
-	//GameThread->join();
-	LOGF_INFO("Game Thread Joined");
-
-	//RenderThread->join();
-	LOGF_INFO("Render Thread Joined");
-
-	//PhysicsThread->join();
-	LOGF_INFO("Physics Thread Joined");
+	LOGF_INFO("Threads started");
 }
 
 void Application::StartEditorThreads()
 {
+	const int participantCount = 2;
+	mSyncBarrier = std::make_unique<std::barrier<BarrierCompletion>>(
+		participantCount,
+		BarrierCompletion{ this }
+	);
+
+	running.store(true);
+
 	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
 	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
 
-	//GameThread->join();
-	LOGF_INFO("Game Thread Joined");
-
-	//RenderThread->join();
-	LOGF_INFO("Render Thread Joined");
+	LOGF_INFO("Editor threads started");
 }
 
 void Application::InitSystems()
@@ -97,9 +102,9 @@ void Application::InitSystems()
 	PhysicsSystem_ = coordinator->GetSystem("Physics3D");
 }
 
-IViewport* Application::CreateNewViewport(std::string name)
+IViewport* Application::CreateNewViewport(std::string name, int width, int height)
 {
-	IViewport* mainViewport = Renderer_->CreateViewport();
+	IViewport* mainViewport = Renderer_->CreateViewport(width, height);
 
 	window->AddViewport(name, mainViewport);
 
@@ -118,7 +123,6 @@ void Application::Update()
 	int i = 0;
 	while (true)
 	{
-		RenderUpdateThreadSemaphore.acquire();
 
 		auto start = clock::now();
 
@@ -132,7 +136,28 @@ void Application::Update()
 				{
 					if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
 					{
-						window->viewports["SceneViewport"]->GetCommander()->IssueCommand(RenderCommand((uint32_t)i, { entity, *(Transform*)coordinator->GetComponent(entity, "Transform"), 1, 5 }));
+						Transform const* t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
+						StaticMesh const* sm = static_cast<StaticMesh*>(coordinator->GetComponent(entity, "StaticMesh"));
+						if (!t || !sm) continue;
+
+						glm::mat4 model = ReCamera::GetModelMatrix(*t); // use your existing utility
+						
+						
+						RenderPrimitive p;
+						p.ModelMatrix = model;
+						p.MeshResourceId = sm->MeshResourceId;
+						p.Entity = entity;
+
+						if (sm->MaterialId == -1)
+						{
+							p.MaterialId = 1200;
+						}
+						else
+						{
+							p.MaterialId = sm->MaterialId;
+						}
+
+						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({1200,  p });
 					}
 				}
 			}
@@ -164,6 +189,10 @@ void Application::Update()
 
 				staticMeshComponent->StaticMeshHandler = staticMesh;
 
+				MeshResourceId id = coordinator->GetAssetManager()->RegisterMesh(staticMesh);
+				staticMeshComponent->MeshResourceId = id;
+				staticMeshComponent->NeedsUpload = true; // atomic flag used by render thread
+
 				it = pendingMeshes.erase(it);
 			}
 			else {
@@ -178,9 +207,9 @@ void Application::Update()
 		auto end = clock::now(); // End timing
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-		LOGF_INFO("Game tick took %lld milliseconds", duration);
-
-		GameUpdateThreadSemaphore.release();
+		//LOGF_INFO("Game tick took %lld milliseconds", duration);
+		
+		mSyncBarrier->arrive_and_wait();
 	}
 
 }
@@ -211,7 +240,6 @@ void Application::Render()
 
 	while (true)
 	{
-		GameUpdateThreadSemaphore.acquire();
 
 		auto start = clock::now();
 
@@ -229,11 +257,11 @@ void Application::Render()
 		auto end = clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-		LOGF_INFO("Render tick took %lld milliseconds", duration);
+		//LOGF_INFO("Render tick took %lld milliseconds", duration);
 		
 		coordinator->GetEpochManager()->IncrementRenderEpoch();
 
-		RenderUpdateThreadSemaphore.release();
+		mSyncBarrier->arrive_and_wait();
 	}
 		
 }
@@ -248,19 +276,10 @@ void Application::PhysicsTick()
 		auto startTime = clock::now();
 
 		PhysicsSystem_->Update(0.016f);
-		coordinator->SwapComponentBuffers("Transform");
-
-		//LOGF_INFO("Physics tick");
 
 		coordinator->GetEpochManager()->IncrementPhysicsEpoch();
 
-		auto endTime = clock::now();
-		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime);
-
-		if (elapsed < fixedDelta)
-		{
-			std::this_thread::sleep_for(fixedDelta - elapsed);
-		}
+		mSyncBarrier->arrive_and_wait();
 	}
 }
 
@@ -295,4 +314,52 @@ void Application::CreateCoordinator()
 	coordinator = Coordinator::GetCoordinator();
 
 	coordinator->Init(&threadPool);
+}
+
+void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
+{
+	// --- Frame Timing & FPS Logic (from MeasureTime) ---
+	auto frameEndTime = std::chrono::steady_clock::now();
+	dt = std::chrono::duration<float>(frameEndTime - frameStartTime).count();
+
+	// Sleep to maintain target frame rate (if we are faster than target)
+	/*
+	float sleepDuration = targetFrameDuration - dt;
+	if (sleepDuration > 0.0f)
+	{
+		std::this_thread::sleep_for(std::chrono::duration<float>(sleepDuration));
+	}
+	*/
+
+	// New end time after sleep (accurate frame time)
+	auto finalFrameEndTime = std::chrono::steady_clock::now();
+	dt = std::chrono::duration<float>(finalFrameEndTime - frameStartTime).count();
+
+	// prepare for next frame
+	frameStartTime = finalFrameEndTime;
+
+	// FPS accumulator: display every 1.0 second
+	frameTimeAccumulator += dt;
+	frameCount++;
+	if (frameTimeAccumulator >= 1.0f)
+	{
+		float fps = static_cast<float>(frameCount) / frameTimeAccumulator;
+		// Use your logger to print FPS
+		LOGF_INFO("FPS: %.2f", fps);
+		frameTimeAccumulator = 0.0f;
+		frameCount = 0;
+	}
+	// --- End of Frame Timing & FPS Logic ---
+
+
+	// 1. Process pending deletions *before* swapping
+	coordinator->ProcessPendingEntityDeletions();
+
+	// 2. Swap ALL double-buffered components
+	coordinator->SwapComponentBuffers("Transform");
+	// ... add any other swappable components ...
+
+	// 3. Increment epochs
+	coordinator->GetEpochManager()->IncrementGameEpoch();
+	coordinator->GetEpochManager()->IncrementRenderEpoch();
 }

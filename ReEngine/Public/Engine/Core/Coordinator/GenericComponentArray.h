@@ -110,6 +110,15 @@ public:
         mDirtyEntities.insert(entityOfLastElement);
     }
 
+    void* GetDataForWrite(Entity entity)
+    {
+        assert(mEntityToIndexMap.find(entity) != mEntityToIndexMap.end() &&
+            "Retrieving non-existent component for write.");
+
+        auto currentWriteBuffer = writeBufferPtr.load();
+        return &((*currentWriteBuffer)[mEntityToIndexMap[entity] * mComponentSize]);
+    }
+
     std::vector<char>* GetWriteBuffer()
     {
         return writeBufferPtr.load();
@@ -133,31 +142,45 @@ public:
     {
         if (mIsDoubleBuffered)
         {
-
-
+            // Load pointers ONCE.
+            // readBufferPtr should be const after init, but we'll follow your atomic load
             auto* readBuffer = readBufferPtr.load();
             auto* writeBuffer = writeBufferPtr.load();
+
+            // Ensure buffers are the same size. This is critical.
+            if (readBuffer->size() != writeBuffer->size())
+            {
+                readBuffer->resize(writeBuffer->size());
+            }
 
             size_t dirtyCount = mDirtyEntities.size();
 
             // If most entities are dirty, just bulk copy everything
+            // This copies FROM the write buffer TO the read buffer.
             if (dirtyCount > mSize / 3)
             {
-                memcpy(writeBuffer->data(), readBuffer->data(), readBuffer->size());
+                memcpy(readBuffer->data(), writeBuffer->data(), writeBuffer->size());
             }
             else if (dirtyCount > 0)
             {
                 // --- Batch contiguous dirty ranges ---
-                // Step 1: Collect and sort indices
                 std::vector<size_t> dirtyIndices;
                 dirtyIndices.reserve(dirtyCount);
                 for (Entity e : mDirtyEntities)
                 {
-                    dirtyIndices.push_back(mEntityToIndexMap[e]);
+                    // Ensure entity still exists before copying
+                    if (mEntityToIndexMap.count(e)) {
+                        dirtyIndices.push_back(mEntityToIndexMap[e]);
+                    }
                 }
+
+                if (dirtyIndices.empty()) {
+                    mDirtyEntities.clear();
+                    return; // No valid dirty entities
+                }
+
                 std::sort(dirtyIndices.begin(), dirtyIndices.end());
 
-                // Step 2: Walk through sorted indices and find contiguous ranges
                 size_t start = dirtyIndices[0];
                 size_t end = start;
 
@@ -165,31 +188,26 @@ public:
                 {
                     if (dirtyIndices[i] == end + 1)
                     {
-                        // Extend the current range
                         end = dirtyIndices[i];
                     }
                     else
                     {
-                        // Copy the finished contiguous block
+                        // Copy the finished contiguous block FROM Write TO Read
                         size_t count = (end - start + 1);
-                        memcpy(&((*writeBuffer)[start * mComponentSize]),
-                            &((*readBuffer)[start * mComponentSize]),
+                        memcpy(&((*readBuffer)[start * mComponentSize]),
+                            &((*writeBuffer)[start * mComponentSize]),
                             count * mComponentSize);
 
-                        // Start a new range
                         start = end = dirtyIndices[i];
                     }
                 }
 
-                // Copy the final range
+                // Copy the final range FROM Write TO Read
                 size_t count = (end - start + 1);
-                memcpy(&((*writeBuffer)[start * mComponentSize]),
-                    &((*readBuffer)[start * mComponentSize]),
+                memcpy(&((*readBuffer)[start * mComponentSize]),
+                    &((*writeBuffer)[start * mComponentSize]),
                     count * mComponentSize);
             }
-
-            auto oldWritePtr = writeBufferPtr.exchange(readBufferPtr.load());
-            readBufferPtr.store(oldWritePtr);
 
             mDirtyEntities.clear();
         }

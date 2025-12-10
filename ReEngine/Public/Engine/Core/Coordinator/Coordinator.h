@@ -181,6 +181,11 @@ public:
 		mComponentManager->MarkEntityDirty(entity, typeName);
 	}
 
+	void* GetComponentForWrite(Entity entity, const std::string& typeName)
+	{
+		return mComponentManager->GetComponentForWrite(entity, typeName);
+	}
+
 	void SwapComponentBuffers(const std::string& fullName) {
 		mComponentManager->SwapComponentBuffers(fullName);
 	}

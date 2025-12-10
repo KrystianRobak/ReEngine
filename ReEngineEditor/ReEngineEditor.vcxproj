@@ -113,7 +113,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories);$(SolutionDir)\ReEngineReflectionCore;$(SolutionDir)\ReEngineCore;$(SolutionDir)\ReEngine\Public\Engine\Components</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpp23</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>

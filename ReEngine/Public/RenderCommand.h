@@ -6,12 +6,11 @@
 #include <cstdint>
 
 struct RenderPrimitive {
-    Entity entity;
-    Transform transform;
-    uint32_t mesh_id;
-    uint32_t material_id;
+    uint64_t MeshResourceId;     // GPU resource lookup
+    glm::mat4 ModelMatrix;       // snapshot, no pointer to Transform
+    uint32_t Entity;
+	uint64_t MaterialId;    // Material to use for rendering
 };
-
 
 struct RenderCommand : public Command
 {

@@ -8,21 +8,24 @@
 // ECS
 using Entity = std::uint32_t;
 
-const Entity APPLICATION = -1;
-const Entity GUI = -2;
-const Entity WINDOW = -3;
+// Sta³e systemowe (C++17+)
+inline constexpr Entity APPLICATION = static_cast<Entity>(-1);
+inline constexpr Entity GUI = static_cast<Entity>(-2);
+inline constexpr Entity WINDOW = static_cast<Entity>(-3);
 
-const Entity MAX_ENTITIES = 110;
-const Entity MAX_LIGHT_ENTITIES = 10;
-const Entity MAX_OBJECT_ENTITIES = 100;
+inline constexpr Entity MAX_ENTITIES = 110;
+inline constexpr Entity MAX_LIGHT_ENTITIES = 10;
+inline constexpr Entity MAX_OBJECT_ENTITIES = 100;
+
 using ComponentType = std::uint8_t;
-const ComponentType MAX_COMPONENTS = 32;
+inline constexpr ComponentType MAX_COMPONENTS = 32;
+
 using Signature = std::bitset<MAX_COMPONENTS>;
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+inline constexpr unsigned int SCR_WIDTH = 800;
+inline constexpr unsigned int SCR_HEIGHT = 600;
 
-constexpr const char* MAIN_WINDOW_NAME = "ReEngineEditor";
+inline constexpr std::string_view MAIN_WINDOW_NAME = "ReEngineEditor";
 
 
 // Input
