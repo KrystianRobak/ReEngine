@@ -106,6 +106,12 @@
     <Filter Include="Source Files\ImGui">
       <UniqueIdentifier>{52691c57-d667-4cf5-b88e-1cf12e92fd14}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Public\Engine\Animation">
+      <UniqueIdentifier>{f1cdbbee-7460-43ce-9b12-ed4a45102949}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Private\Engine\Animation">
+      <UniqueIdentifier>{00496202-8011-429e-a795-7e6f52642eb1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp">
@@ -340,6 +346,18 @@
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\SkeletalMeshComponent.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Animation\Animation.h">
+      <Filter>Source Files\Public\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Animation\AnimHelpers.h">
+      <Filter>Source Files\Public\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Animation\AssimpNodeData.h">
+      <Filter>Source Files\Public\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Animation\Bone.h">
+      <Filter>Source Files\Public\Engine\Animation</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

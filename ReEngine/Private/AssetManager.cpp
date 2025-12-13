@@ -3,40 +3,15 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-static glm::mat4 AssimpToGLM(const aiMatrix4x4& from) {
-    glm::mat4 to;
-    // the a,b,c,d in assimp is row-major, glm is column-major default constructor
-    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
-    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
-    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
-    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
-    return to;
-}
-
-static void SetupSkeletalMeshOpenGL(MeshResource& r, SkeletalMeshData* skeletalCpu)
-{
-	SetupMeshOpenGL(r);
-
-    // NEW: Generate a VBO for Bone Data
-    GLuint boneVBO;
-    glGenBuffers(1, &boneVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, boneVBO);
-
-    // We need to flatten the bone data for the specific sub-mesh we are uploading
-    // Assuming we are inside the loop iterating over meshes[i]:
-    auto& boneDataVec = skeletalCpu->bonesPerMesh[i]; // 'i' is the submesh index
-    glBufferData(GL_ARRAY_BUFFER, boneDataVec.size() * sizeof(VertexBoneData), boneDataVec.data(), GL_STATIC_DRAW);
-
-    // Attribute 5: Bone IDs (Integers!)
-    glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_INT, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, BoneIDs));
-
-    // Attribute 6: Weights (Floats)
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, Weights));
-
-    glBindVertexArray(0);
-}
+//static glm::mat4 AssimpToGLM(const aiMatrix4x4& from) {
+//    glm::mat4 to;
+//    // the a,b,c,d in assimp is row-major, glm is column-major default constructor
+//    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
+//    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
+//    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
+//    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
+//    return to;
+//}
 
 static void SetupMeshOpenGL(MeshResource& r)
 {
@@ -86,6 +61,34 @@ static void SetupMeshOpenGL(MeshResource& r)
         break;
     }
 }
+
+
+static void SetupSkeletalMeshOpenGL(MeshResource& r, SkeletalMeshData* skeletalCpu)
+{
+    SetupMeshOpenGL(r);
+
+    // We need to flatten the bone data for the specific sub-mesh we are uploading
+    // Assuming we are inside the loop iterating over meshes[i]:
+    for (int i = 0; i < skeletalCpu->meshes.size(); ++i)
+    {
+        glGenBuffers(1, &r.BVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, r.BVAO);
+
+        auto& boneDataVec = skeletalCpu->bonesPerMesh[i]; // 'i' is the submesh index
+        glBufferData(GL_ARRAY_BUFFER, boneDataVec.size() * sizeof(VertexBoneData), boneDataVec.data(), GL_STATIC_DRAW);
+
+        // Attribute 5: Bone IDs (Integers!)
+        glEnableVertexAttribArray(5);
+        glVertexAttribIPointer(5, 4, GL_INT, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, BoneIDs));
+
+        // Attribute 6: Weights (Floats)
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, Weights));
+
+        glBindVertexArray(0);
+    }
+}
+
 
 MeshResourceId AssetManager::RegisterMesh(std::shared_ptr<StaticMeshData> cpuMesh)
 {
@@ -350,6 +353,16 @@ std::shared_ptr<SkeletalMeshData> AssetManager::importSkeletalMesh(const std::st
 
         // 2. Process Bone Weights
         processSkeletalMesh(mesh, scene, *skeletalMesh, i);
+    }
+
+    if (scene->HasAnimations())
+    {
+        for (unsigned int i = 0; i < scene->mNumAnimations; i++)
+        {
+            aiAnimation* animation = scene->mAnimations[i];
+            Animation newAnimation(animation, scene);
+            skeletalMesh->animations[newAnimation.GetName()] = newAnimation;
+        }
     }
 
     return skeletalMesh;

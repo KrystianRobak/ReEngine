@@ -23,7 +23,7 @@ struct Keyframe {
     glm::vec3 rotation;
 };
 
-struct Animation {
+struct AnimationTr {
     Keyframe CurrentKeyFrame;
     std::vector<Keyframe> keyframes;
 };
@@ -38,7 +38,7 @@ struct AnimationPath {
     float Duration = 0.0f;
     bool Selected = false;
 
-    std::vector<Animation> Animations;
+    std::vector<AnimationTr> Animations;
 
     AnimationPath(float EndTime, float BeginTime, std::string Name) : EndTime(EndTime), BeginTime(BeginTime), Name(Name) {
         this->Duration = EndTime - BeginTime;

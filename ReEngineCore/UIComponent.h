@@ -19,6 +19,7 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include "TextureData.h"
 
 
 class ILayer;

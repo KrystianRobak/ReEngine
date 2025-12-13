@@ -9,6 +9,6 @@
 struct Animated
 {
 	AnimationPath AnimPath;
-	Animation CurrentlyPlaying;
+	AnimationTr CurrentlyPlaying;
 	bool IsPlaying;
 };

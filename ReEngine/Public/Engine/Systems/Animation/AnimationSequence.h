@@ -36,9 +36,9 @@ private:
     }
 
     // Helper function to ensure an animation exists for the track
-    Animation& GetOrCreateAnimation(AnimationPath& track) {
+    AnimationTr& GetOrCreateAnimation(AnimationPath& track) {
         if (track.Animations.empty()) {
-            Animation newAnim;
+            AnimationTr newAnim;
             track.Animations.push_back(newAnim);
         }
         return track.Animations[0]; // For now, we'll work with the first animation
@@ -250,7 +250,7 @@ private:
             float clickTime = (mouseX / width) * timeSpan + sequencer->timeline_start;
 
             // Create and add new keyframe
-            Animation& animation = GetOrCreateAnimation(*track);
+            AnimationTr& animation = GetOrCreateAnimation(*track);
             Keyframe newKeyframe = CreateKeyframe(clickTime);
             InsertKeyframeSorted(animation.keyframes, newKeyframe);
 

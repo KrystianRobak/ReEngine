@@ -37,4 +37,11 @@ private:
 	ImTextureID TranslateIcon;
 	ImTextureID RotateIcon;
 	ImTextureID ScaleIcon;
+
+    // State for the pop-up
+    bool showImportTypePopup = false;
+
+    // Data passed from the drag-drop event
+    std::string pendingImportPath;
+    std::string pendingImportName;
 };

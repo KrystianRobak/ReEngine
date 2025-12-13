@@ -196,6 +196,10 @@
     <ClInclude Include="ApplicationAPI.h" />
     <ClInclude Include="Public\AssetManager.h" />
     <ClInclude Include="Public\Commander.h" />
+    <ClInclude Include="Public\Engine\Animation\Animation.h" />
+    <ClInclude Include="Public\Engine\Animation\AnimHelpers.h" />
+    <ClInclude Include="Public\Engine\Animation\AssimpNodeData.h" />
+    <ClInclude Include="Public\Engine\Animation\Bone.h" />
     <ClInclude Include="Public\Engine\Components\SkeletalMeshComponent.h" />
     <ClInclude Include="Public\Engine\Components\SkeletalMeshData.h" />
     <ClInclude Include="Public\Engine\Components\StaticMesh.h" />

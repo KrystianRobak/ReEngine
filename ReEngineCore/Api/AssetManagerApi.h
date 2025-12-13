@@ -7,6 +7,7 @@
 
 class CompiledMaterial;
 class StaticMeshData;
+class SkeletalMeshData;
 class PendingStaticMesh;
 struct TextureData;
 struct TextureResource;
@@ -21,6 +22,7 @@ struct MeshResource {
 	uint32_t VAO = 0;
 	uint32_t VBO = 0;
 	uint32_t EBO = 0;
+	uint32_t BVAO = 0;
 	uint32_t indexCount = 0;
 };
 using MeshResourceId = uint64_t;
@@ -30,6 +32,8 @@ class AssetManagerApi
 public:
 
 	virtual std::future<std::shared_ptr<StaticMeshData>> loadFBX(const std::string& path) = 0;
+
+	virtual std::future<std::shared_ptr<SkeletalMeshData>> loadSkeletalFBX(const std::string& path) = 0;
 
 	virtual MeshResourceId RegisterMesh(std::shared_ptr<StaticMeshData> cpuMesh) = 0;;
 

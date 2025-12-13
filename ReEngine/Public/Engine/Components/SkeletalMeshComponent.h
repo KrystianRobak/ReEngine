@@ -22,6 +22,9 @@ struct SkeletalMeshComponent
     // Animation State
     float CurrentTime = 0.0f;
     float AnimationSpeed = 1.0f;
+    
+    REFVARIABLE()
+    std::string CurrentAnimationName;
 
     // TODO: Add reference to an AnimationClip resource here
 };

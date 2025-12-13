@@ -81,7 +81,7 @@ public:
 		return LastMaterialId++;
     }
 
-    std::future<std::shared_ptr<SkeletalMeshData>> loadSkeletalFBX(const std::string& path);
+    std::future<std::shared_ptr<SkeletalMeshData>> loadSkeletalFBX(const std::string& path) override;
 
     std::shared_ptr<SkeletalMeshData> importSkeletalMesh(const std::string& path);
 

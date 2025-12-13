@@ -30,26 +30,78 @@ void SceneView::Render()
 
     ImGui::Image(reinterpret_cast<void*>(viewport->GetTexture()), ImVec2{ size.x, size.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
+    // --- Drag and Drop Target: Capture path and trigger pop-up ---
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DIRECTORY_ENTRY")) {
             if (payload->DataSize > 0) {
                 std::string nameWithPath(static_cast<const char*>(payload->Data));
-                std::vector<std::string> parts = splitString(nameWithPath, '|'); 
+                std::vector<std::string> parts = splitString(nameWithPath, '|');
+
                 if (parts.size() == 2) {
-                    std::string name = parts[0];
-                    std::string path = parts[1];
-                    
-					Entity entity = engineAPI->CreateEntity();
+                    // 1. Store the data temporarily
+                    pendingImportName = parts[0];
+                    pendingImportPath = parts[1];
 
-					engineAPI->AddComponent(entity, "Transform");
-					
-                    auto future = engineAPI->GetAssetManager()->loadFBX(path);
-
-                    engineAPI->GetAssetManager()->AddPendingMesh(entity, std::move(future));
+                    // 2. Set the flag to show the pop-up on the next frame
+                    showImportTypePopup = true;
                 }
             }
-        } 
+        }
         ImGui::EndDragDropTarget();
+    }
+
+    // --- Pop-up Logic ---
+    if (showImportTypePopup) {
+        ImGui::OpenPopup("Select Import Type");
+        // Keep the flag true until the user makes a choice
+    }
+
+    if (ImGui::BeginPopupModal("Select Import Type", &showImportTypePopup, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("File: %s", pendingImportName.c_str());
+        ImGui::Separator();
+        ImGui::Text("Select the type of mesh to import:");
+
+        // Static Mesh Button
+        if (ImGui::Button("Static Mesh", ImVec2(120, 0))) {
+
+            Entity entity = engineAPI->CreateEntity();
+            engineAPI->AddComponent(entity, "Transform");
+
+            // Load using loadFBX (Static)
+            auto future = engineAPI->GetAssetManager()->loadFBX(pendingImportPath);
+            engineAPI->GetAssetManager()->AddPendingMesh(entity, std::move(future));
+
+            ImGui::CloseCurrentPopup();
+            showImportTypePopup = false;
+        }
+
+        ImGui::SameLine();
+
+        // Skeletal Mesh Button
+        if (ImGui::Button("Skeletal Mesh", ImVec2(120, 0))) {
+
+            Entity entity = engineAPI->CreateEntity();
+            engineAPI->AddComponent(entity, "Transform");
+
+            // Add Skeletal Mesh Component instead of Static Mesh Component
+            engineAPI->AddComponent(entity, "SkeletalMeshComponent");
+
+            // Load using loadSkeletalFBX (Skeletal)
+            auto future = engineAPI->GetAssetManager()->loadSkeletalFBX(pendingImportPath);
+            engineAPI->GetAssetManager()->AddPendingMesh(entity, std::move(future)); // Still use AddPendingMesh
+
+            ImGui::CloseCurrentPopup();
+            showImportTypePopup = false;
+        }
+
+        // Optional: Cancel Button
+        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+            ImGui::CloseCurrentPopup();
+            showImportTypePopup = false;
+        }
+
+        ImGui::EndPopup();
     }
 
     // ---------- Overlay Gizmo Buttons (Top-Right of Scene Window) ----------
