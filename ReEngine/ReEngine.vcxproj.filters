@@ -112,6 +112,12 @@
     <Filter Include="Source Files\Private\Engine\Animation">
       <UniqueIdentifier>{00496202-8011-429e-a795-7e6f52642eb1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Public\Engine\AssetManagement">
+      <UniqueIdentifier>{a35c6985-ff2d-43cd-8b7c-f7cb189eaadb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Private\Engine\AssetManagement">
+      <UniqueIdentifier>{3f242c6f-47f4-4566-a9f1-2b6ea39a3163}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp">
@@ -197,6 +203,9 @@
     </ClCompile>
     <ClCompile Include="Private\EpochManager.cpp">
       <Filter>Source Files\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="Private\Engine\AssetManagement\AssetSerializer.cpp">
+      <Filter>Source Files\Private\Engine\AssetManagement</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -358,6 +367,18 @@
     </ClInclude>
     <ClInclude Include="Public\Engine\Animation\Bone.h">
       <Filter>Source Files\Public\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\AssetManagement\AssetFileFormat.h">
+      <Filter>Source Files\Public\Engine\AssetManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\AssetManagement\AssetSerializer.h">
+      <Filter>Source Files\Public\Engine\AssetManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Components\BoxCollider.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Components\HeightfieldCollider.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

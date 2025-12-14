@@ -163,6 +163,7 @@
     <ClCompile Include="ApplicationAPI.cpp" />
     <ClCompile Include="Private\AssetManager.cpp" />
     <ClCompile Include="Private\Commander.cpp" />
+    <ClCompile Include="Private\Engine\AssetManagement\AssetSerializer.cpp" />
     <ClCompile Include="Private\EpochManager.cpp" />
     <ClCompile Include="Private\SceneManager.cpp" />
     <ClCompile Include="Private\ThreadPool.cpp" />
@@ -200,6 +201,10 @@
     <ClInclude Include="Public\Engine\Animation\AnimHelpers.h" />
     <ClInclude Include="Public\Engine\Animation\AssimpNodeData.h" />
     <ClInclude Include="Public\Engine\Animation\Bone.h" />
+    <ClInclude Include="Public\Engine\AssetManagement\AssetFileFormat.h" />
+    <ClInclude Include="Public\Engine\AssetManagement\AssetSerializer.h" />
+    <ClInclude Include="Public\Engine\Components\BoxCollider.h" />
+    <ClInclude Include="Public\Engine\Components\HeightfieldCollider.h" />
     <ClInclude Include="Public\Engine\Components\SkeletalMeshComponent.h" />
     <ClInclude Include="Public\Engine\Components\SkeletalMeshData.h" />
     <ClInclude Include="Public\Engine\Components\StaticMesh.h" />
