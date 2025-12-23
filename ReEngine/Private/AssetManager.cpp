@@ -1,521 +1,291 @@
-#include "AssetManager.h"
+#include "Engine/AssetManager.h"
+#include <GL/glew.h>
+#include <iostream>
+#include <algorithm>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+namespace fs = std::filesystem;
 
-//static glm::mat4 AssimpToGLM(const aiMatrix4x4& from) {
-//    glm::mat4 to;
-//    // the a,b,c,d in assimp is row-major, glm is column-major default constructor
-//    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
-//    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
-//    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
-//    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
-//    return to;
-//}
+// Extension for your custom cooked assets
+const std::string COOKED_EXT = ".rasset";
 
-static void SetupMeshOpenGL(MeshResource& r)
-{
-    // r.cpuMesh must be valid here
-    auto& cpu = r.cpuMesh; // StaticMeshData should contain vector<MeshData> meshes or a single MeshData
-    // If StaticMeshData has multiple sub-meshes: you can choose to create one combined VAO or store per-submesh resources.
-    // For brevity, assume StaticMeshData contains a vector<MeshData> meshes, and we upload each submesh individually.
-    // Here we'll upload the first mesh only as an example (adapt as needed).
-    if (cpu->meshes.empty()) return;
+AssetManager::AssetManager(ThreadPool* threadPool) : pool(threadPool) {}
 
-    // For each MeshData:
-    for (auto& mesh : cpu->meshes) {
-        // Create VAO/VBO/EBO
-        glGenVertexArrays(1, &r.VAO);
-        glGenBuffers(1, &r.VBO);
-        glGenBuffers(1, &r.EBO);
+AssetManager::~AssetManager() { shutdown(); }
 
-        glBindVertexArray(r.VAO);
+void AssetManager::shutdown() {
+    std::lock_guard<std::mutex> lock(assetMutex);
+    meshCache.clear();
+    textureCache.clear();
+}
 
-        glBindBuffer(GL_ARRAY_BUFFER, r.VBO);
-        glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
+// -----------------------------------------------------------------------
+//  UPLOAD SYSTEM (Render Thread)
+// -----------------------------------------------------------------------
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, r.EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
+void AssetManager::EnqueueUpload(std::function<void()> func) {
+    std::lock_guard<std::mutex> lock(uploadMutex);
+    uploadQueue.push(std::move(func));
+}
 
-        // Vertex layout (match your Vertex struct)
-        glEnableVertexAttribArray(0); // Position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-
-        glEnableVertexAttribArray(1); // Normal
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-
-        glEnableVertexAttribArray(2); // TexCoords
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-
-        glEnableVertexAttribArray(3); // Tangent
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-
-        glEnableVertexAttribArray(4); // Bitangent
-        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
-
-        glBindVertexArray(0);
-
-        r.indexCount = static_cast<uint32_t>(mesh.indices.size());
-
-        // If you have multiple submeshes you need to store them separately. For simplicity, we're handling one.
-        break;
+void AssetManager::DispatchUploads() {
+    // Standard double-buffer queue swap pattern
+    std::queue<std::function<void()>> localQueue;
+    {
+        std::lock_guard<std::mutex> lock(uploadMutex);
+        if (uploadQueue.empty()) return;
+        std::swap(localQueue, uploadQueue);
+    }
+    while (!localQueue.empty()) {
+        localQueue.front()();
+        localQueue.pop();
     }
 }
 
+// -----------------------------------------------------------------------
+//  STATIC MESH (Async Load)
+// -----------------------------------------------------------------------
 
-static void SetupSkeletalMeshOpenGL(MeshResource& r, SkeletalMeshData* skeletalCpu)
-{
-    SetupMeshOpenGL(r);
+std::shared_ptr<MeshResource> AssetManager::GetMesh(const std::string& path) {
+    std::lock_guard<std::mutex> lock(assetMutex);
+    // Return existing handle if already requested
+    if (meshCache.find(path) != meshCache.end()) return meshCache[path];
 
-    // We need to flatten the bone data for the specific sub-mesh we are uploading
-    // Assuming we are inside the loop iterating over meshes[i]:
-    for (int i = 0; i < skeletalCpu->meshes.size(); ++i)
-    {
-        glGenBuffers(1, &r.BVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, r.BVAO);
+    // Create a new handle that is initially "Not Uploaded"
+    auto resource = std::make_shared<MeshResource>();
+    resource->uploaded = false;
+    meshCache[path] = resource;
 
-        auto& boneDataVec = skeletalCpu->bonesPerMesh[i]; // 'i' is the submesh index
-        glBufferData(GL_ARRAY_BUFFER, boneDataVec.size() * sizeof(VertexBoneData), boneDataVec.data(), GL_STATIC_DRAW);
+    // Submit Job to IO Thread (JobType::Background)
+    pool->submit(JobType::Background, [this, path, resource]() {
 
-        // Attribute 5: Bone IDs (Integers!)
-        glEnableVertexAttribArray(5);
-        glVertexAttribIPointer(5, 4, GL_INT, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, BoneIDs));
+        std::string cookedPath = path + COOKED_EXT;
 
-        // Attribute 6: Weights (Floats)
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, Weights));
+        // This heavy IO happens on background thread
+        auto cpuMesh = LoadBinaryStaticMesh(cookedPath);
 
-        glBindVertexArray(0);
-    }
-}
-
-
-MeshResourceId AssetManager::RegisterMesh(std::shared_ptr<StaticMeshData> cpuMesh)
-{
-    std::lock_guard<std::mutex> lock(meshResourcesMutex);
-    MeshResourceId id = ++lastMeshResourceId;
-
-    auto res = std::make_shared<MeshResource>();
-    res->cpuMesh = std::move(cpuMesh);
-    res->needsUpload = true;
-    res->uploaded = false;
-    res->VAO = res->VBO = res->EBO = 0;
-    res->indexCount = 0;
-
-    meshResources.emplace(id, res);
-
-    return id;
-}
-
-void AssetManager::UploadPendingResources()
-{
-    std::vector<std::shared_ptr<TextureData>> texturesToUpload;
-
-    {
-        std::lock_guard<std::mutex> lock(gpuTextureMutex);
-        texturesToUpload.swap(pendingTextures); // move pending textures out
-    }
-
-    for (auto& texData : texturesToUpload)
-    {
-        if (!texData) continue;
-
-        std::shared_ptr<TextureResource> texRes;
-
-        {
-            std::lock_guard<std::mutex> lock(gpuTextureMutex);
-            auto it = gpuTextures.find(texData->path);
-            if (it != gpuTextures.end())
-                texRes = it->second;
+        if (!cpuMesh) {
+            std::cerr << "[AssetManager] Failed to load cooked mesh: " << cookedPath << "\n";
+            return;
         }
 
-        // If first time, create resource
-        if (!texRes)
-        {
-            texRes = std::make_shared<TextureResource>();
-            texRes->width = texData->width;
-            texRes->height = texData->height;
+        resource->cpuMesh = cpuMesh;
 
-            glGenTextures(1, &texRes->id);
-            glBindTexture(GL_TEXTURE_2D, texRes->id);
+        // Once IO is done, queue the GPU Upload for the Main Thread
+        this->EnqueueUpload([resource]() {
+            if (!resource->cpuMesh) return;
+            for (auto& mesh : resource->cpuMesh->meshes) {
+                glGenVertexArrays(1, &resource->VAO);
+                glGenBuffers(1, &resource->VBO);
+                glGenBuffers(1, &resource->EBO);
 
-            glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RGBA8,
-                texData->width,
-                texData->height,
-                0,
-                GL_RGBA,
-                GL_UNSIGNED_BYTE,
-                texData->pixels.data()
-            );
+                glBindVertexArray(resource->VAO);
+                glBindBuffer(GL_ARRAY_BUFFER, resource->VBO);
+                glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
 
-            glGenerateMipmap(GL_TEXTURE_2D);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resource->EBO);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glEnableVertexAttribArray(0); glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+                glEnableVertexAttribArray(1); glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+                glEnableVertexAttribArray(2); glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+                glEnableVertexAttribArray(3); glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+                glEnableVertexAttribArray(4); glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-            glBindTexture(GL_TEXTURE_2D, 0);
-
-            texRes->uploaded = true;
-
-            // store in GPU cache
-            {
-                std::lock_guard<std::mutex> lock(gpuTextureMutex);
-                gpuTextures[texData->path] = texRes;
+                resource->indexCount = (uint32_t)mesh.indices.size();
+                glBindVertexArray(0);
+                break;
             }
-        }
-    }
-
-    std::vector<std::shared_ptr<MeshResource>> toUpload;
-
-    {
-        std::lock_guard<std::mutex> lock(meshResourcesMutex);
-
-        for (auto& [id, resPtr] : meshResources) {
-
-            if (resPtr->needsUpload && !resPtr->uploaded) {
-
-                resPtr->needsUpload = false;
-                toUpload.push_back(resPtr);
-            }
-        }
-    }
-
-    // Upload outside lock
-    for (auto& res : toUpload) {
-
-        if (!res->cpuMesh)
-            continue;
-
-        SetupMeshOpenGL(*res);
-        res->uploaded = true;
-    }
-}
-
-MeshResource* AssetManager::GetMeshResource(MeshResourceId id)
-{
-    std::lock_guard<std::mutex> lock(meshResourcesMutex);
-    auto it = meshResources.find(id);
-
-    if (it == meshResources.end())
-        return nullptr;
-
-    return it->second.get();
-}
-
-
-std::future<std::shared_ptr<StaticMeshData>> AssetManager::loadFBX(const std::string& path) {
-    return pool->submit([this, path]() {
-		auto mesh = this->importFBX(path);
-
-        return mesh;
+            // Mark as ready so the game knows it can draw this
+            resource->uploaded = true;
+            });
         });
+
+    return resource;
 }
 
-std::future<std::shared_ptr<TextureData>> AssetManager::loadTexture(const std::string& rawPath)
-{
+// -----------------------------------------------------------------------
+//  TEXTURE (Async Load)
+// -----------------------------------------------------------------------
+
+std::shared_ptr<TextureResource> AssetManager::GetTexture(const std::string& rawPath) {
     std::string path = rawPath;
     std::replace(path.begin(), path.end(), '\\', '/');
 
-    std::lock_guard<std::mutex> lock(textureCacheMutex);
+    std::lock_guard<std::mutex> lock(assetMutex);
+    if (textureCache.find(path) != textureCache.end()) return textureCache[path];
 
-    // If exists in CPU cache
-    auto cached = textureCache[path].lock();
-    if (cached)
-        return std::async(std::launch::deferred, [cached]() { return cached; });
+    auto resource = std::make_shared<TextureResource>();
+    resource->id = lastTextureResourceId++;
+    resource->uploaded = false;
+    textureCache[path] = resource;
 
-    // Launch async load
-    return pool->submit([this, path]() -> std::shared_ptr<TextureData> {
+    // Submit to IO Thread
+    pool->submit(JobType::Background, [this, path, resource]() {
+        std::string cookedPath = path + COOKED_EXT;
+        auto texData = LoadBinaryTexture(cookedPath);
 
-        int w, h, c;
-        stbi_set_flip_vertically_on_load(true);
-        unsigned char* data = stbi_load(path.c_str(), &w, &h, &c, 4);
-
-        if (!data)
-            return nullptr;
-
-        auto tex = std::make_shared<TextureData>(w, h, 4, data);
-        tex->path = path;
-
-        stbi_image_free(data);
-
-        // put into CPU cache
-        {
-            std::lock_guard<std::mutex> lock(textureCacheMutex);
-            textureCache[path] = tex;
+        if (!texData) {
+            std::cerr << "[AssetManager] Failed to load cooked texture: " << cookedPath << "\n";
+            return;
         }
 
-        // mark as pending GPU upload
-        {
-            std::lock_guard<std::mutex> lock(gpuTextureMutex);
-            pendingTextures.push_back(tex);
-        }
-
-        return tex;
+        // Enqueue Upload to Main Thread
+        this->EnqueueUpload([resource, texData = std::move(texData)]() {
+            resource->width = texData->w; resource->height = texData->h;
+            glGenTextures(1, &resource->id);
+            glBindTexture(GL_TEXTURE_2D, resource->id);
+            // Note: Uploading raw pixels can be slow. In a pro engine, 
+            // you might use PBOs here to keep this async on the GPU too.
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texData->w, texData->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData->pixels.data());
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            resource->uploaded = true;
+            });
         });
+    return resource;
 }
 
-void AssetManager::unloadTexture(const std::string& path)
-{
-    std::lock_guard<std::mutex> lock(textureCacheMutex);
-	textureCache.erase(path);
-}
+// -----------------------------------------------------------------------
+//  BINARY LOADERS (Same as previous turn, just ensuring implementation exists)
+// -----------------------------------------------------------------------
 
-std::vector<std::string> AssetManager::GetCachedTexturesPaths()
-{
-    // Use the mutex that protects GPU texture access
-    std::lock_guard<std::mutex> lock(gpuTextureMutex);
-    std::vector<std::string> paths;
+std::shared_ptr<StaticMeshData> AssetManager::LoadBinaryStaticMesh(const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open()) return nullptr;
 
-    // Iterate over the map holding the shared_ptr<TextureResource>
-    for (const auto& pair : gpuTextures)
-    {
-        // Add the path (key) to the list
-        paths.push_back(pair.first);
+    AssetHeader header;
+    in.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
+    if (header.magic != ASSET_MAGIC || header.type != AssetType::StaticMesh) return nullptr;
+
+    auto result = std::make_shared<StaticMeshData>();
+    result->path = path;
+
+    in.read(reinterpret_cast<char*>(&result->aabbMin), sizeof(glm::vec3));
+    in.read(reinterpret_cast<char*>(&result->aabbMax), sizeof(glm::vec3));
+
+    uint32_t meshCount = 0;
+    in.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
+
+    result->meshes.resize(meshCount);
+    for (uint32_t i = 0; i < meshCount; ++i) {
+        ReadVector(in, result->meshes[i].vertices);
+        ReadVector(in, result->meshes[i].indices);
     }
-
-    return paths;
+    return result;
 }
 
-void AssetManager::unloadMesh(const std::string& path)
-{
-    std::lock_guard<std::mutex> lock(cacheMutex);
-	cache.erase(path);
+std::unique_ptr<AssetManager::TextureLoadResult> AssetManager::LoadBinaryTexture(const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open()) return nullptr;
+
+    AssetHeader header;
+    in.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
+    if (header.magic != ASSET_MAGIC || header.type != AssetType::Texture) return nullptr;
+
+    TextureHeader texHeader;
+    in.read(reinterpret_cast<char*>(&texHeader), sizeof(TextureHeader));
+
+    auto result = std::make_unique<TextureLoadResult>();
+    result->w = texHeader.width;
+    result->h = texHeader.height;
+    result->c = texHeader.channels;
+    result->pixels.resize(texHeader.dataSize);
+
+    in.read(reinterpret_cast<char*>(result->pixels.data()), texHeader.dataSize);
+    return result;
 }
 
-void AssetManager::addMaterial(int id, CompiledMaterial material)
-{
-	materials[id] = material;
-}
+std::shared_ptr<MeshResource> AssetManager::GetSkeletalMesh(const std::string& path) {
+    std::lock_guard<std::mutex> lock(assetMutex);
+    if (meshCache.find(path) != meshCache.end()) return meshCache[path];
 
-void AssetManager::AddPendingMesh(Entity entity, std::future<std::shared_ptr<StaticMeshData>> future)
-{
-    PendingStaticMesh Pending;
+    auto resource = std::make_shared<MeshResource>();
+    resource->uploaded = false;
+    meshCache[path] = resource;
 
-	Pending.entity = entity;
-	Pending.future = std::move(future);
+    pool->submit(JobType::Background, [this, path, resource]() {
+        std::string cookedPath = path + COOKED_EXT;
+        auto cpuMesh = LoadBinarySkeletalMesh(cookedPath);
+        if (!cpuMesh) return;
+        resource->cpuMesh = cpuMesh;
+        this->EnqueueUpload([resource, cpuMesh]() {
+            if (cpuMesh->meshes.empty()) return;
+            auto& mesh = cpuMesh->meshes[0];
+            glGenVertexArrays(1, &resource->VAO);
+            glGenBuffers(1, &resource->VBO);
+            glGenBuffers(1, &resource->EBO);
+            glBindVertexArray(resource->VAO);
+            glBindBuffer(GL_ARRAY_BUFFER, resource->VBO);
+            glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resource->EBO);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
+            glEnableVertexAttribArray(0); glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+            glEnableVertexAttribArray(1); glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+            glEnableVertexAttribArray(2); glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+            glEnableVertexAttribArray(3); glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+            glEnableVertexAttribArray(4); glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
-	pendingMeshes.emplace_back(std::move(Pending));
-}
-
-inline std::vector<std::string> AssetManager::GetCachedPaths()
-{
-    std::lock_guard<std::mutex> lock(cacheMutex);
-    std::vector<std::string> paths;
-    for (auto& [path, weak] : cache)
-        if (!weak.expired())
-            paths.push_back(path);
-    return paths;
-}
-
-
-std::future<std::shared_ptr<SkeletalMeshData>> AssetManager::loadSkeletalFBX(const std::string& path) {
-    return pool->submit([this, path]() {
-        return this->importSkeletalMesh(path);
+            if (!cpuMesh->bonesPerMesh.empty()) {
+                glGenBuffers(1, &resource->BVAO);
+                glBindBuffer(GL_ARRAY_BUFFER, resource->BVAO);
+                auto& boneData = cpuMesh->bonesPerMesh[0];
+                glBufferData(GL_ARRAY_BUFFER, boneData.size() * sizeof(VertexBoneData), boneData.data(), GL_STATIC_DRAW);
+                glEnableVertexAttribArray(5); glVertexAttribIPointer(5, 4, GL_INT, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, BoneIDs));
+                glEnableVertexAttribArray(6); glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, Weights));
+            }
+            resource->indexCount = (uint32_t)mesh.indices.size();
+            glBindVertexArray(0);
+            resource->uploaded = true;
+            });
         });
+    return resource;
+}
+std::shared_ptr<SkeletalMeshData> AssetManager::LoadBinarySkeletalMesh(const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open()) return nullptr;
+    AssetHeader header;
+    in.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
+    if (header.magic != ASSET_MAGIC || header.type != AssetType::SkeletalMesh) return nullptr;
+    auto result = std::make_shared<SkeletalMeshData>();
+    result->path = path;
+    in.read(reinterpret_cast<char*>(&result->aabbMin), sizeof(glm::vec3));
+    in.read(reinterpret_cast<char*>(&result->aabbMax), sizeof(glm::vec3));
+    uint32_t meshCount = 0;
+    in.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
+    result->meshes.resize(meshCount);
+    result->bonesPerMesh.resize(meshCount);
+    for (uint32_t i = 0; i < meshCount; ++i) {
+        ReadVector(in, result->meshes[i].vertices);
+        ReadVector(in, result->meshes[i].indices);
+        ReadVector(in, result->bonesPerMesh[i]);
+    }
+    uint32_t boneMapSize = 0;
+    in.read(reinterpret_cast<char*>(&boneMapSize), sizeof(uint32_t));
+    for (uint32_t i = 0; i < boneMapSize; ++i) {
+        uint32_t nameLen;
+        in.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
+        std::string boneName; boneName.resize(nameLen);
+        in.read(&boneName[0], nameLen);
+        BoneInfo info;
+        in.read(reinterpret_cast<char*>(&info), sizeof(BoneInfo));
+        result->boneInfoMap[boneName] = info;
+    }
+    result->boneCount = boneMapSize;
+    return result;
 }
 
-std::shared_ptr<SkeletalMeshData> AssetManager::importSkeletalMesh(const std::string& path) {
-    // cache check
-    {
-        std::lock_guard<std::mutex> lock(skeletalCacheMutex);
-        if (auto cached = SkeletalMeshCache[path].lock())
-            return cached;
-    }
-
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path,
-        aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcess_LimitBoneWeights);
-
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        throw std::runtime_error("Assimp Skeletal Error: " + std::string(importer.GetErrorString()));
-    }
-
-    auto skeletalMesh = std::make_shared<SkeletalMeshData>();
-    skeletalMesh->path = path;
-
-    // Resize the bonesPerMesh vector to match the number of meshes
-    skeletalMesh->bonesPerMesh.resize(scene->mNumMeshes);
-
-    // Process all meshes to get vertices AND bone weights
-    for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
-        aiMesh* mesh = scene->mMeshes[i];
-
-        // 1. Process Standard Geometry (Vertices, Indices, Textures)
-        // Reuse your existing processMesh logic!
-        MeshData geoData = processMesh(mesh, scene);
-        skeletalMesh->meshes.push_back(geoData);
-
-        // 2. Process Bone Weights
-        processSkeletalMesh(mesh, scene, *skeletalMesh, i);
-    }
-
-    if (scene->HasAnimations())
-    {
-        for (unsigned int i = 0; i < scene->mNumAnimations; i++)
-        {
-            aiAnimation* animation = scene->mAnimations[i];
-            Animation newAnimation(animation, scene);
-            skeletalMesh->animations[newAnimation.GetName()] = newAnimation;
-        }
-    }
-
-    return skeletalMesh;
+// Utilities
+void AssetManager::addMaterial(int id, CompiledMaterial material) { materials[id] = material; }
+CompiledMaterial* AssetManager::GetMaterial(int id) { return materials.count(id) ? &materials[id] : nullptr; }
+void AssetManager::unloadTexture(const std::string& path) { std::lock_guard<std::mutex> l(assetMutex); textureCache.erase(path); }
+void AssetManager::unloadMesh(const std::string& path) { std::lock_guard<std::mutex> l(assetMutex); meshCache.erase(path); }
+std::vector<std::string> AssetManager::GetCachedPaths() {
+    std::lock_guard<std::mutex> l(assetMutex);
+    std::vector<std::string> p; for (auto& kv : meshCache) p.push_back(kv.first); return p;
 }
-
-void AssetManager::processSkeletalMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData& data, int meshIndex)
-{
-    // Initialize bone data for every vertex in this mesh with default -1/0 values
-    data.bonesPerMesh[meshIndex].resize(mesh->mNumVertices);
-
-    // Iterate through the bones provided by Assimp for this specific mesh
-    for (unsigned int i = 0; i < mesh->mNumBones; i++) {
-        int boneID = -1;
-        std::string boneName = mesh->mBones[i]->mName.C_Str();
-
-        // If bone doesn't exist in our global map yet, add it
-        if (data.boneInfoMap.find(boneName) == data.boneInfoMap.end()) {
-            BoneInfo newBoneInfo;
-            newBoneInfo.id = data.boneCount;
-            newBoneInfo.offset = AssimpToGLM(mesh->mBones[i]->mOffsetMatrix);
-
-            data.boneInfoMap[boneName] = newBoneInfo;
-            boneID = data.boneCount;
-            data.boneCount++;
-        }
-        else {
-            boneID = data.boneInfoMap[boneName].id;
-        }
-
-        // Get the weights for this bone
-        auto weights = mesh->mBones[i]->mWeights;
-        int numWeights = mesh->mBones[i]->mNumWeights;
-
-        for (int weightIndex = 0; weightIndex < numWeights; weightIndex++) {
-            int vertexId = weights[weightIndex].mVertexId;
-            float weight = weights[weightIndex].mWeight;
-
-            // Add to our parallel array
-            data.bonesPerMesh[meshIndex][vertexId].AddBoneData(boneID, weight);
-        }
-    }
+std::vector<std::string> AssetManager::GetCachedTexturesPaths() {
+    std::lock_guard<std::mutex> l(assetMutex);
+    std::vector<std::string> p; for (auto& kv : textureCache) p.push_back(kv.first); return p;
 }
-
-void AssetManager::ExtractBoneWeightForVertices(std::vector<VertexBoneData>& vertices, aiMesh* mesh, const aiScene* scene, SkeletalMeshData& data)
-{
-}
-
-void AssetManager::shutdown() {
-    
-}
-
-    std::shared_ptr<StaticMeshData> AssetManager::importFBX(const std::string& path) {
-        // cache check
-        {
-            std::lock_guard<std::mutex> lock(cacheMutex);
-            if (auto cached = cache[path].lock())
-                return cached;
-        }
-
-        Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(
-            path,
-            aiProcess_Triangulate |
-            aiProcess_FlipUVs |
-            aiProcess_CalcTangentSpace |
-            aiProcess_GenNormals
-        );
-
-        if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-            throw std::runtime_error("Assimp failed: " + std::string(importer.GetErrorString()));
-        }
-
-        auto staticMesh = std::make_shared<StaticMeshData>();
-
-		staticMesh->path = path;
-
-        processNode(scene->mRootNode, scene, *staticMesh.get());
-
-        {
-            std::lock_guard<std::mutex> lock(cacheMutex);
-            cache[path] = staticMesh;
-        }
-
-        return staticMesh;
-    }
-
-    void AssetManager::processNode(aiNode* node, const aiScene* scene, StaticMeshData& staticMesh) {
-        for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-            MeshData meshData = processMesh(mesh, scene);
-
-			staticMesh.meshes.push_back(meshData);
-
-            //staticMesh.MaterialId.push_back(node->mMeshes[i]);
-        }
-        for (unsigned int i = 0; i < node->mNumChildren; i++) {
-            processNode(node->mChildren[i], scene, staticMesh);
-        }
-    }
-
-    MeshData AssetManager::processMesh(aiMesh* mesh, const aiScene* scene) {
-        MeshData data;
-
-        for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-            Vertex vertex;
-            vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
-            vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
-
-            if (mesh->mTextureCoords[0]) {
-                vertex.TexCoords = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
-            }
-            else {
-                vertex.TexCoords = { 0.0f, 0.0f };
-            }
-
-            if (mesh->mTangents)
-                vertex.Tangent = { mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z };
-            if (mesh->mBitangents)
-                vertex.Bitangent = { mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z };
-
-            data.vertices.push_back(vertex);
-        }
-
-        for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-            aiFace face = mesh->mFaces[i];
-            for (unsigned int j = 0; j < face.mNumIndices; j++)
-                data.indices.push_back(face.mIndices[j]);
-        }
-
-        if (mesh->mMaterialIndex >= 0) {
-            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-            loadTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", data.textures);
-            loadTextures(material, aiTextureType_SPECULAR, "texture_specular", data.textures);
-        }
-
-        return data;
-    }
-
-    void AssetManager::loadTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName, std::vector<TextureData>& textures) {
-        for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
-            aiString str;
-            mat->GetTexture(type, i, &str);
-
-            std::string texturePath = str.C_Str();
-
-            this->loadTexture(texturePath);
-
-            TextureData texMetadata;
-            texMetadata.path = texturePath; // The mesh only needs to know the path
-            texMetadata.type = typeName;
-            texMetadata.width = 0;  // Metadata only
-            texMetadata.height = 0; // Metadata only
-
-            textures.push_back(texMetadata);
-        }
-    }

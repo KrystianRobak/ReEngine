@@ -15,9 +15,9 @@ public:
     void Render();
 private:
     int type;
-	ImTextureID startIcon = nullptr;
-	ImTextureID pauseIcon = nullptr;
-	ImTextureID recompileIcon = nullptr;
+	std::shared_ptr<TextureResource> startIcon = nullptr;
+    std::shared_ptr<TextureResource> pauseIcon = nullptr;
+    std::shared_ptr<TextureResource> recompileIcon = nullptr;
 	bool isPlaying = false;
 };
 

@@ -163,10 +163,8 @@
     <ClCompile Include="ApplicationAPI.cpp" />
     <ClCompile Include="Private\AssetManager.cpp" />
     <ClCompile Include="Private\Commander.cpp" />
-    <ClCompile Include="Private\Engine\AssetManagement\AssetSerializer.cpp" />
     <ClCompile Include="Private\EpochManager.cpp" />
     <ClCompile Include="Private\SceneManager.cpp" />
-    <ClCompile Include="Private\ThreadPool.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -201,8 +199,6 @@
     <ClInclude Include="Public\Engine\Animation\AnimHelpers.h" />
     <ClInclude Include="Public\Engine\Animation\AssimpNodeData.h" />
     <ClInclude Include="Public\Engine\Animation\Bone.h" />
-    <ClInclude Include="Public\Engine\AssetManagement\AssetFileFormat.h" />
-    <ClInclude Include="Public\Engine\AssetManagement\AssetSerializer.h" />
     <ClInclude Include="Public\Engine\Components\BoxCollider.h" />
     <ClInclude Include="Public\Engine\Components\HeightfieldCollider.h" />
     <ClInclude Include="Public\Engine\Components\SkeletalMeshComponent.h" />
@@ -212,7 +208,6 @@
     <ClInclude Include="Public\ReEngineExport.h" />
     <ClInclude Include="Public\RenderCommand.h" />
     <ClInclude Include="Public\SceneManager.h" />
-    <ClInclude Include="Public\ThreadPool.h" />
     <ClInclude Include="RawImageData.h" />
     <ClInclude Include="RenderCommand.h" />
     <ClInclude Include="ComponentBasic.h" />

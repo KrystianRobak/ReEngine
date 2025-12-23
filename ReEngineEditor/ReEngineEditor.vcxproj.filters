@@ -25,6 +25,9 @@
     <Filter Include="Source Files\stb">
       <UniqueIdentifier>{e7172d96-e1c4-4508-bd92-42e3e8a4d570}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\AssetManagement">
+      <UniqueIdentifier>{5a2cd0f5-ffc0-4bbf-b85c-fa12f0848843}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ReEngineEditor.cpp">
@@ -104,6 +107,12 @@
     </ClCompile>
     <ClCompile Include="..\Libs\Include\imgui\imnodes.cpp">
       <Filter>Source Files\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetManagement\AssetSerializer.cpp">
+      <Filter>Source Files\AssetManagement</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -193,6 +202,12 @@
     </ClInclude>
     <ClInclude Include="..\Libs\Include\imgui\imnodes_internal.h">
       <Filter>Source Files\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetManagement\AssetSerializer.h">
+      <Filter>Source Files\AssetManagement</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

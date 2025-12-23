@@ -78,6 +78,9 @@
     <ClCompile Include="IViewport.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
+    <ClCompile Include="ThreadPool.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="System\System.h">
@@ -151,6 +154,15 @@
     </ClInclude>
     <ClInclude Include="Api\AssetManagerApi.h">
       <Filter>Pliki nagłówkowe\Api</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetFileFormat.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="Api\ThreadPoolApi.h">
+      <Filter>Pliki nagłówkowe\Api</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadPool.h">
+      <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

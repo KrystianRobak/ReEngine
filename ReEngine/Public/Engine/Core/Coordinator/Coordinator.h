@@ -165,6 +165,15 @@ public:
 		mSystemManager->EntitySignatureChanged(entity, signature);
 	}
 
+	bool HasComponent(Entity entity, const char* name) {
+		Signature signature = GetEntitySignature(entity);
+		if (!signature.test(GetComponentType(name)))
+		{
+			return true;
+		}
+		return false;
+	}
+
 	void RemoveComponent(Entity entity, const std::string& typeName) override
 	{
 		mComponentManager->RemoveComponent(entity, typeName);

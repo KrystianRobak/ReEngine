@@ -4,12 +4,17 @@
 #include "Transform.h"
 #include "ReTypes.h"
 #include <cstdint>
+#include <memory>
+
+class MeshResource;
 
 struct RenderPrimitive {
-    uint64_t MeshResourceId;     // GPU resource lookup
-    glm::mat4 ModelMatrix;       // snapshot, no pointer to Transform
-    uint32_t Entity;
-	uint64_t MaterialId;    // Material to use for rendering
+    glm::mat4 ModelMatrix;
+    Entity Entity;
+    int MaterialId;
+
+    // Direct handle to the mesh resource (including VAO and uploaded flag)
+    std::shared_ptr<MeshResource> Mesh;
 };
 
 struct RenderCommand : public Command

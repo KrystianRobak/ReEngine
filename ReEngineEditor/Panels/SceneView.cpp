@@ -69,8 +69,7 @@ void SceneView::Render()
             engineAPI->AddComponent(entity, "Transform");
 
             // Load using loadFBX (Static)
-            auto future = engineAPI->GetAssetManager()->loadFBX(pendingImportPath);
-            engineAPI->GetAssetManager()->AddPendingMesh(entity, std::move(future));
+            auto future = engineAPI->GetAssetManager()->GetMesh(pendingImportPath);
 
             ImGui::CloseCurrentPopup();
             showImportTypePopup = false;
@@ -87,9 +86,9 @@ void SceneView::Render()
             // Add Skeletal Mesh Component instead of Static Mesh Component
             engineAPI->AddComponent(entity, "SkeletalMeshComponent");
 
-            // Load using loadSkeletalFBX (Skeletal)
-            auto future = engineAPI->GetAssetManager()->loadSkeletalFBX(pendingImportPath);
-            engineAPI->GetAssetManager()->AddPendingMesh(entity, std::move(future)); // Still use AddPendingMesh
+            //// Load using loadSkeletalFBX (Skeletal)
+            //auto future = engineAPI->GetAssetManager()->loadSkeletalFBX(pendingImportPath);
+            //engineAPI->GetAssetManager()->AddPendingSkeletalMesh(entity, std::move(future)); // Still use AddPendingMesh
 
             ImGui::CloseCurrentPopup();
             showImportTypePopup = false;
@@ -127,19 +126,19 @@ void SceneView::Render()
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1, 1, 1, 0.2f));
 
         // Button 1: Rotate
-        if (ImGui::ImageButton((void*)(intptr_t)RotateIcon, btnSize))
+        if (ImGui::ImageButton((void*)(intptr_t)RotateIcon->id, btnSize))
             engineAPI->SendEvent(Events::Editor::Gizmo::ROTATE);
 
         ImGui::SameLine(0, spacing);
 
         // Button 2: Translate
-        if (ImGui::ImageButton((void*)(intptr_t)TranslateIcon, btnSize))
+        if (ImGui::ImageButton((void*)(intptr_t)TranslateIcon->id, btnSize))
             engineAPI->SendEvent(Events::Editor::Gizmo::TRANSLATE);
 
         ImGui::SameLine(0, spacing);
 
         // Button 3: Scale
-        if (ImGui::ImageButton((void*)(intptr_t)ScaleIcon, btnSize))
+        if (ImGui::ImageButton((void*)(intptr_t)ScaleIcon->id, btnSize))
             engineAPI->SendEvent(Events::Editor::Gizmo::SCALE);
 
         ImGui::PopStyleColor(3);

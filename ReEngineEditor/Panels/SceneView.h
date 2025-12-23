@@ -20,9 +20,9 @@ public:
 		viewport = engineApp->CreateNewViewport("SceneViewport", 1920, 1080);
 
 
-        RotateIcon = LoadTexture("pngs/rotate.jpg");
-		TranslateIcon = LoadTexture("pngs/translate.jpg");
-		ScaleIcon = LoadTexture("pngs/scale.jpg");
+        RotateIcon = GetTexture("pngs/rotate.jpg");
+		TranslateIcon = GetTexture("pngs/translate.jpg");
+		ScaleIcon = GetTexture("pngs/scale.jpg");
 	}
 
     void resize(int32_t width, int32_t height);
@@ -34,9 +34,9 @@ private:
 
 	IViewport* viewport = nullptr;
 
-	ImTextureID TranslateIcon;
-	ImTextureID RotateIcon;
-	ImTextureID ScaleIcon;
+    std::shared_ptr<TextureResource> TranslateIcon;
+    std::shared_ptr<TextureResource> RotateIcon;
+    std::shared_ptr<TextureResource> ScaleIcon;
 
     // State for the pop-up
     bool showImportTypePopup = false;

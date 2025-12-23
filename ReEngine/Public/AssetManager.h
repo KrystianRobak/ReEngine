@@ -1,127 +1,84 @@
 #pragma once
 
 #include "Api/AssetManagerApi.h"
-
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
 #include <unordered_map>
 #include <string>
-#include <future>
 #include <memory>
 #include <mutex>
+#include <queue>
+#include <functional>
+#include <atomic>
+#include <filesystem>
+#include <fstream>
 
-#include "ThreadPool.h"
-#include "StaticMesh.h"
+#include "ThreadPool.h" // Include your provided ThreadPool
 #include "MeshData.h"
 #include "StaticMeshData.h"
+#include "SkeletalMeshData.h"
 #include "TextureData.h"
 #include "MaterialSystem/Material.h"
-#include <SkeletalMeshComponent.h>
-
-
+#include "AssetFileFormat.h" 
 
 class ENGINE_API AssetManager : public AssetManagerApi {
 public:
-    AssetManager(ThreadPool* threadPool)
-        : pool(threadPool) {
-    }
+    // Pass the global engine ThreadPool here
+    AssetManager(ThreadPool* threadPool);
+    ~AssetManager();
 
-    ~AssetManager() {
-        shutdown();
-    }
+    // --- API Implementation ---
+    void DispatchUploads() override;
 
-    MeshResourceId RegisterMesh(std::shared_ptr<StaticMeshData> cpuMesh) override;
+    // These now return a "Loading" resource immediately, 
+    // which populates itself later when the thread finishes.
+    std::shared_ptr<MeshResource> GetMesh(const std::string& path) override;
+    std::shared_ptr<MeshResource> GetSkeletalMesh(const std::string& path) override;
+    std::shared_ptr<TextureResource> GetTexture(const std::string& path) override;
 
-    void UploadPendingResources() override;
+    void addMaterial(int id, CompiledMaterial material) override;
+    CompiledMaterial* GetMaterial(int id) override;
+    int GetCurrentMaterialId() override { return LastMaterialId++; }
+    int GetCurrentMeshId() override { return lastMeshResourceId++; }
 
-    MeshResource* GetMeshResource(MeshResourceId id) override;
+    void unloadTexture(const std::string& path) override;
+    void unloadMesh(const std::string& path) override;
 
-	std::vector<PendingStaticMesh>& GetPendingMeshes() { return pendingMeshes; }
-
-    // Asynchronously load FBX asset
-    std::future<std::shared_ptr<StaticMeshData>> loadFBX(const std::string& path) override;
-
-	std::future<std::shared_ptr<TextureData>> loadTexture(const std::string& path) override;
-
-	void unloadTexture(const std::string& path);
-
-    TextureResource* GetTextureResource(const std::string& path) override 
-    {
-        std::lock_guard<std::mutex> lock(gpuTextureMutex);
-
-        auto it = gpuTextures.find(path);
-        if (it != gpuTextures.end())
-            return it->second.get();
-
-        return nullptr;
-    }
-
-    virtual std::vector<std::string> GetCachedTexturesPaths() override;
-
-	void unloadMesh(const std::string& path);
-
-	void addMaterial(int id, CompiledMaterial material);
-
-    void AddPendingMesh(Entity entity, std::future<std::shared_ptr<StaticMeshData>> future) override;
-
-    std::vector<std::string> GetCachedPaths();
-
-    CompiledMaterial* GetMaterial(int id) override {
-        auto it = materials.find(id);
-        if (it != materials.end()) {
-            return &it->second;
-        }
-        return nullptr;
-	}
-
-    virtual int GetCurrentMaterialId() override
-    {
-		return LastMaterialId++;
-    }
-
-    std::future<std::shared_ptr<SkeletalMeshData>> loadSkeletalFBX(const std::string& path) override;
-
-    std::shared_ptr<SkeletalMeshData> importSkeletalMesh(const std::string& path);
-
-    void processSkeletalMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData& data, int meshIndex);
-
-    void ExtractBoneWeightForVertices(std::vector<VertexBoneData>& vertices, aiMesh* mesh, const aiScene* scene, SkeletalMeshData& data);
+    std::vector<std::string> GetCachedPaths() override;
+    std::vector<std::string> GetCachedTexturesPaths() override;
 
     void shutdown();
 
 private:
-    ThreadPool* pool;
-    std::unordered_map<std::string, std::weak_ptr<SkeletalMeshData>> SkeletalMeshCache;
-	std::mutex skeletalCacheMutex;
+    ThreadPool* pool; // Reference to the engine's thread pool
+    std::mutex assetMutex;
+    std::mutex uploadMutex;
 
-    std::unordered_map<std::string, std::weak_ptr<StaticMeshData>> cache;
+    // The Command Queue for the Render Thread
+    std::queue<std::function<void()>> uploadQueue;
 
-	std::unordered_map<std::string, std::weak_ptr<TextureData>> textureCache;
+    std::unordered_map<std::string, std::shared_ptr<MeshResource>> meshCache;
+    std::unordered_map<std::string, std::shared_ptr<TextureResource>> textureCache;
+    std::unordered_map<int, CompiledMaterial> materials;
 
-	std::unordered_map<int, CompiledMaterial> materials;
+    std::atomic<int> lastMeshResourceId{ 0 };
+    std::atomic<int> LastMaterialId{ 0 };
+    std::atomic<int> lastTextureResourceId{ 0 };
 
-    std::unordered_map<MeshResourceId, std::shared_ptr<MeshResource>> meshResources;
-    std::mutex meshResourcesMutex;
-    MeshResourceId lastMeshResourceId = 0;
+    // --- Internal Helpers ---
+    void EnqueueUpload(std::function<void()> func);
 
-	int LastMaterialId = 0;
+    // --- INTERNAL LOADERS (No Assimp/STB, pure binary reading) ---
+    std::shared_ptr<StaticMeshData> LoadBinaryStaticMesh(const std::string& path);
+    std::shared_ptr<SkeletalMeshData> LoadBinarySkeletalMesh(const std::string& path);
 
-    std::unordered_map<std::string, std::shared_ptr<TextureResource>> gpuTextures;
-    std::mutex gpuTextureMutex;
+    struct TextureLoadResult { int w, h, c; std::vector<unsigned char> pixels; };
+    std::unique_ptr<TextureLoadResult> LoadBinaryTexture(const std::string& path);
 
-    std::mutex cacheMutex;
-	std::mutex textureCacheMutex;
-
-    std::vector<std::shared_ptr<TextureData>> pendingTextures;
-	std::vector<PendingStaticMesh> pendingMeshes;
-
-    std::shared_ptr<StaticMeshData> importFBX(const std::string& path);
-
-    void processNode(aiNode* node, const aiScene* scene, StaticMeshData& staticMesh);
-
-    MeshData processMesh(aiMesh* mesh, const aiScene* scene);
-
-    void loadTextures(aiMaterial* mat, aiTextureType type, const std::string& typeName, std::vector<TextureData>& textures);
+    // Helper
+    template<typename T>
+    void ReadVector(std::ifstream& in, std::vector<T>& vec) {
+        uint32_t size = 0;
+        in.read(reinterpret_cast<char*>(&size), sizeof(uint32_t));
+        vec.resize(size);
+        if (size > 0) in.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
+    }
 };

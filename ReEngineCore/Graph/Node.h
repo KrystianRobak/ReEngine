@@ -382,7 +382,7 @@ struct TextureSampleNode : public BaseNode
                 ImGui::BeginGroup();
 
                 // Get texture resource for thumbnail
-                TextureResource* res = assetManager->GetTextureResource(path);
+                auto res = assetManager->GetTexture(path);
 
                 // Clickable whole row
                 ImGui::Selectable("##sel", selected, 0, ImVec2(0, 48));
@@ -439,7 +439,7 @@ struct TextureSampleNode : public BaseNode
         // --------------------------
         if (!textureLoaded && !texturePath.empty())
         {
-            TextureResource* res = assetManager->GetTextureResource(texturePath);
+            auto res = assetManager->GetTexture(texturePath);
             if (res && res->uploaded)
             {
                 textureId = res->id;
@@ -448,7 +448,7 @@ struct TextureSampleNode : public BaseNode
             else
             {
                 // Request async load
-                assetManager->loadTexture(texturePath);
+                assetManager->GetTexture(texturePath);
             }
         }
 

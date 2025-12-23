@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <string>
+#include <iostream>
 
 struct TextureData {
 	int width = 0;

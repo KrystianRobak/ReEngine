@@ -3,6 +3,11 @@
 #include "StaticMeshData.h"
 #include <map>
 #include "../Animation/Animation.h"
+#include <vector>
+#include <memory>
+#include <future>
+#include <atomic>
+#include "ReTypes.h"
 
 #define MAX_BONE_INFLUENCE 4
 
@@ -32,6 +37,7 @@ struct BoneInfo {
     glm::mat4 offset; // Inverse Bind Pose Matrix
 };
 
+
 struct SkeletalMeshData : public StaticMeshData {
     // Parallel array to meshes[i].vertices, holds bone weights
     std::vector<std::vector<VertexBoneData>> bonesPerMesh;
@@ -44,4 +50,20 @@ struct SkeletalMeshData : public StaticMeshData {
     // The root node of the Assimp scene hierarchy (needed for traversing animation)
     // You might need a custom Node struct if you don't want to store raw aiNode*
     // For now, let's assume we copy the hierarchy or re-use Assimp's logic during import.
+};
+
+struct PendingSkeletalMesh
+{
+    Entity entity;
+    std::future<std::shared_ptr<SkeletalMeshData>> future;
+
+    PendingSkeletalMesh() = default;
+
+    // move-only
+    PendingSkeletalMesh(PendingSkeletalMesh&&) noexcept = default;
+    PendingSkeletalMesh& operator=(PendingSkeletalMesh&&) noexcept = default;
+
+    // no copies
+    PendingSkeletalMesh(const PendingSkeletalMesh&) = delete;
+    PendingSkeletalMesh& operator=(const PendingSkeletalMesh&) = delete;
 };

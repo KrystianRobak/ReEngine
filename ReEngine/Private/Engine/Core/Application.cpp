@@ -125,7 +125,7 @@ void Application::Update()
 	{
 
 		auto start = clock::now();
-
+		auto assetManager = coordinator->GetAssetManager();
 		auto systems = Reflection::Registry::Instance().GetAllSystems();
 		for (auto system : systems)
 		{
@@ -136,28 +136,24 @@ void Application::Update()
 				{
 					if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
 					{
-						Transform const* t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
-						StaticMesh const* sm = static_cast<StaticMesh*>(coordinator->GetComponent(entity, "StaticMesh"));
+						auto t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
+						auto sm = static_cast<StaticMesh*>(coordinator->GetComponent(entity, "StaticMesh"));
 						if (!t || !sm) continue;
 
-						glm::mat4 model = ReCamera::GetModelMatrix(*t); // use your existing utility
-						
-						
+						// 2. Asset Logic: Ensure the component has a handle to the resource
+						if (!sm->MeshResource && !sm->AssetPath.empty()) {
+							sm->MeshResource = assetManager->GetMesh(sm->AssetPath);
+						}
+
+						// 3. Command Packing
 						RenderPrimitive p;
-						p.ModelMatrix = model;
-						p.MeshResourceId = sm->MeshResourceId;
+						p.ModelMatrix = ReCamera::GetModelMatrix(*t);
 						p.Entity = entity;
+						p.MaterialId = (sm->MaterialId == -1) ? 1200 : sm->MaterialId;
+						p.Mesh = sm->MeshResource; // Pass the shared_ptr
 
-						if (sm->MaterialId == -1)
-						{
-							p.MaterialId = 1200;
-						}
-						else
-						{
-							p.MaterialId = sm->MaterialId;
-						}
-
-						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({1200,  p });
+						// 4. Issue Command
+						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
 					}
 				}
 			}
@@ -169,34 +165,6 @@ void Application::Update()
 			{
 				auto sys = coordinator->GetSystem(system->fullName);
 				sys->Update(dt);
-			}
-		}
-
-		auto& pendingMeshes = coordinator->GetAssetManager()->GetPendingMeshes();
-
-		for (auto it = pendingMeshes.begin(); it != pendingMeshes.end(); ) {
-			auto& pending = *it;
-
-			if (pending.future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-
-				std::shared_ptr<StaticMeshData> staticMesh = pending.future.get();
-
-
-				coordinator->AddComponent(pending.entity, "StaticMesh");
-				auto staticMeshComponent = static_cast<StaticMesh*>(coordinator->GetComponent(pending.entity, "StaticMesh"));
-
-				staticMeshComponent->AssetPath = staticMesh->path;
-
-				staticMeshComponent->StaticMeshHandler = staticMesh;
-
-				MeshResourceId id = coordinator->GetAssetManager()->RegisterMesh(staticMesh);
-				staticMeshComponent->MeshResourceId = id;
-				staticMeshComponent->NeedsUpload = true; // atomic flag used by render thread
-
-				it = pendingMeshes.erase(it);
-			}
-			else {
-				++it;
 			}
 		}
 
@@ -242,6 +210,8 @@ void Application::Render()
 	{
 
 		auto start = clock::now();
+
+		coordinator->GetAssetManager()->DispatchUploads();
 
 		window->PreRender();
 

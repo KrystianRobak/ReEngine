@@ -1,37 +1,31 @@
 #include "FileBrowser.h"
 
 // Define your specific engine extensions here
-static const std::map<std::string, FileType> ExtensionMap = {
-    { ".cpp",       FileType::Code },
-    { ".h",         FileType::Code },
-    { ".hpp",       FileType::Code },
-    { ".remesh",    FileType::StaticMesh },   // Your custom static mesh
-    { ".reskel",    FileType::SkeletalMesh }, // Your custom skeletal mesh
-    { ".retex",     FileType::Texture },      // Your custom texture
-    { ".material",  FileType::Material },
-    { ".scene",     FileType::Scene },        // Renamed .json to .scene for clarity?
-    { ".json",      FileType::Scene }
-};
+
 
 FileBrowser::FileBrowser() {
     // Load your icons once
-    icons[FileType::Folder] = LoadTexture("icons/folder.png");
-    icons[FileType::Unknown] = LoadTexture("icons/file.png");
-    icons[FileType::Code] = LoadTexture("icons/code.png");
-    icons[FileType::StaticMesh] = LoadTexture("icons/mesh.png");
-    icons[FileType::SkeletalMesh] = LoadTexture("icons/skeleton.png");
-    icons[FileType::Texture] = LoadTexture("icons/texture.png");
-    icons[FileType::Material] = LoadTexture("icons/material.png");
-    icons[FileType::Scene] = LoadTexture("icons/scene.png");
-
-    FindFiles(".");
 }
 
-FileType FileBrowser::GetFileType(const std::string& extension) {
-    if (ExtensionMap.count(extension)) {
-        return ExtensionMap.at(extension);
-    }
-    return FileType::Unknown;
+
+
+void FileBrowser::OnInit()
+{
+    engineAPI->AddEventListener(Events::Window::FILE_DROPPED, [this](Event& e) {
+        std::string droppedPath = e.GetParam<std::string>("FilePath");
+            
+		});
+
+    icons[FileType::Folder] = GetTexture("icons/folder.png");
+    icons[FileType::Unknown] = GetTexture("icons/file.png");
+    icons[FileType::Code] = GetTexture("icons/code.png");
+    icons[FileType::StaticMesh] = GetTexture("icons/mesh.png");
+    icons[FileType::SkeletalMesh] = GetTexture("icons/skeleton.png");
+    icons[FileType::Texture] = GetTexture("icons/texture.png");
+    icons[FileType::Material] = GetTexture("icons/material.png");
+    icons[FileType::Scene] = GetTexture("icons/scene.png");
+
+    FindFiles(".");
 }
 
 std::string FileBrowser::GetDragPayloadType(FileType type) {
@@ -90,7 +84,7 @@ void FileBrowser::FindFiles(const std::string& folderPath) {
 void FileBrowser::RenderItem(const BrowserItem& item, float itemWidth, float itemSpacing, int itemsPerRow, int& itemsInRow) {
     ImGui::BeginGroup();
 
-    GLuint iconID = icons[item.type];
+    ImTextureID iconID = (ImTextureID)icons[item.type]->id;
     std::string payloadType = GetDragPayloadType(item.type);
     std::string fullPath = item.entry.path().string();
 
@@ -178,44 +172,4 @@ void FileBrowser::Render() {
     }
 
     ImGui::End();
-}
-
-// Reuse your existing LoadTexture logic (stb_image) here
-GLuint FileBrowser::LoadTexture(const std::string& path) {
-    // ... [Your existing STB Image Code] ...
-    return 0; // placeholder
-}
-
-GLuint FileBrowser::LoadFileTexture(const std::string& filepath) {
-    int width, height, channels;
-    unsigned char* data = stbi_load(filepath.c_str(), &width, &height, &channels, 0);
-    if (!data) {
-        std::cerr << "Failed to load texture: " << filepath << std::endl;
-        return 0;
-    }
-
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    if (channels == 4) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    }
-    else if (channels == 3) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    }
-    else {
-        std::cerr << "Unsupported number of channels: " << channels << std::endl;
-        stbi_image_free(data);
-        return 0;
-    }
-
-    stbi_image_free(data);
-
-    return textureID;
 }

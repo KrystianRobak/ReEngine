@@ -185,6 +185,7 @@ namespace Events::Window {
     constexpr inline EventType QUIT = "Events::Window::QUIT";
     constexpr inline EventType RESIZED = "Events::Window::RESIZED";
     constexpr inline EventType INPUT = "Events::Window::INPUT";
+	constexpr inline EventType FILE_DROPPED = "Events::Window::FILE_DROPPED";
 }
 
 namespace Events::Window::Input {

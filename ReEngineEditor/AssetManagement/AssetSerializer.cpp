@@ -1,27 +1,5 @@
 #include "AssetSerializer.h"
-#include <fstream>
-#include <iostream>
 
-// Helper to write vector data directly
-template<typename T>
-void WriteVector(std::ofstream& out, const std::vector<T>& vec) {
-    uint32_t size = static_cast<uint32_t>(vec.size());
-    out.write(reinterpret_cast<const char*>(&size), sizeof(uint32_t));
-    if (size > 0) {
-        out.write(reinterpret_cast<const char*>(vec.data()), size * sizeof(T));
-    }
-}
-
-// Helper to read vector data directly
-template<typename T>
-void ReadVector(std::ifstream& in, std::vector<T>& vec) {
-    uint32_t size = 0;
-    in.read(reinterpret_cast<char*>(&size), sizeof(uint32_t));
-    vec.resize(size);
-    if (size > 0) {
-        in.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
-    }
-}
 
 // --- STATIC MESH IMPLEMENTATION ---
 
@@ -191,4 +169,9 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
     result->boneCount = boneMapSize;
 
     return result;
+}
+
+bool AssetSerializer::ImportFile(const std::string& path, const std::string& destination)
+{
+    return false;
 }

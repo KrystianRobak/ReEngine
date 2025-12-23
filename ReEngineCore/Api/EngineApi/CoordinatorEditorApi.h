@@ -42,6 +42,8 @@ namespace Editor
 
 		virtual void AddComponent(Entity entity, const std::string& fullName) = 0;
 
+		virtual bool HasComponent(Entity entity, const char* name) = 0;
+
 		virtual void RemoveComponent(Entity entity, const std::string& typeName) = 0;
 
 		virtual void MarkEntityDirty(Entity entity, const std::string& typeName) = 0;

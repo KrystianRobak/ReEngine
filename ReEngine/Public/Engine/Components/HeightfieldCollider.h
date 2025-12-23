@@ -3,7 +3,7 @@
 #include "ReflectionMacros.h"
 
 REFCOMPONENT()
-struct REFLECTION_API HeightfieldCollider {
+struct HeightfieldCollider {
     // Parameters stored from WorldGenSystem
     REFVARIABLE() int width = 0;
     REFVARIABLE() int depth = 0;

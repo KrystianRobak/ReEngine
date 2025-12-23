@@ -126,7 +126,6 @@ void MaterialGraphPanel::Render()
 
                 RenderPrimitive primitive;
                 primitive.ModelMatrix = ReCamera::GetModelMatrix(tempTransform);
-                primitive.MeshResourceId = 1; // Placeholder mesh resource ID
                 primitive.Entity = 0; // No specific entity
                 primitive.MaterialId = m_CompiledMaterialPtr->id;
 
@@ -141,7 +140,6 @@ void MaterialGraphPanel::Render()
 
                 RenderPrimitive primitive;
                 primitive.ModelMatrix = ReCamera::GetModelMatrix(tempTransform);
-                primitive.MeshResourceId = 1; // Placeholder mesh resource ID
                 primitive.Entity = 0; // No specific entity
                 primitive.MaterialId = 1200;
 

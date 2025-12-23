@@ -24,24 +24,6 @@
 
 class ILayer;
 
-inline ImTextureID LoadTexture(const char* path)
-{
-    int w, h, channels;
-    unsigned char* data = stbi_load(path, &w, &h, &channels, 4);
-    if (data)
-    {
-        GLuint tex;
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-        stbi_image_free(data);
-
-        return (ImTextureID)(intptr_t)tex;
-    }
-}
-
 class UIComponent
 {
 public:
@@ -63,31 +45,16 @@ public:
     bool IsMinimized() const { return minimized; }
 
 protected:
-    ImTextureID GetTexture(const std::string& path)
+    std::shared_ptr<TextureResource> GetTexture(const std::string& path)
     {
-        if (!engineAPI) return (ImTextureID)0;
+        if (!engineAPI) return nullptr;
 
         auto assetManager = engineAPI->GetAssetManager();
-        if (!assetManager) return (ImTextureID)0;
+        if (!assetManager) return nullptr;
 
-        // 1. Check if the GPU already has this texture ready
-        // We cast to TextureResource because AssetManagerApi might return a base type, 
-        // but based on your code, GetTextureResource returns the resource struct.
-        auto* resource = assetManager->GetTextureResource(path);
+        auto resource = assetManager->GetTexture(path);
 
-        if (resource && resource->uploaded)
-        {
-            // Success: Return the OpenGL ID cast to ImTextureID
-            return (ImTextureID)(intptr_t)resource->id;
-        }
-
-        // 2. If not found, request it to be loaded async
-        // The AssetManager::loadTexture implementation checks its own cache,
-        // so calling this repeatedly is safer than calling stbi_load repeatedly.
-        assetManager->loadTexture(path);
-
-        // 3. Return 0 (or a default "loading" icon ID) while waiting for async load
-        return (ImTextureID)0;
+        return resource;
     }
 
     bool RenderWindowTopBar()

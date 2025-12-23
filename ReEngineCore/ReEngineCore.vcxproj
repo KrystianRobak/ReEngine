@@ -146,6 +146,7 @@
     <ClCompile Include="ReScene.h" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="System\System.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="Window\RenderContext.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +154,8 @@
     <ClInclude Include="Api\EngineApi\CoordinatorEditorApi.h" />
     <ClInclude Include="Api\IApplicationApi.h" />
     <ClInclude Include="Api\SystemApi\CoordinatorSystemApi.h" />
+    <ClInclude Include="Api\ThreadPoolApi.h" />
+    <ClInclude Include="AssetFileFormat.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="Graph\Node.h" />
     <ClInclude Include="BaseApi.h" />
@@ -169,6 +172,7 @@
     <ClInclude Include="System\System.h" />
     <ClInclude Include="ReTypes.h" />
     <ClInclude Include="TextureData.h" />
+    <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="UIComponent.h" />
     <ClInclude Include="Window\FrameBuffer.h" />
     <ClInclude Include="Window\IWindow.h" />

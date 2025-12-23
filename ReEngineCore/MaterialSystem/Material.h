@@ -195,7 +195,7 @@ public:
                 if (texNode->texturePath.empty()) continue;
 
                 // Ask AssetManager for the GPU resource
-                TextureResource* texRes = assetManager->GetTextureResource(texNode->texturePath);
+                auto texRes = assetManager->GetTexture(texNode->texturePath);
 
                 if (texRes)
                 {
@@ -204,7 +204,7 @@ public:
                     std::string samplerName = texNode->Outputpins[0].label + "_Tex";
 
                     // Store it in the compiled material
-                    result.SetTexture(samplerName, texRes);
+                    result.SetTexture(samplerName, texRes.get());
                 }
             }
         }

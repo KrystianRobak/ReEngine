@@ -126,7 +126,8 @@ void ProjectBuilder::ParseConfig() {
     {
         System* registeredSystem = engineAPI_->RegisterSystem(system);
 		SystemsLoaded_.push_back(registeredSystem);
-        registeredSystem->InitApi(engineAPI_);
+        
+        registeredSystem->InitApi(engineAPI_, engineAPI_->GetAssetManager());
 
         Signature signature;
 
@@ -198,10 +199,11 @@ void ProjectBuilder::LoadTextures(nlohmann::json& config, fs::path projectPath)
                             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
                             if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".bmp") {
-                                std::string assetPath = entry.path().string();
-                                LOGF_INFO("Pre-loading texture: %s", assetPath.c_str());
+                                fs::path relativePath = fs::relative(entry.path(), projectPath);
+                                std::string assetPath = relativePath.generic_string();
 
-                                assetManager->loadTexture(assetPath);
+                                LOGF_INFO("Pre-loading texture: %s", assetPath.c_str());
+                                assetManager->GetTexture(assetPath);
                             }
                         }
                     }

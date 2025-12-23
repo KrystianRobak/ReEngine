@@ -67,9 +67,7 @@ public:
 				if (compType == "StaticMesh" && compJson["data"].contains("AssetPath"))
 				{
 					std::string path = compJson["data"]["AssetPath"].get<std::string>();
-					auto future = engine->GetAssetManager()->loadFBX(path);
-
-					engine->GetAssetManager()->AddPendingMesh(entity, std::move(future));
+					engine->GetAssetManager()->GetMesh(path);
 				}
 				else
 				{

@@ -8,6 +8,7 @@
 #include "ReTypes.h"
 
 class StaticMeshData;
+class MeshResource;
 
 struct PendingStaticMesh
 {
@@ -35,8 +36,7 @@ struct StaticMesh
     REFVARIABLE()
     int MaterialId = -1;
 
-    uint64_t MeshResourceId = 0;
+    std::shared_ptr<MeshResource> MeshResource = nullptr;
 
-	std::shared_ptr<StaticMeshData> StaticMeshHandler;
-    std::atomic<bool> NeedsUpload{ false };
+    uint64_t MeshResourceId = 0;
 };
