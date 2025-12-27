@@ -6,6 +6,7 @@ class Camera;
 class Commander;
 class IWindow;
 class IViewport;
+class FrameBuffer;
 
 class RenderSystem : public System
 {
@@ -16,6 +17,6 @@ public:
 
 	virtual IViewport* CreateViewport(int width, int height) = 0;
 
-	virtual void RenderViewport(Camera* camera, Commander* commander) = 0;
+	virtual void RenderViewport(Camera* camera, Commander* commander, FrameBuffer* framebuffer) = 0;
 
 };

@@ -25,7 +25,7 @@ public:
     {
         PreRender();
 
-        renderer->RenderViewport(camera, commander);
+        renderer->RenderViewport(camera, commander, framebuffer.get());
 
         PostRender();
     }

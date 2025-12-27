@@ -28,7 +28,7 @@ static const std::map<std::string, FileType> ExtensionMap = {
     { ".json",      FileType::Scene }
 };
 
-constexpr inline static FileType GetFileType(const std::string& extension) {
+inline static FileType GetFileType(const std::string& extension) {
     if (ExtensionMap.count(extension)) {
         return ExtensionMap.at(extension);
     }
@@ -41,7 +41,6 @@ enum class AssetType : uint32_t {
     Texture = 2
 };
 
-// The very first bytes of your file
 struct AssetHeader {
     uint32_t magic = ASSET_MAGIC;
     uint32_t version = ASSET_VERSION;

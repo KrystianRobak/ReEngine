@@ -577,15 +577,36 @@ struct OutputNode : public BaseNode
     std::string GenerateShaderCode(const std::vector<Link>& links,
         const std::vector<BaseNode*>& nodes) override
     {
+        // Get Variable Names from connected nodes
         auto baseColor = GetConnectedVariableName(Inputpins[1], links, nodes);
-        auto emissive = GetConnectedVariableName(Inputpins[2], links, nodes);
+        auto emissive = GetConnectedVariableName(Inputpins[2], links, nodes); // Emissive handling is tricky in Deferred, usually needs a separate buffer or forward pass. 
         auto opacity = GetConnectedVariableName(Inputpins[3], links, nodes);
+        auto metallic = GetConnectedVariableName(Inputpins[4], links, nodes);
+        auto roughness = GetConnectedVariableName(Inputpins[5], links, nodes);
+        auto normalIn = GetConnectedVariableName(Inputpins[6], links, nodes);
 
         std::string code;
-        code += "    vec3 base = " + baseColor + (".rgb") + ";\n";
-        code += "    vec3 eme  = " + emissive + (".rgb") + ";\n";
-        code += "    float op  = clamp(" + opacity + ", 0.0, 1.0);\n";
-        code += "    FragColor = vec4(base + eme, op);\n";
+
+        // 1. Write Position and pack Metallic
+        code += "    gPosition.rgb = FragPos;\n";
+        code += "    gPosition.a = " + metallic + ";\n";
+
+        // 2. Write Albedo and pack Roughness
+        code += "    gAlbedoSpec.rgb = " + baseColor + ".rgb;\n";
+        code += "    gAlbedoSpec.a = " + roughness + ";\n";
+
+        // 3. Handle Normal Mapping
+        // If the connected normal is (0,0,1) (default), use geometry normal.
+        // Otherwise, transform the tangent space normal to world space.
+        code += "    vec3 mapNormal = " + normalIn + ";\n";
+        code += "    if(length(mapNormal) == 0.0) mapNormal = vec3(0,0,1);\n"; // Safety
+
+        // Transform [0,1] range to [-1,1] vector if it came from a texture
+        code += "    mapNormal = normalize(mapNormal * 2.0 - 1.0);\n";
+
+        // Apply TBN
+        code += "    gNormal.rgb = normalize(TBN * mapNormal);\n";
+        code += "    gNormal.a = 1.0;\n";
 
         return code;
     }

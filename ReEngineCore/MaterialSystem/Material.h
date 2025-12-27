@@ -211,46 +211,59 @@ public:
 
         // Minimal Shader Template (Vertex remains the same)
         result.VertexShaderCode = R"(
-        #version 460 core
-        // #version 330 core -- Removed redundancy
+#version 460 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aTexCoords;
+layout (location = 3) in vec3 aTangent;
+layout (location = 4) in vec3 aBitangent;
 
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aNormal;
-        layout (location = 2) in vec2 aTexCoords;
+out vec2 TexCoords;
+out vec3 FragPos;
+out vec3 Normal;
+out mat3 TBN;
 
-        out vec2 TexCoords;
-        out vec3 FragPos;
-        out vec3 Normal;
+uniform mat4 Model;
+uniform mat4 View;
+uniform mat4 Projection;
 
-        uniform mat4 Model;
-        uniform mat4 View;
-        uniform mat4 Projection;
-        
-        void main()
-        {
-            FragPos = vec3(Model * vec4(aPos, 1.0));
-            Normal = mat3(transpose(inverse(Model))) * aNormal;
-            gl_Position = Projection * View * Model * vec4(aPos, 1.0);
-            TexCoords = aTexCoords;
-        }
-        )";
+void main()
+{
+    vec4 worldPos = Model * vec4(aPos, 1.0);
+    FragPos = vec3(worldPos);
+    TexCoords = aTexCoords;
+    
+    // Normal Matrix calculation
+    mat3 normalMatrix = transpose(inverse(mat3(Model)));
+    Normal = normalize(normalMatrix * aNormal);
+    
+    // Calculate TBN for Normal Mapping
+    vec3 T = normalize(normalMatrix * aTangent);
+    vec3 B = normalize(normalMatrix * aBitangent);
+    vec3 N = normalize(normalMatrix * aNormal);
+    TBN = mat3(T, B, N);
+    
+    gl_Position = Projection * View * worldPos;
+}
+)";
 
         // Fragment Shader Template (Cleaned up output variable)
         result.FragmentShaderCode =
             "#version 460 core\n"
+            "layout (location = 0) out vec4 gPosition;\n"   // RGB=Pos, A=Metallic
+            "layout (location = 1) out vec4 gNormal;\n"     // RGB=Normal, A=Unused (or AO)
+            "layout (location = 2) out vec4 gAlbedoSpec;\n" // RGB=Albedo, A=Roughness
+            "\n"
             "in vec2 TexCoords;\n"
             "in vec3 FragPos; \n"
             "in vec3 Normal; \n"
+            "in mat3 TBN; \n"
             "\n"
             + GenerateUniforms() +
             "\n"
-            "out vec4 FragColor;\n" // Consistent output variable name
             "void main()\n"
             "{\n"
             + shaderBody +
-            // The last line is now handled by the OutputNode's code (FragColor = vec4(finalColor, opacity);)
-            // The original template had an issue here; this line is redundant/incorrect if OutputNode handles it.
-            // Since OutputNode produces the final FragColor, we *remove* the redundant line.
             "}\n";
 
         return result;

@@ -129,7 +129,7 @@ void MaterialGraphPanel::Render()
                 primitive.Entity = 0; // No specific entity
                 primitive.MaterialId = m_CompiledMaterialPtr->id;
 
-                viewport->GetCommander()->IssueCommand(RenderCommand((uint32_t)1, primitive));
+                //viewport->GetCommander()->IssueCommand(RenderCommand((uint32_t)1, primitive));
             }
             else
             {
@@ -143,7 +143,7 @@ void MaterialGraphPanel::Render()
                 primitive.Entity = 0; // No specific entity
                 primitive.MaterialId = 1200;
 
-                viewport->GetCommander()->IssueCommand(RenderCommand((uint32_t)1200, primitive));
+                //viewport->GetCommander()->IssueCommand(RenderCommand((uint32_t)1200, primitive));
             }
             
         }

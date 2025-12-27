@@ -19,6 +19,7 @@ public:
     Shader(const char* vertexCode, const char* fragmentCode, bool IsCode);
 
     void ChangeShaderDefineStatus(uint32_t amount);
+    Shader(const std::string& vertexPath, const std::string& fragmentPath);
     void Use();
 
     unsigned int get_program_id() { return ID; }
@@ -40,6 +41,7 @@ public:
     void SetMat4(const std::string& name, const glm::mat4& mat) const;
 private:
 
+    std::string ReadFile(const std::string& path);
     void CheckCompileErrors(unsigned int shader, std::string type);
 
 private:

@@ -1,63 +1,63 @@
 #include "Shader.h"
 
 #include <algorithm>
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+// 1. HELPER: Finds the actual path of the shader
+std::string ResolveShaderPath(const std::string& path) {
+    // Check if path is already valid
+    if (fs::exists(path)) return path;
+
+    // Search common relative locations (e.g., up two levels for dev builds)
+    fs::path searchPaths[] = {
+        fs::current_path() / path,
+        fs::current_path() / "shaders" / path,
+        fs::current_path().parent_path() / path,
+        fs::current_path().parent_path().parent_path() / path // Useful for IDE builds
+    };
+
+    for (const auto& p : searchPaths) {
+        if (fs::exists(p)) return p.string();
+    }
+
+    return ""; // Not found
+}
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {
-    mFragmentPath = fragmentPath;
+    try {
+        std::string vCode = ReadFile(vertexPath);
+        std::string fCode = ReadFile(fragmentPath);
 
-    // 1. retrieve the vertex/fragment source code from filePath
-    std::string vertexCode;
-    std::string fragmentCode;
-    std::ifstream vShaderFile;
-    std::ifstream fShaderFile;
-    // ensure ifstream objects can throw exceptions:
-    vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try
-    {
-        // open files
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
-        std::stringstream vShaderStream, fShaderStream;
-        // read file's buffer contents into streams
-        vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << fShaderFile.rdbuf();
-        // close file handlers
-        vShaderFile.close();
-        fShaderFile.close();
-        // convert stream into string
-        vertexCode = vShaderStream.str();
-        fragmentCode = fShaderStream.str();
+        const char* vShaderCode = vCode.c_str();
+        const char* fShaderCode = fCode.c_str();
+
+        unsigned int vertex = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertex, 1, &vShaderCode, NULL);
+        glCompileShader(vertex);
+        CheckCompileErrors(vertex, "VERTEX");
+
+        unsigned int fragment = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragment, 1, &fShaderCode, NULL);
+        glCompileShader(fragment);
+        CheckCompileErrors(fragment, "FRAGMENT");
+
+        ID = glCreateProgram();
+        glAttachShader(ID, vertex);
+        glAttachShader(ID, fragment);
+        glLinkProgram(ID);
+        CheckCompileErrors(ID, "PROGRAM");
+
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+
+        std::cout << "Successfully loaded: " << vertexPath << " and " << fragmentPath << std::endl;
     }
-    catch (std::ifstream::failure& e)
-    {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
+    catch (const std::exception& e) {
+        std::cerr << "FATAL SHADER ERROR: " << e.what() << std::endl;
     }
-    const char* vShaderCode = vertexCode.c_str();
-    const char* fShaderCode = fragmentCode.c_str();
-    // 2. compile shaders
-    unsigned int vertex, fragment;
-    // vertex shader
-    vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &vShaderCode, NULL);
-    glCompileShader(vertex);
-    CheckCompileErrors(vertex, "VERTEX");
-    // fragment Shader
-    fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &fShaderCode, NULL);
-    glCompileShader(fragment);
-    CheckCompileErrors(fragment, "FRAGMENT");
-    // shader Program
-    ID = glCreateProgram();
-    glAttachShader(ID, vertex);
-    glAttachShader(ID, fragment);
-    glLinkProgram(ID);
-    CheckCompileErrors(ID, "PROGRAM");
-    // delete the shaders as they're linked into our program now and no longer necessary
-    glDeleteShader(vertex);
-    glDeleteShader(fragment);
-    std::cout << "SHADER::COMPILED_SUCCESFULLY" << std::endl;
 }
 
 Shader::Shader(const char* vertexCode, const char* fragmentCode, bool IsCode)
@@ -146,6 +146,40 @@ void Shader::ChangeShaderDefineStatus(uint32_t amount)
     FileToWrite.close();
 }
 
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) {
+    try {
+        std::string vCode = ReadFile(vertexPath);
+        std::string fCode = ReadFile(fragmentPath);
+
+        const char* vShaderCode = vCode.c_str();
+        const char* fShaderCode = fCode.c_str();
+
+        unsigned int vertex = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertex, 1, &vShaderCode, NULL);
+        glCompileShader(vertex);
+        CheckCompileErrors(vertex, "VERTEX");
+
+        unsigned int fragment = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragment, 1, &fShaderCode, NULL);
+        glCompileShader(fragment);
+        CheckCompileErrors(fragment, "FRAGMENT");
+
+        ID = glCreateProgram();
+        glAttachShader(ID, vertex);
+        glAttachShader(ID, fragment);
+        glLinkProgram(ID);
+        CheckCompileErrors(ID, "PROGRAM");
+
+        glDeleteShader(vertex);
+        glDeleteShader(fragment);
+
+        std::cout << "Successfully loaded: " << vertexPath << " and " << fragmentPath << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "FATAL SHADER ERROR: " << e.what() << std::endl;
+    }
+}
+
 void Shader::Use()
 {
     glUseProgram(ID);
@@ -199,7 +233,22 @@ void Shader::SetMat4(const std::string& name, const glm::mat4& mat) const
     glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 }
 
+std::string Shader::ReadFile(const std::string& path) {
+    std::string resolved = ResolveShaderPath(path);
+    if (resolved.empty()) {
+        throw std::runtime_error("Shader file not found: " + path);
+    }
 
+    std::ifstream file(resolved, std::ios::in | std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Could not open shader file: " + resolved);
+    }
+
+    // Efficiently read entire file into string
+    std::ostringstream sstr;
+    sstr << file.rdbuf();
+    return sstr.str();
+}
 
 void Shader::CheckCompileErrors(unsigned int shader, std::string type)
 {

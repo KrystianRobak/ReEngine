@@ -32,7 +32,7 @@ void SceneView::Render()
 
     // --- Drag and Drop Target: Capture path and trigger pop-up ---
     if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DIRECTORY_ENTRY")) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_STATIC_MESH")) {
             if (payload->DataSize > 0) {
                 std::string nameWithPath(static_cast<const char*>(payload->Data));
                 std::vector<std::string> parts = splitString(nameWithPath, '|');
@@ -69,7 +69,9 @@ void SceneView::Render()
             engineAPI->AddComponent(entity, "Transform");
 
             // Load using loadFBX (Static)
-            auto future = engineAPI->GetAssetManager()->GetMesh(pendingImportPath);
+            engineAPI->AddComponent(entity, "StaticMesh");
+            auto sm = (StaticMesh*)engineAPI->GetComponent(entity, "StaticMesh");
+            sm->MeshResource = engineAPI->GetAssetManager()->GetMesh(pendingImportPath);
 
             ImGui::CloseCurrentPopup();
             showImportTypePopup = false;

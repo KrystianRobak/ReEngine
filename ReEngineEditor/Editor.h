@@ -5,7 +5,7 @@
 #include "AssetManagement/AssetSerializer.h"
 #include "ThreadPool.h"
 
-class Editor
+class EditorApp
 {
 
 

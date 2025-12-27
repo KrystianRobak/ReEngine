@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ReEngineExport.h"
 #include "Api/AssetManagerApi.h"
 #include <unordered_map>
 #include <string>
@@ -18,6 +19,7 @@
 #include "TextureData.h"
 #include "MaterialSystem/Material.h"
 #include "AssetFileFormat.h" 
+
 
 class ENGINE_API AssetManager : public AssetManagerApi {
 public:

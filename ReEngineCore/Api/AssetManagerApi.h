@@ -20,15 +20,11 @@ struct MeshResource {
 
     std::atomic<bool> uploaded{ false };
 
-    uint32_t VAO = 0;
-
-    uint32_t VBO = 0;
-
-    uint32_t EBO = 0;
-
-    uint32_t BVAO = 0;
-
-    uint32_t indexCount = 0;
+    std::vector<uint32_t> VAOs;
+    std::vector<uint32_t> VBOs;
+    std::vector<uint32_t> EBOs;
+    std::vector<uint32_t> BVAOs;
+    std::vector<uint32_t> indexCounts;
 
 };
 

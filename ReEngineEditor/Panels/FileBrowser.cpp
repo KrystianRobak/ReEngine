@@ -1,5 +1,6 @@
 #include "FileBrowser.h"
-
+#include "AssetManagement/AssetSerializer.h"
+#include "Logger.h"
 // Define your specific engine extensions here
 
 
@@ -13,7 +14,8 @@ void FileBrowser::OnInit()
 {
     engineAPI->AddEventListener(Events::Window::FILE_DROPPED, [this](Event& e) {
         std::string droppedPath = e.GetParam<std::string>("FilePath");
-            
+        LOGF_INFO("Detected file drop, path to dropped: %s", droppedPath.c_str())
+            AssetSerializer::ImportAndCookFile(droppedPath, this->pathHistory.back());
 		});
 
     icons[FileType::Folder] = GetTexture("icons/folder.png");

@@ -1,4 +1,4 @@
-#include "Engine/AssetManager.h"
+#include "AssetManager.h"
 #include <GL/glew.h>
 #include <iostream>
 #include <algorithm>
@@ -58,7 +58,7 @@ std::shared_ptr<MeshResource> AssetManager::GetMesh(const std::string& path) {
     // Submit Job to IO Thread (JobType::Background)
     pool->submit(JobType::Background, [this, path, resource]() {
 
-        std::string cookedPath = path + COOKED_EXT;
+        std::string cookedPath = path;
 
         // This heavy IO happens on background thread
         auto cpuMesh = LoadBinaryStaticMesh(cookedPath);
@@ -73,29 +73,40 @@ std::shared_ptr<MeshResource> AssetManager::GetMesh(const std::string& path) {
         // Once IO is done, queue the GPU Upload for the Main Thread
         this->EnqueueUpload([resource]() {
             if (!resource->cpuMesh) return;
-            for (auto& mesh : resource->cpuMesh->meshes) {
-                glGenVertexArrays(1, &resource->VAO);
-                glGenBuffers(1, &resource->VBO);
-                glGenBuffers(1, &resource->EBO);
 
-                glBindVertexArray(resource->VAO);
-                glBindBuffer(GL_ARRAY_BUFFER, resource->VBO);
+            // Clear and resize to match the number of sub-meshes
+            size_t numSubMeshes = resource->cpuMesh->meshes.size();
+            resource->VAOs.resize(numSubMeshes);
+            resource->VBOs.resize(numSubMeshes);
+            resource->EBOs.resize(numSubMeshes);
+            resource->indexCounts.resize(numSubMeshes);
+
+            for (size_t i = 0; i < numSubMeshes; ++i) {
+                auto& mesh = resource->cpuMesh->meshes[i];
+
+                glGenVertexArrays(1, &resource->VAOs[i]);
+                glGenBuffers(1, &resource->VBOs[i]);
+                glGenBuffers(1, &resource->EBOs[i]);
+
+                glBindVertexArray(resource->VAOs[i]);
+
+                glBindBuffer(GL_ARRAY_BUFFER, resource->VBOs[i]);
                 glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
 
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resource->EBO);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resource->EBOs[i]);
                 glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
 
+                // Attributes
                 glEnableVertexAttribArray(0); glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
                 glEnableVertexAttribArray(1); glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
                 glEnableVertexAttribArray(2); glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
                 glEnableVertexAttribArray(3); glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
                 glEnableVertexAttribArray(4); glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
-                resource->indexCount = (uint32_t)mesh.indices.size();
-                glBindVertexArray(0);
-                break;
+                resource->indexCounts[i] = (uint32_t)mesh.indices.size();
             }
-            // Mark as ready so the game knows it can draw this
+
+            glBindVertexArray(0);
             resource->uploaded = true;
             });
         });
@@ -121,8 +132,8 @@ std::shared_ptr<TextureResource> AssetManager::GetTexture(const std::string& raw
 
     // Submit to IO Thread
     pool->submit(JobType::Background, [this, path, resource]() {
-        std::string cookedPath = path + COOKED_EXT;
-        auto texData = LoadBinaryTexture(cookedPath);
+        std::string cookedPath = path;
+        std::shared_ptr<TextureLoadResult> texData = LoadBinaryTexture(cookedPath);
 
         if (!texData) {
             std::cerr << "[AssetManager] Failed to load cooked texture: " << cookedPath << "\n";
@@ -209,39 +220,70 @@ std::shared_ptr<MeshResource> AssetManager::GetSkeletalMesh(const std::string& p
         std::string cookedPath = path + COOKED_EXT;
         auto cpuMesh = LoadBinarySkeletalMesh(cookedPath);
         if (!cpuMesh) return;
-        resource->cpuMesh = cpuMesh;
-        this->EnqueueUpload([resource, cpuMesh]() {
-            if (cpuMesh->meshes.empty()) return;
-            auto& mesh = cpuMesh->meshes[0];
-            glGenVertexArrays(1, &resource->VAO);
-            glGenBuffers(1, &resource->VBO);
-            glGenBuffers(1, &resource->EBO);
-            glBindVertexArray(resource->VAO);
-            glBindBuffer(GL_ARRAY_BUFFER, resource->VBO);
-            glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resource->EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
-            glEnableVertexAttribArray(0); glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
-            glEnableVertexAttribArray(1); glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-            glEnableVertexAttribArray(2); glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-            glEnableVertexAttribArray(3); glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-            glEnableVertexAttribArray(4); glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
 
-            if (!cpuMesh->bonesPerMesh.empty()) {
-                glGenBuffers(1, &resource->BVAO);
-                glBindBuffer(GL_ARRAY_BUFFER, resource->BVAO);
-                auto& boneData = cpuMesh->bonesPerMesh[0];
-                glBufferData(GL_ARRAY_BUFFER, boneData.size() * sizeof(VertexBoneData), boneData.data(), GL_STATIC_DRAW);
-                glEnableVertexAttribArray(5); glVertexAttribIPointer(5, 4, GL_INT, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, BoneIDs));
-                glEnableVertexAttribArray(6); glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, Weights));
+        resource->cpuMesh = cpuMesh;
+
+        this->EnqueueUpload([resource, cpuMesh]() {
+            size_t numMeshes = cpuMesh->meshes.size();
+
+            // Initialize vectors
+            resource->VAOs.resize(numMeshes);
+            resource->VBOs.resize(numMeshes);
+            resource->EBOs.resize(numMeshes);
+            resource->BVAOs.resize(numMeshes);
+            resource->indexCounts.resize(numMeshes);
+
+            for (size_t i = 0; i < numMeshes; ++i) {
+                auto& mesh = cpuMesh->meshes[i];
+
+                glGenVertexArrays(1, &resource->VAOs[i]);
+                glGenBuffers(1, &resource->VBOs[i]);
+                glGenBuffers(1, &resource->EBOs[i]);
+
+                glBindVertexArray(resource->VAOs[i]);
+
+                // 1. Standard Vertex Data (Pos, Normal, UV, etc.)
+                glBindBuffer(GL_ARRAY_BUFFER, resource->VBOs[i]);
+                glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resource->EBOs[i]);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
+
+                // Attributes 0-4
+                glEnableVertexAttribArray(0); glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position));
+                glEnableVertexAttribArray(1); glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+                glEnableVertexAttribArray(2); glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+                glEnableVertexAttribArray(3); glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+                glEnableVertexAttribArray(4); glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+
+                // 2. Skeletal Bone Data (IDs and Weights)
+                if (i < cpuMesh->bonesPerMesh.size()) {
+                    glGenBuffers(1, &resource->BVAOs[i]);
+                    glBindBuffer(GL_ARRAY_BUFFER, resource->BVAOs[i]);
+
+                    auto& boneData = cpuMesh->bonesPerMesh[i];
+                    glBufferData(GL_ARRAY_BUFFER, boneData.size() * sizeof(VertexBoneData), boneData.data(), GL_STATIC_DRAW);
+
+                    // Attribute 5: Bone IDs (Note: glVertexAttribIPointer for Integers!)
+                    glEnableVertexAttribArray(5);
+                    glVertexAttribIPointer(5, 4, GL_INT, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, BoneIDs));
+
+                    // Attribute 6: Weights
+                    glEnableVertexAttribArray(6);
+                    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (void*)offsetof(VertexBoneData, Weights));
+                }
+
+                resource->indexCounts[i] = (uint32_t)mesh.indices.size();
             }
-            resource->indexCount = (uint32_t)mesh.indices.size();
+
             glBindVertexArray(0);
             resource->uploaded = true;
             });
         });
+
     return resource;
 }
+
 std::shared_ptr<SkeletalMeshData> AssetManager::LoadBinarySkeletalMesh(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
     if (!in.is_open()) return nullptr;
