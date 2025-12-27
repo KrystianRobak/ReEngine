@@ -28,6 +28,9 @@ struct MeshData {
 
 	bool isSetup = false;
 
+    glm::vec3 aabbMin = glm::vec3(FLT_MAX);
+    glm::vec3 aabbMax = glm::vec3(-FLT_MAX);
+
     GLuint VAO = 0;
     GLuint VBO = 0;
     GLuint EBO = 0;

@@ -183,6 +183,11 @@ std::shared_ptr<StaticMeshData> AssetManager::LoadBinaryStaticMesh(const std::st
     for (uint32_t i = 0; i < meshCount; ++i) {
         ReadVector(in, result->meshes[i].vertices);
         ReadVector(in, result->meshes[i].indices);
+
+        for (const auto& v : result->meshes[i].vertices) {
+            result->meshes[i].aabbMin = glm::min(result->meshes[i].aabbMin, v.Position);
+            result->meshes[i].aabbMax = glm::max(result->meshes[i].aabbMax, v.Position);
+        }
     }
     return result;
 }
