@@ -46,6 +46,9 @@
     <Filter Include="Pliki nagłówkowe\Graph">
       <UniqueIdentifier>{7362e6bc-8f61-4146-a645-db3bad1b3f0a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Pliki nagłówkowe\Input">
+      <UniqueIdentifier>{38e2b05e-5aa0-4387-995f-c07d2a6117bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="System\System.cpp">
@@ -79,6 +82,12 @@
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
     <ClCompile Include="ThreadPool.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="InputManagerApi.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClCompile>
+    <ClCompile Include="InputManagerApi.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
   </ItemGroup>
@@ -163,6 +172,12 @@
     </ClInclude>
     <ClInclude Include="ThreadPool.h">
       <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="InputEnums.h">
+      <Filter>Pliki nagłówkowe\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="InputEvent.h">
+      <Filter>Pliki nagłówkowe\Input</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

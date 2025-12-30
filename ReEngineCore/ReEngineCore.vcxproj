@@ -140,6 +140,8 @@
     <ClCompile Include="Event.cpp" />
     <ClCompile Include="ILayerManager.cpp" />
     <ClCompile Include="ILayerManager.h" />
+    <ClCompile Include="InputManagerApi.cpp" />
+    <ClCompile Include="InputManagerApi.h" />
     <ClCompile Include="IViewport.cpp" />
     <ClCompile Include="MaterialSystem\Material.cpp" />
     <ClCompile Include="ProjectBuilder.cpp" />
@@ -161,6 +163,8 @@
     <ClInclude Include="BaseApi.h" />
     <ClInclude Include="CoreExport.h" />
     <ClInclude Include="ILayer.h" />
+    <ClInclude Include="InputEnums.h" />
+    <ClInclude Include="InputEvent.h" />
     <ClInclude Include="IViewport.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MaterialSystem\Material.h" />

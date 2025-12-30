@@ -54,6 +54,7 @@ void Application::Init()
 {
 	coordinator = Coordinator::GetCoordinator();
 
+	inputManager = std::make_unique<InputManager>();
 	threadPool.Init();
 	coordinator->Init(&threadPool);
 
@@ -65,7 +66,7 @@ void Application::Init()
 
 void Application::StartGameThreads()
 {
-	const int participantCount = 3;
+	const int participantCount = 3; // Game + Render + Physics
 	mSyncBarrier = std::make_unique<std::barrier<BarrierCompletion>>(
 		participantCount,
 		BarrierCompletion{ this }
@@ -73,27 +74,19 @@ void Application::StartGameThreads()
 
 	running.store(true);
 
+	// We start all threads even if in Editor mode.
+	// The individual thread loops will decide whether to work or idle based on m_AppState.
 	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
 	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
 	PhysicsThread = std::make_unique<std::thread>(std::thread(&Application::PhysicsTick, this));
 
-	LOGF_INFO("Threads started");
+	LOGF_INFO("Threads started (Game Mode Ready)");
 }
 
 void Application::StartEditorThreads()
 {
-	const int participantCount = 2;
-	mSyncBarrier = std::make_unique<std::barrier<BarrierCompletion>>(
-		participantCount,
-		BarrierCompletion{ this }
-	);
-
-	running.store(true);
-
-	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
-	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
-
-	LOGF_INFO("Editor threads started");
+	// Same as GameThreads, usually we want Physics thread available for "Play" testing inside editor.
+	StartGameThreads();
 }
 
 void Application::InitSystems()
@@ -124,7 +117,11 @@ void Application::Update()
 	while (true)
 	{
 
+
 		auto start = clock::now();
+
+		if (inputManager) inputManager->Update(dt);
+
 		auto assetManager = coordinator->GetAssetManager();
 		auto systems = Reflection::Registry::Instance().GetAllSystems();
 		for (auto system : systems)
@@ -163,8 +160,12 @@ void Application::Update()
 			}
 			else
 			{
-				auto sys = coordinator->GetSystem(system->fullName);
-				sys->Update(dt);
+				// Only update gameplay systems if we are in Play State
+				if (m_AppState == ApplicationState::Play)
+				{
+					auto sys = coordinator->GetSystem(system->fullName);
+					sys->Update(dt);
+				}
 			}
 		}
 
@@ -239,13 +240,14 @@ void Application::Render()
 void Application::PhysicsTick()
 {
 	using clock = std::chrono::steady_clock;
-	const std::chrono::milliseconds fixedDelta(16); // ~60Hz
 
 	while (true)
 	{
-		auto startTime = clock::now();
-
-		PhysicsSystem_->Update(0.016f);
+		// Only step physics if playing
+		if (m_AppState == ApplicationState::Play && PhysicsSystem_)
+		{
+			PhysicsSystem_->Update(0.016f); // Fixed Update
+		}
 
 		coordinator->GetEpochManager()->IncrementPhysicsEpoch();
 
@@ -325,9 +327,7 @@ void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
 	// 1. Process pending deletions *before* swapping
 	coordinator->ProcessPendingEntityDeletions();
 
-	// 2. Swap ALL double-buffered components
 	coordinator->SwapComponentBuffers("Transform");
-	// ... add any other swappable components ...
 
 	// 3. Increment epochs
 	coordinator->GetEpochManager()->IncrementGameEpoch();

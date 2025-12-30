@@ -12,4 +12,7 @@ struct RigidBody {
     REFVARIABLE() float restitution = 0.0f;  // Bounciness: 0 = no bounce, 1 = super ball
     REFVARIABLE() bool useGravity = true;
     REFVARIABLE() bool isStatic = false;     // True for floors/walls
+    REFVARIABLE() glm::vec3 angularVelocity = glm::vec3(0.0f);
+    float inverseMass;
+    glm::mat3 inverseInertiaTensor;
 };

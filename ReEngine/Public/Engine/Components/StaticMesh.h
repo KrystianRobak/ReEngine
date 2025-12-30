@@ -1,42 +1,24 @@
 #pragma once
 
 #include "ReflectionMacros.h"
-#include <vector>
+#include <string>
 #include <memory>
-#include <future>
-#include <atomic>
 #include "ReTypes.h"
 
-class StaticMeshData;
-class MeshResource;
-
-struct PendingStaticMesh
-{
-    Entity entity;
-    std::future<std::shared_ptr<StaticMeshData>> future;
-
-    PendingStaticMesh() = default;
-
-    // move-only
-    PendingStaticMesh(PendingStaticMesh&&) noexcept = default;
-    PendingStaticMesh& operator=(PendingStaticMesh&&) noexcept = default;
-
-    // no copies
-    PendingStaticMesh(const PendingStaticMesh&) = delete;
-    PendingStaticMesh& operator=(const PendingStaticMesh&) = delete;
-};
-
+// Forward declaration to avoid including the heavy AssetManagerApi
+struct MeshResource;
 
 REFCOMPONENT()
 struct StaticMesh
 {
+    // The path is useful for Serialization/Saving
     REFVARIABLE()
-    std::string AssetPath;
+        std::string AssetPath;
 
     REFVARIABLE()
-    int MaterialId = -1;
+        int MaterialId = -1;
 
+    // Runtime Handle. 
+    // The RenderSystem checks MeshResource->uploaded to know if it can draw.
     std::shared_ptr<MeshResource> MeshResource = nullptr;
-
-    uint64_t MeshResourceId = 0;
 };

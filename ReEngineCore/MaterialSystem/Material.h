@@ -217,41 +217,57 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
 layout (location = 3) in vec3 aTangent;
 layout (location = 4) in vec3 aBitangent;
+layout (location = 5) in mat4 aInstanceMatrix; // Changed from uniform to attribute
 
 out vec2 TexCoords;
 out vec3 FragPos;
 out vec3 Normal;
 out mat3 TBN;
 
-uniform mat4 Model;
-uniform mat4 View;
-uniform mat4 Projection;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main()
 {
-    vec4 worldPos = Model * vec4(aPos, 1.0);
-    FragPos = vec3(worldPos);
+    // Use instance matrix
+    vec4 worldPos = aInstanceMatrix * vec4(aPos, 1.0);
+    FragPos = worldPos.xyz;
     TexCoords = aTexCoords;
     
-    // Normal Matrix calculation
-    mat3 normalMatrix = transpose(inverse(mat3(Model)));
+    // Normal Matrix from Instance Matrix
+    // Note: In production, calculating inverse() in shader is expensive. 
+    // Ideally, pass a NormalMatrix as another attribute, but this works for now.
+    mat3 normalMatrix = transpose(inverse(mat3(aInstanceMatrix)));
     Normal = normalize(normalMatrix * aNormal);
     
-    // Calculate TBN for Normal Mapping
-    vec3 T = normalize(normalMatrix * aTangent);
-    vec3 B = normalize(normalMatrix * aBitangent);
+    // Calculate TBN
+    vec3 T = vec3(0.0);
+    vec3 B = vec3(0.0);
     vec3 N = normalize(normalMatrix * aNormal);
+
+    if (length(aTangent) > 0.001) {
+        T = normalize(normalMatrix * aTangent);
+        B = normalize(normalMatrix * aBitangent);
+    } else {
+        // Fallback: create arbitrary tangent if missing
+        // (This prevents the matrix from being full of NaNs)
+        vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+        T = normalize(cross(up, N));
+        B = cross(N, T);
+    }
+    
     TBN = mat3(T, B, N);
     
-    gl_Position = Projection * View * worldPos;
+    gl_Position = projection * view * worldPos;
 }
 )";
 
-        // Fragment Shader Template (Cleaned up output variable)
+        // --- 4. FRAGMENT SHADER TEMPLATE (DEFERRED) ---
+        // Matches InitGBuffer attachments
         result.FragmentShaderCode =
             "#version 460 core\n"
             "layout (location = 0) out vec4 gPosition;\n"   // RGB=Pos, A=Metallic
-            "layout (location = 1) out vec4 gNormal;\n"     // RGB=Normal, A=Unused (or AO)
+            "layout (location = 1) out vec4 gNormal;\n"     // RGB=Normal, A=Unused
             "layout (location = 2) out vec4 gAlbedoSpec;\n" // RGB=Albedo, A=Roughness
             "\n"
             "in vec2 TexCoords;\n"

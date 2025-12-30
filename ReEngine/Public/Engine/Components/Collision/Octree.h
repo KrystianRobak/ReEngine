@@ -4,170 +4,54 @@
 #include <array>
 #include <memory>
 #include <glm/vec3.hpp>
-
 #include "AABB.h"
 
-class OctreeNode {
+class Octree {
 private:
-    glm::vec3 center;
-    float size;
-    std::vector<AABB*> objects;
-    std::array<std::unique_ptr<OctreeNode>, 8> children;
+    struct OctreeNode {
+        glm::vec3 center;
+        float size;
+
+        // Separate lists to avoid rebuilding static parts
+        std::vector<AABB*> staticObjects;
+        std::vector<AABB*> dynamicObjects;
+
+        std::array<std::unique_ptr<OctreeNode>, 8> children;
+        bool hasChildren = false;
+
+        OctreeNode(const glm::vec3& c, float s) : center(c), size(s) {}
+
+        // Check if an AABB intersects this node's bounds
+        bool intersects(const AABB& aabb) const;
+    };
+
+    std::unique_ptr<OctreeNode> root;
+    float minNodeSize = 1.0f; // Prevent infinite recursion on small overlapping objects
     static constexpr int MAX_OBJECTS = 8;
     static constexpr int MAX_DEPTH = 8;
-    bool hasChildren = false;
 
-    bool intersectsAABB(const AABB& aabb) const {
+    // Recursive helpers
+    void InsertStatic(OctreeNode* node, AABB* obj, int depth);
+    void InsertDynamic(OctreeNode* node, AABB* obj, int depth);
+    void ClearDynamicRecursive(OctreeNode* node);
 
-        glm::vec3 nodeMin = center - glm::vec3(size / 2);
-        glm::vec3 nodeMax = center + glm::vec3(size / 2);
+    // The core optimized collision logic
+    void CheckNodeCollisions(OctreeNode* node,
+        const std::vector<AABB*>& staticAncestors,
+        const std::vector<AABB*>& dynamicAncestors,
+        std::vector<std::pair<AABB*, AABB*>>& collisions);
 
-        return !(aabb.GetMax().x < nodeMin.x || aabb.GetMin().x > nodeMax.x ||
-            aabb.GetMax().y < nodeMin.y || aabb.GetMin().y > nodeMax.y ||
-            aabb.GetMax().z < nodeMin.z || aabb.GetMin().z > nodeMax.z);
-    }
-
-    int getOctantForPoint(const glm::vec3& point) const {
-        int octant = 0;
-        if (point.x >= center.x) octant |= 1;
-        if (point.y >= center.y) octant |= 2;
-        if (point.z >= center.z) octant |= 4;
-        return octant;
-    }
-
-    OctreeNode* getChildContainingPoint(const glm::vec3& point) {
-        if (!hasChildren) return nullptr;
-
-        for (auto& child : children) {
-            glm::vec3 childMin = child->center - glm::vec3(child->size / 2);
-            glm::vec3 childMax = child->center + glm::vec3(child->size / 2);
-
-            if (point.x >= childMin.x && point.x <= childMax.x &&
-                point.y >= childMin.y && point.y <= childMax.y &&
-                point.z >= childMin.z && point.z <= childMax.z) {
-                return child.get();
-            }
-        }
-        return nullptr;
-    }
-
-    void subdivide() {
-        float childSize = size / 2.0f;
-        float offset = childSize / 2.0f;
-
-        for (int i = 0; i < 8; i++) {
-            // Calculate new center based on octant index
-            glm::vec3 newCenter = center;
-            if (i & 1) newCenter.x += offset; else newCenter.x -= offset;
-            if (i & 2) newCenter.y += offset; else newCenter.y -= offset;
-            if (i & 4) newCenter.z += offset; else newCenter.z -= offset;
-
-            children[i] = std::make_unique<OctreeNode>(newCenter, childSize);
-        }
-        hasChildren = true;
-    }
+    // Helper math
+    int GetOctant(const glm::vec3& nodeCenter, const glm::vec3& point);
+    bool CheckAABBCollision(const AABB& a, const AABB& b);
 
 public:
-    OctreeNode(const glm::vec3& c, float s) : center(c), size(s) {}
+    Octree(const glm::vec3& center, float size);
 
-    void insert(AABB* obj, int depth = 0) {
-        // If the AABB doesn't intersect this node, don't insert
-        if (!intersectsAABB(*obj)) {
-            return;
-        }
+    // Call this ONCE (or when static geometry changes)
+    void BuildStatic(const std::vector<AABB*>& statics);
 
-        // If we're at max depth or don't have too many objects yet, add to this node
-        if (depth >= MAX_DEPTH || objects.size() < MAX_OBJECTS) {
-            objects.push_back(obj);
-            return;
-        }
-
-        // Create children if they don't exist
-        if (!hasChildren) {
-            subdivide();
-        }
-
-        // Try to insert into children
-        bool insertedInChild = false;
-        glm::vec3 objCenter = (obj->GetMin() + obj->GetMax()) * 0.5f;
-
-        // First try the child that contains the center point
-        int octant = getOctantForPoint(objCenter);
-        if (children[octant]->intersectsAABB(*obj)) {
-            children[octant]->insert(obj, depth + 1);
-            insertedInChild = true;
-        }
-
-        // If we couldn't insert into the best child, try all others that intersect
-        if (!insertedInChild) {
-            // If the object spans multiple octants, add it to this node
-            objects.push_back(obj);
-        }
-    }
-
-    void queryRegion(const AABB& queryBox, std::vector<AABB*>& results) const {
-        if (!intersectsAABB(queryBox)) return;
-
-        results.insert(results.end(), objects.begin(), objects.end());
-
-        if (hasChildren) {
-            for (const auto& child : children) {
-                child->queryRegion(queryBox, results);
-            }
-        }
-    }
+    // Call this EVERY FRAME
+    // It clears only dynamic data, re-inserts, and checks collisions
+    void Update(const std::vector<AABB*>& dynamics, std::vector<std::pair<AABB*, AABB*>>& outCollisions);
 };
-
-
-
-inline bool checkCollision(const AABB& a, const AABB& b) {
-    return !(a.GetMin().x > b.GetMax().x || a.GetMax().x < b.GetMin().x ||
-        a.GetMin().y > b.GetMax().y || a.GetMax().y < b.GetMin().y ||
-        a.GetMin().z > b.GetMax().z || a.GetMax().z < b.GetMin().z);
-}
-
-inline std::vector<std::pair<AABB*, AABB*>> checkCollisions(std::vector<AABB*>& objects) {
-    // Determine appropriate root size
-    glm::vec3 minBound(std::numeric_limits<float>::max());
-    glm::vec3 maxBound(std::numeric_limits<float>::lowest());
-
-    for (auto* obj : objects) {
-        minBound = glm::min(minBound, obj->GetMin());
-        maxBound = glm::max(maxBound, obj->GetMax());
-    }
-
-    // Calculate center and size for the root node
-    glm::vec3 center = (minBound + maxBound) * 0.5f;
-    float size = glm::length(maxBound - minBound) * 0.6f; // Add some margin
-
-    OctreeNode root(center, size);
-    std::vector<std::pair<AABB*, AABB*>> collisions;
-
-    // Insert all objects
-    for (auto* obj : objects) {
-        root.insert(obj);
-    }
-
-    // Check for collisions
-    for (size_t i = 0; i < objects.size(); i++) {
-        auto* obj = objects[i];
-        std::vector<AABB*> nearby;
-        root.queryRegion(*obj, nearby);
-
-        for (auto* other : nearby) {
-            // Skip if it's the same object or we've already checked this pair
-            if (other == obj || other < obj) {
-                continue;
-            }
-
-            if (checkCollision(*obj, *other)) {
-                // Set collision flags on both objects
-                obj->SetIsColliding(true);
-                other->SetIsColliding(true);
-                collisions.emplace_back(obj, other);
-            }
-        }
-    }
-
-    return collisions;
-}

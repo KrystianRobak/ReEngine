@@ -1,183 +1,93 @@
 #pragma once
 
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <vector>
 #include <memory>
 #include <limits>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <cmath>
 #include "Shader.h"
 
 class AABB {
 public:
-    AABB() : minOffset(std::numeric_limits<float>::max()),
-        maxOffset(std::numeric_limits<float>::lowest()) {
+    AABB() : localMin(-0.5f), localMax(0.5f) {
+        UpdateWorldTransform(glm::vec3(0), glm::quat(1, 0, 0, 0), glm::vec3(1));
     }
 
-    ~AABB() {
-        cleanup();
-    }
+    ~AABB() { cleanup(); }
 
-    glm::vec3 GetCentre()
-    {
-        return currentPosition;
-    }
-
-    // Static vertex and index data shared across all AABBs
+    // Static resources
     static unsigned int staticVAO, staticVBO, staticEBO;
     static bool buffersInitialized;
 
-    glm::vec3 GetMin() const { return transformedMin; }
-    glm::vec3 GetMax() const { return transformedMax; }
+    // --- Core API ---
+    glm::vec3 GetMin() const { return worldMin; }
+    glm::vec3 GetMax() const { return worldMax; }
 
-    void SetOffsets(const std::tuple<glm::vec3, glm::vec3>& MinMax) {
-        glm::vec3 meshMin = std::get<0>(MinMax);
-        glm::vec3 meshMax = std::get<1>(MinMax);
-        // Check if the mesh bounds are valid
-        if (meshMin.x == meshMax.x && meshMin.y == meshMax.y && meshMin.z == meshMax.z) {
-            std::cerr << "WARNING: Mesh bounds are invalid - min equals max!" << std::endl;
-            // Set some default small box
-            minOffset = glm::vec3(-0.5f);
-            maxOffset = glm::vec3(0.5f);
-        }
-        else {
-            // Calculate offsets relative to the current position
-            minOffset = meshMin - currentPosition;
-            maxOffset = meshMax - currentPosition;
-        }
-        // Update the corners and bounds with the new offsets
-        updateTransformedBounds();
+    // Sets the raw size of the object (e.g., {-0.5, -0.5, -0.5} to {0.5, 0.5, 0.5} for a unit box)
+    void SetLocalBounds(const glm::vec3& min, const glm::vec3& max) {
+        localMin = min;
+        localMax = max;
+        // Recalculate immediately with current transform
+        UpdateWorldTransform(currentPos, currentRot, currentScale);
     }
 
-    void SetIsColliding(bool isColliding) {
-        this->collides = isColliding;
-    }
+    void UpdateWorldTransform(const glm::vec3& pos, const glm::quat& rot, const glm::vec3& scale) {
+        currentPos = pos;
+        currentRot = rot;
+        currentScale = scale;
 
-    void updatePosition(const glm::vec3& newPosition, const glm::quat& newRotation, const glm::vec3& newScale) {
-        currentPosition = newPosition;
+        modelMatrix = glm::translate(glm::mat4(1.0f), pos) *
+            glm::mat4_cast(rot) *
+            glm::scale(glm::mat4(1.0f), scale);
 
-        
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), newPosition) *
-            glm::mat4_cast(newRotation) *
-            glm::scale(glm::mat4(1.0f), newScale);
+        // Recompute AABB in World Space (AABB rotation)
+        // We take the 8 local corners, transform them, and find the new min/max
+        std::vector<glm::vec3> corners = GetEightCornersLocal();
+        worldMin = glm::vec3(std::numeric_limits<float>::max());
+        worldMax = glm::vec3(std::numeric_limits<float>::lowest());
 
-        this->modelMatrix = model;
-        // Now update the corners and transformed bounds
-        updateTransformedBounds();
-
-    }
-
-    void draw(Shader* shader) const {
-        if (!buffersInitialized) {
-            std::cerr << "AABB buffers not initialized! Attempting to initialize now..." << std::endl;
-            // Force initialization - cast away const to call the non-const method
-            const_cast<AABB*>(this)->setupStaticBuffers();
-
-            if (!buffersInitialized) {
-                std::cerr << "Failed to initialize AABB buffers!" << std::endl;
-                return;
-            }
-        }
-
-        // Check if shader is valid
-        if (!shader || shader->get_program_id() == 0) {
-            std::cerr << "Invalid shader for AABB drawing!" << std::endl;
-            return;
-        }
-
-        // Make sure we have valid corners data
-        if (corners.size() != 8) {
-            std::cerr << "Invalid AABB corners data! Expected 8 corners, got "
-                << corners.size() << std::endl;
-            return;
-        }
-
-        // Update the vertex buffer with current corner positions
-        glBindVertexArray(staticVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, staticVBO);
-
-        glBufferSubData(GL_ARRAY_BUFFER, 0, corners.size() * sizeof(glm::vec3), corners.data());
-
-        // Set shader uniforms
-        if (collides) {
-            shader->SetVec3("color", { 0.0f, 1.0f, 0.0f }); // Green for collision
-        }
-        else {
-            shader->SetVec3("color", { 1.0f, 0.0f, 0.0f }); // Red for no collision
-        }
-
-        shader->SetMat4("Model", modelMatrix);
-
-        // Draw the AABB
-        glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
-
-        // Check for OpenGL errors
-        GLenum err;
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            std::cerr << "OpenGL error in AABB::draw: " << err << std::endl;
-        }
-
-        glBindVertexArray(0);
-    }
-
-    void updateTransformedBounds() {
-        // Clear the previous corners
-        corners.clear();
-
-        // Calculate all 8 corners of the AABB using the offsets and current position
-        // Order: min corner, then permute X,Y,Z for other corners
-        corners = {
-            currentPosition + minOffset,                                              // 0: min point
-            currentPosition + glm::vec3(maxOffset.x, minOffset.y, minOffset.z),       // 1: max X, min Y, min Z
-            currentPosition + glm::vec3(minOffset.x, maxOffset.y, minOffset.z),       // 2: min X, max Y, min Z
-            currentPosition + glm::vec3(maxOffset.x, maxOffset.y, minOffset.z),       // 3: max X, max Y, min Z
-            currentPosition + glm::vec3(minOffset.x, minOffset.y, maxOffset.z),       // 4: min X, min Y, max Z
-            currentPosition + glm::vec3(maxOffset.x, minOffset.y, maxOffset.z),       // 5: max X, min Y, max Z
-            currentPosition + glm::vec3(minOffset.x, maxOffset.y, maxOffset.z),       // 6: min X, max Y, max Z
-            currentPosition + maxOffset                                               // 7: max point
-        };
-        // Now calculate the transformed bounds for queries
-        transformedMin = glm::vec3(std::numeric_limits<float>::max());
-        transformedMax = glm::vec3(std::numeric_limits<float>::lowest());
-
-        // Consider model transformation when calculating bounds
         for (const auto& corner : corners) {
-            // Transform the corner by the model matrix
-            glm::vec4 transformed = modelMatrix * glm::vec4(corner, 1.0f);
-            glm::vec3 transformedCorner(transformed.x, transformed.y, transformed.z);
-
-            // Update min/max bounds
-            transformedMin = glm::min(transformedMin, transformedCorner);
-            transformedMax = glm::max(transformedMax, transformedCorner);
+            glm::vec4 worldPt = modelMatrix * glm::vec4(corner, 1.0f);
+            worldMin = glm::min(worldMin, glm::vec3(worldPt));
+            worldMax = glm::max(worldMax, glm::vec3(worldPt));
         }
     }
 
+    void SetIsColliding(bool isColliding) { collides = isColliding; }
+
+    // --- Debug Drawing ---
+    void draw(Shader* shader) const;
     static void setupStaticBuffers();
-
-    void cleanup() {
-        if (buffersInitialized) {
-            glDeleteVertexArrays(1, &staticVAO);
-            glDeleteBuffers(1, &staticVBO);
-            glDeleteBuffers(1, &staticEBO);
-            buffersInitialized = false;
-        }
-    }
+    void cleanup() {};
 
 private:
-    glm::vec3 minOffset;
-    glm::vec3 maxOffset;
-    glm::vec3 currentPosition;
-    glm::vec3 transformedMin;
-    glm::vec3 transformedMax;
-    glm::mat4 modelMatrix;
-    std::vector<glm::vec3> corners;
-    bool collides;
+    glm::vec3 localMin;
+    glm::vec3 localMax;
 
-    
+    glm::vec3 worldMin;
+    glm::vec3 worldMax;
 
-    
-   
+    // Cache for debug drawing
+    glm::vec3 currentPos;
+    glm::quat currentRot;
+    glm::vec3 currentScale;
+    glm::mat4 modelMatrix{ 1.0f };
+
+    bool collides = false;
+
+    std::vector<glm::vec3> GetEightCornersLocal() const {
+        return {
+            localMin,
+            glm::vec3(localMax.x, localMin.y, localMin.z),
+            glm::vec3(localMin.x, localMax.y, localMin.z),
+            glm::vec3(localMax.x, localMax.y, localMin.z),
+            glm::vec3(localMin.x, localMin.y, localMax.z),
+            glm::vec3(localMax.x, localMin.y, localMax.z),
+            glm::vec3(localMin.x, localMax.y, localMax.z),
+            localMax
+        };
+    }
 };

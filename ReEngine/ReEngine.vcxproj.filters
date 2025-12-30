@@ -112,6 +112,12 @@
     <Filter Include="Source Files\Private\Engine\Animation">
       <UniqueIdentifier>{00496202-8011-429e-a795-7e6f52642eb1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Public\Engine\Input">
+      <UniqueIdentifier>{637ee760-6819-4cf1-9ca0-a15a7b297273}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Private\Engine\Input">
+      <UniqueIdentifier>{4dd4662f-2419-4c09-a72b-6d632430942e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp">
@@ -194,6 +200,9 @@
     </ClCompile>
     <ClCompile Include="Private\EpochManager.cpp">
       <Filter>Source Files\Private</Filter>
+    </ClCompile>
+    <ClCompile Include="InputManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -357,6 +366,18 @@
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\HeightfieldCollider.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="InputManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Components\CapsuleCollider.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Components\MeshCollider.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="SphereCollider.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
   </ItemGroup>

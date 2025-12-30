@@ -78,7 +78,7 @@ inline std::string GetDefaultValueForInput(const Pin& pin)
     if (pin.label == "Opacity")    return "1.0";
     if (pin.label == "Metallic")   return "0.0";
     if (pin.label == "Roughness")  return "1.0";
-    if (pin.label == "Normal")     return "vec3(0.0, 0.0, 1.0)";
+    if (pin.label == "Normal")     return "vec3(0.5, 0.5, 1.0)";
     if (pin.label == "WorldPosition") return "FragPos"; // Safe fallback
 
     return "0.0"; // generic float fallback
@@ -577,9 +577,10 @@ struct OutputNode : public BaseNode
     std::string GenerateShaderCode(const std::vector<Link>& links,
         const std::vector<BaseNode*>& nodes) override
     {
-        // Get Variable Names from connected nodes
+        // 1. Fetch variable names from connected inputs
+            // Default values are handled by GetConnectedVariableName if not connected
         auto baseColor = GetConnectedVariableName(Inputpins[1], links, nodes);
-        auto emissive = GetConnectedVariableName(Inputpins[2], links, nodes); // Emissive handling is tricky in Deferred, usually needs a separate buffer or forward pass. 
+        // Emissive (Input 2) is currently ignored in standard GBuffer unless you have an Emissive Buffer
         auto opacity = GetConnectedVariableName(Inputpins[3], links, nodes);
         auto metallic = GetConnectedVariableName(Inputpins[4], links, nodes);
         auto roughness = GetConnectedVariableName(Inputpins[5], links, nodes);
@@ -587,26 +588,30 @@ struct OutputNode : public BaseNode
 
         std::string code;
 
-        // 1. Write Position and pack Metallic
+        // --- ATTACHMENT 0: Position + Metallic ---
         code += "    gPosition.rgb = FragPos;\n";
         code += "    gPosition.a = " + metallic + ";\n";
 
-        // 2. Write Albedo and pack Roughness
-        code += "    gAlbedoSpec.rgb = " + baseColor + ".rgb;\n";
-        code += "    gAlbedoSpec.a = " + roughness + ";\n";
+        // --- ATTACHMENT 1: Normal ---
+        // Check if Normal input is connected or default (0,0,1)
+        // We assume the graph provides a Tangent Space normal (e.g. from a texture)
 
-        // 3. Handle Normal Mapping
-        // If the connected normal is (0,0,1) (default), use geometry normal.
-        // Otherwise, transform the tangent space normal to world space.
         code += "    vec3 mapNormal = " + normalIn + ";\n";
-        code += "    if(length(mapNormal) == 0.0) mapNormal = vec3(0,0,1);\n"; // Safety
 
-        // Transform [0,1] range to [-1,1] vector if it came from a texture
+        // Safety: If mapNormal is essentially zero/default, fall back to geometry normal
+        // (A blue normal map is 0,0,1)
+        code += "    if (length(mapNormal) < 0.1) mapNormal = vec3(0.0, 0.0, 1.0);\n";
+
+        // Convert from [0,1] texture range to [-1,1] vector range
         code += "    mapNormal = normalize(mapNormal * 2.0 - 1.0);\n";
 
-        // Apply TBN
+        // Apply TBN matrix to transform Tangent Space -> World Space
         code += "    gNormal.rgb = normalize(TBN * mapNormal);\n";
-        code += "    gNormal.a = 1.0;\n";
+        code += "    gNormal.a = 1.0;\n"; // Reserved (AO or other flags)
+
+        // --- ATTACHMENT 2: Albedo + Roughness ---
+        code += "    gAlbedoSpec.rgb = " + baseColor + ".rgb;\n";
+        code += "    gAlbedoSpec.a = " + roughness + ";\n";
 
         return code;
     }

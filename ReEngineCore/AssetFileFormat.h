@@ -36,6 +36,7 @@ inline static FileType GetFileType(const std::string& extension) {
 }
 
 enum class AssetType : uint32_t {
+    Null = -1,
     StaticMesh = 0,
     SkeletalMesh = 1,
     Texture = 2

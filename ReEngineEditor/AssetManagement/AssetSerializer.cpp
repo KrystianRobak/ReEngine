@@ -59,7 +59,7 @@ void ReadVector(std::ifstream& in, std::vector<T>& vec) {
 
 // --- MAIN IMPORT LOGIC ---
 
-bool AssetSerializer::ImportAndCookFile(const std::string& sourcePath, const std::string& destDir) {
+std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std::string& sourcePath, const std::string& destDir) {
     fs::path src(sourcePath);
     std::string ext = src.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -78,7 +78,7 @@ bool AssetSerializer::ImportAndCookFile(const std::string& sourcePath, const std
 
             if (!scene || !scene->mRootNode) {
                 std::cerr << "[Importer] Assimp Error: " << importer.GetErrorString() << std::endl;
-                return false;
+                return { AssetType::Null, "" };
             }
 
             // Heuristic: Check if any mesh has bones
@@ -96,7 +96,8 @@ bool AssetSerializer::ImportAndCookFile(const std::string& sourcePath, const std
                 auto skelData = ImportSkeletalMeshAssimp(sourcePath);
                 if (skelData) {
                     std::string outPath = (destFolder / (filename + ".reskel")).string();
-                    return SaveSkeletalMesh(outPath, *skelData);
+                    SaveSkeletalMesh(outPath, *skelData);
+                    return { AssetType::SkeletalMesh, outPath };
                 }
             }
             else {
@@ -105,22 +106,33 @@ bool AssetSerializer::ImportAndCookFile(const std::string& sourcePath, const std
                 auto staticData = ImportStaticMeshAssimp(sourcePath);
                 if (staticData) {
                     std::string outPath = (destFolder / (filename + ".remesh")).string();
-                    return SaveStaticMesh(outPath, *staticData);
+                    SaveStaticMesh(outPath, *staticData);
+                    return {AssetType::StaticMesh, outPath };
                 }
             }
         }
         catch (std::exception& e) {
             std::cerr << "[Importer] Failed: " << sourcePath << " -> " << e.what() << std::endl;
-            return false;
+            return { AssetType::Null, "" };
         }
     }
     // --- TEXTURES ---
     else if (ext == ".png" || ext == ".jpg" || ext == ".tga" || ext == ".bmp") {
         std::string outPath = (destFolder / (filename + ".retex")).string();
-        return ImportTexture(sourcePath, outPath);
+        bool result = ImportTexture(sourcePath, outPath);
+
+        if (result)
+        {
+
+            return { AssetType::Texture, outPath };
+        }
+        else
+        {
+            return {AssetType::Null,""};
+        } 
     }
 
-    return false;
+    return { AssetType::Null, "" };
 }
 
 // --- STATIC MESH IMPLEMENTATION ---

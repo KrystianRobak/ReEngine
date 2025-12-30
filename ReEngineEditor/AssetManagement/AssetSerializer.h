@@ -23,7 +23,7 @@ public:
 
     // Main Entry point for dragging and dropping files
     // Returns true if successfully cooked into a .remesh, .reskel, or .retex
-    static bool ImportAndCookFile(const std::string& sourcePath, const std::string& destDir);
+    static std::pair<AssetType,std::string> ImportAndCookFile(const std::string& sourcePath, const std::string& destDir);
 
     static bool ImportTexture(const std::string& source, const std::string& dest);
 

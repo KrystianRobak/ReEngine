@@ -167,7 +167,7 @@ public:
 
 	bool HasComponent(Entity entity, const char* name) {
 		Signature signature = GetEntitySignature(entity);
-		if (!signature.test(GetComponentType(name)))
+		if (signature.test(GetComponentType(name)))
 		{
 			return true;
 		}
@@ -190,7 +190,7 @@ public:
 		mComponentManager->MarkEntityDirty(entity, typeName);
 	}
 
-	void* GetComponentForWrite(Entity entity, const std::string& typeName)
+	void* GetComponentForWrite(Entity entity, const std::string& typeName) override
 	{
 		return mComponentManager->GetComponentForWrite(entity, typeName);
 	}

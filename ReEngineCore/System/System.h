@@ -23,7 +23,11 @@ public:
 	{
 		engine_ = engine;
 		assetManager_ = AssetManger;
+
+		OnInit();
 	};
+
+	virtual void OnInit() {};
 
 	virtual void Update(float dt) = 0;
 

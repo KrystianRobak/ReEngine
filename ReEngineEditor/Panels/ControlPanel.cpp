@@ -35,6 +35,14 @@ void ControlPanel::Render()
         if (ImGui::ImageButton("##playButton", (isPlaying ? (void*)(intptr_t)startIcon->id : (void*)(intptr_t)pauseIcon->id), ImVec2(20, 20)))
         {
             isPlaying = !isPlaying;
+            if (isPlaying)
+            {
+                engineApp->SetState(ApplicationState::Editor);
+            }
+            else
+            {
+                engineApp->SetState(ApplicationState::Play);
+            }
         }
 			
         ImGui::SameLine();

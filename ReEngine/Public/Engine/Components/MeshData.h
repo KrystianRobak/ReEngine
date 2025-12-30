@@ -1,14 +1,9 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include "TextureData.h"
 #include <string>
 #include <vector>
-
-
+#include "TextureData.h"
 
 struct Vertex {
     glm::vec3 Position;
@@ -18,21 +13,17 @@ struct Vertex {
     glm::vec3 Bitangent;
 };
 
+// Pure CPU Data Container
 struct MeshData {
-
-	MeshData() = default;
+    MeshData() = default;
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    std::vector<TextureData> textures;
 
-	bool isSetup = false;
+    // AABB for this specific submesh (useful for precise culling)
+    glm::vec3 aabbMin{ 0.0f };
+    glm::vec3 aabbMax{ 0.0f };
 
-    glm::vec3 aabbMin = glm::vec3(FLT_MAX);
-    glm::vec3 aabbMax = glm::vec3(-FLT_MAX);
-
-    GLuint VAO = 0;
-    GLuint VBO = 0;
-    GLuint EBO = 0;
-	GLuint BVAO = 0;
+    // Material slot index for this submesh
+    int materialIndex = 0;
 };

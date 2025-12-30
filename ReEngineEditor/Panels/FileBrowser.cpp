@@ -1,6 +1,11 @@
 #include "FileBrowser.h"
 #include "AssetManagement/AssetSerializer.h"
 #include "Logger.h"
+#include <fstream>
+
+#include <json/json.hpp>
+
+using json = nlohmann::json;
 // Define your specific engine extensions here
 
 
@@ -15,7 +20,12 @@ void FileBrowser::OnInit()
     engineAPI->AddEventListener(Events::Window::FILE_DROPPED, [this](Event& e) {
         std::string droppedPath = e.GetParam<std::string>("FilePath");
         LOGF_INFO("Detected file drop, path to dropped: %s", droppedPath.c_str())
-            AssetSerializer::ImportAndCookFile(droppedPath, this->pathHistory.back());
+        auto AssetImportedType = AssetSerializer::ImportAndCookFile(droppedPath, this->currentPath);
+        switch (AssetImportedType.first)
+        {
+            case AssetType::Texture:
+                engineAPI->GetAssetManager()->GetTexture(AssetImportedType.second);
+        }
 		});
 
     icons[FileType::Folder] = GetTexture("icons/folder.png");
@@ -126,7 +136,10 @@ void FileBrowser::RenderItem(const BrowserItem& item, float itemWidth, float ite
             FindFiles(fullPath);
         }
         else if (item.type == FileType::Material) {
-            // Open Material Editor
+            Event event(Events::Editor::MaterialSystem::OPEN_MATERIAL_FILE);
+            event.SetParam<std::string>("PATH", fullPath);
+
+            engineAPI->SendEvent(event);
         }
         else if (item.type == FileType::Scene) {
             // Load Scene
@@ -157,6 +170,61 @@ void FileBrowser::Render() {
     ImGui::SameLine();
     ImGui::Text("Path: %s", currentPath.c_str());
     ImGui::Separator();
+
+    if (ImGui::BeginPopupContextWindow("CreateFilePopUp"))
+    {
+        if (ImGui::MenuItem("Create Scene"))
+        {
+
+        }
+        if (ImGui::MenuItem("Create Material"))
+        {
+            std::string fileName = "NewMaterial.material";
+            std::filesystem::path filePath = std::filesystem::path(currentPath) / fileName;
+
+            // Ensure the file name is unique
+            int counter = 1;
+            while (std::filesystem::exists(filePath))
+            {
+                fileName = "NewMaterial_" + std::to_string(counter++) + ".material";
+                filePath = std::filesystem::path(currentPath) / fileName;
+            }
+
+            json j;
+            j["id"] = 1;
+            j["name"] = fileName;
+            j["path"] = filePath.string();
+            j["nodes"] = json::array();
+            j["links"] = json::array();
+
+            // Ensure parent directory exists
+            const std::filesystem::path materialPath = filePath;
+            if (!materialPath.parent_path().empty())
+            {
+                std::filesystem::create_directories(materialPath.parent_path());
+            }
+
+            // Write JSON to file using filesystem path
+            std::ofstream file(materialPath, std::ios::out | std::ios::trunc);
+            if (file)
+            {
+                file << j.dump(4); // Pretty print
+                file.close();
+
+                std::cout << "Created material file: " << materialPath << std::endl;
+            }
+            else
+            {
+                std::cerr << "Failed to create file: " << materialPath << std::endl;
+            }
+
+            // Notify the engine/editor
+            Event event(Events::Editor::MaterialSystem::CREATE_MATERIAL_FILE);
+            event.SetParam<std::string>("PATH", materialPath.string());
+            engineAPI->SendEvent(event);
+        }
+        ImGui::EndPopup();
+    }
 
     // Grid Layout
     float padding = 16.0f;

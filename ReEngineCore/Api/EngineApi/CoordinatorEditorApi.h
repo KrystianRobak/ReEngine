@@ -63,6 +63,8 @@ namespace Editor
 		virtual void SaveScene(const std::string& path) = 0;
 
 		virtual void* GetComponent(Entity entity, const std::string& typeName) = 0;
+		
+		virtual void* GetComponentForWrite(Entity entity, const std::string& typeName) = 0;
 
 		virtual System* GetSystem(const std::string& typeName) = 0;
 

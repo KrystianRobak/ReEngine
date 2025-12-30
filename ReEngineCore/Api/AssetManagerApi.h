@@ -13,19 +13,22 @@ struct TextureData;
 struct TextureResource;
 
 struct MeshResource {
-
+    // Keep CPU data alive for context recovery or picking, 
+    // but you could release it after upload if RAM is tight.
     std::shared_ptr<StaticMeshData> cpuMesh;
-
-    std::atomic<bool> needsUpload{ true };
 
     std::atomic<bool> uploaded{ false };
 
+    // GPU Handles (One per submesh)
     std::vector<uint32_t> VAOs;
     std::vector<uint32_t> VBOs;
     std::vector<uint32_t> EBOs;
-    std::vector<uint32_t> BVAOs;
-    std::vector<uint32_t> indexCounts;
 
+    // Skeletal specific
+    std::vector<uint32_t> BVAOs;
+
+    // Cached counts for DrawElements
+    std::vector<uint32_t> indexCounts;
 };
 
 using MeshResourceId = uint64_t;

@@ -4,6 +4,7 @@
 
 #include "SceneView.h"
 #include "StaticMesh.h"
+#include "Transform.h"
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -67,11 +68,16 @@ void SceneView::Render()
 
             Entity entity = engineAPI->CreateEntity();
             engineAPI->AddComponent(entity, "Transform");
+            auto t = (Transform*)engineAPI->GetComponent(entity, "Transform");
+            t->scale = { 1, 1, 1 };
 
             // Load using loadFBX (Static)
             engineAPI->AddComponent(entity, "StaticMesh");
             auto sm = (StaticMesh*)engineAPI->GetComponent(entity, "StaticMesh");
             sm->MeshResource = engineAPI->GetAssetManager()->GetMesh(pendingImportPath);
+
+            engineAPI->AddComponent(entity, "BoxCollider");
+            engineAPI->AddComponent(entity, "RigidBody");
 
             ImGui::CloseCurrentPopup();
             showImportTypePopup = false;

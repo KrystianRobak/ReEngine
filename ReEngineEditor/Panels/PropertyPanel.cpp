@@ -76,32 +76,51 @@ void PropertyPanel::Render()
             // If it does, render a collapsible header for it.
             if (ImGui::CollapsingHeader(componentInfo->name)) {
                 // Get the actual component data pointer.
-                void* componentData = engineAPI->GetComponent(entity, componentInfo->name);
+                // 1. Get BOTH pointers
+                void* readData = engineAPI->GetComponent(entity, componentInfo->name);
+                void* writeData = engineAPI->GetComponentForWrite(entity, componentInfo->name);
+
+                // Check if we actually have two different buffers (Double Buffering Active)
+                bool isDoubleBuffered = (readData != writeData && writeData != nullptr);
 
                 for (auto& variable : componentInfo->variables) {
-                    char* varDataPtr = (char*)componentData + variable.offset;
-                    
+                    char* readVarPtr = (char*)readData + variable.offset;
+                    char* writeVarPtr = (isDoubleBuffered) ? (char*)writeData + variable.offset : nullptr;
+
                     const char* typeName = variable.type->name;
                     const char* varName = variable.name;
-                    
+
+                    bool valueChanged = false;
+
+                    // --- Render UI based on READ pointer ---
+                    // We use the Read pointer for the UI so the user sees the current frame's state
                     if (strcmp(typeName, "float") == 0) {
-                        ImGui::DragFloat(varName, (float*)varDataPtr, 0.1f);
+                        if (ImGui::DragFloat(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
                     }
                     else if (strcmp(typeName, "int") == 0) {
-                        ImGui::InputInt(varName, (int*)varDataPtr);
+                        if (ImGui::InputInt(varName, (int*)readVarPtr)) valueChanged = true;
                     }
                     else if (strcmp(typeName, "bool") == 0) {
-                        ImGui::Checkbox(varName, (bool*)varDataPtr);
+                        if (ImGui::Checkbox(varName, (bool*)readVarPtr)) valueChanged = true;
                     }
                     else if (strcmp(typeName, "glm::vec<3, float>") == 0 || strcmp(typeName, "glm::vec3") == 0) {
-                        ImGui::DragFloat3(varName, (float*)varDataPtr, 0.1f);
+                        if (ImGui::DragFloat3(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
                     }
                     else if (strcmp(typeName, "glm::vec<4, float>") == 0 || strcmp(typeName, "glm::vec4") == 0) {
-                        ImGui::DragFloat4(varName, (float*)varDataPtr, 0.1f);
+                        if (ImGui::DragFloat4(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
                     }
                     else if (strcmp(typeName, "glm::qua<float>") == 0) {
-                        // Treat quaternion as 4 floats (x,y,z,w)
-                        ImGui::DragFloat4(varName, (float*)varDataPtr, 0.1f);
+                        if (ImGui::DragFloat4(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
+                    }
+
+                    // --- FORCE SYNC: Apply change to WRITE buffer ---
+                    if (valueChanged && isDoubleBuffered) {
+                        // Copy the modified value from Read buffer to Write buffer
+                        // We copy only the specific variable size
+                        size_t varSize = variable.type->size; // Ensure ClassInfo::Variable has size! 
+                        // If you don't have size in Variable struct, you need to deduce it from typeName
+
+                        memcpy(writeVarPtr, readVarPtr, varSize);
                     }
                     
                 }

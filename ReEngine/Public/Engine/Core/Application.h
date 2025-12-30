@@ -19,6 +19,7 @@
 #include <RenderSystem.h>
 #include <functional>
 #include <barrier>
+#include "InputManager.h"
 
 
 class ENGINE_API Application : public IApplicationApi
@@ -42,9 +43,27 @@ public:
 	void Render() override;
 	void PhysicsTick();
 
+	// --- State Implementation ---
+	void SetState(ApplicationState newState) override
+	{
+		m_AppState = newState;
+		// Optional: Reset scene or reload logic here if switching Editor -> Play
+	}
+
+	ApplicationState GetState() override
+	{
+		return m_AppState;
+	}
+	// ---------------------------
+
 	ILayerManager* GetLayerManager() override
 	{
 		return window->GetLayerManager();
+	}
+
+	IInputManager* GetInputManager() override
+	{
+		return inputManager.get();
 	}
 
 	void SetPostUpdateUI(FunctionDelegate fun) override;
@@ -89,6 +108,9 @@ private:
 	float dt = 0.0f;
 	std::atomic<bool> running{ true };
 
+	// Default to Editor mode so the game doesn't auto-start
+	std::atomic<ApplicationState> m_AppState{ ApplicationState::Editor };
+
 	std::mutex initMutex;
 	std::condition_variable initCondition;
 	bool renderInitialized = false;
@@ -100,6 +122,8 @@ private:
 	std::shared_ptr<Coordinator> coordinator;
 	RenderSystem* Renderer_;
 	System* PhysicsSystem_;
+
+	std::unique_ptr<InputManager> inputManager;
 
 	IWindow* window;
 

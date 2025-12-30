@@ -97,6 +97,27 @@ struct RigidBody_AutoRegister {
             };
             RigidBody_Variables.push_back(std::move(rv));
         }
+         vType = Reflection::Registry::Instance().GetOrCreateType("glm::vec<3, float>");
+        {
+            Reflection::ReflectedVariable rv = {
+                "angularVelocity", "public",
+                false,
+                offsetof(RigidBody, angularVelocity),
+                vType,
+                "glm, ::, vec3, (, 0.0f, )"
+            };
+            RigidBody_Variables.push_back(std::move(rv));
+        }
+         vType = Reflection::Registry::Instance().GetOrCreateType("float");
+        {
+            Reflection::ReflectedVariable rv = {
+                "inverseMass", "public",
+                false,
+                offsetof(RigidBody, inverseMass),
+                vType
+            };
+            RigidBody_Variables.push_back(std::move(rv));
+        }
         ci.variables = RigidBody_Variables;
         Reflection::Registry::Instance().RegisterComponent(std::move(ci));
     }

@@ -116,7 +116,7 @@ void ProjectBuilder::ParseConfig() {
 
     for (auto component : components)
     {
-        if(std::strcmp(component->name, "Transform"))
+        if(std::strcmp(component->name, "Transform") == 0)
             engineAPI_->RegisterComponent(component, true);
         else
 			engineAPI_->RegisterComponent(component, false);
