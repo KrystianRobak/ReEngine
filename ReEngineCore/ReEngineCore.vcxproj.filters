@@ -179,5 +179,11 @@
     <ClInclude Include="InputEvent.h">
       <Filter>Pliki nagłówkowe\Input</Filter>
     </ClInclude>
+    <ClInclude Include="AnimGraph.h">
+      <Filter>Pliki nagłówkowe\Graph</Filter>
+    </ClInclude>
+    <ClInclude Include="SystemGraph.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

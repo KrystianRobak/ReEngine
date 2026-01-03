@@ -45,6 +45,7 @@ public:
     // --- Mesh API ---
     // Returns a handle immediately. Check returned->uploaded to see if ready.
     // Handles automatic caching (FBX -> Custom Binary).
+    virtual std::shared_ptr<MeshResource> CreateManualMesh(const std::string& name, std::shared_ptr<StaticMeshData> data) = 0;
     virtual std::shared_ptr<MeshResource> GetMesh(const std::string& path) = 0;
     virtual std::shared_ptr<MeshResource> GetSkeletalMesh(const std::string& path) = 0;
 

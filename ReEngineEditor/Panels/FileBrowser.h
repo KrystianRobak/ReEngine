@@ -26,7 +26,6 @@ private:
 	void OnInit() override;
 
     GLuint GetIconForType(FileType type);
-    std::string GetDragPayloadType(FileType type);
 
     std::vector<BrowserItem> currentItems; // Unified list of folders and files
 

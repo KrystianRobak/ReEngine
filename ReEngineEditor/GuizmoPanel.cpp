@@ -27,12 +27,12 @@ void GuizmoPanel::Render()
 {
 	Entity selectedEntity = engineAPI->GetSelectedEntity();
 
-    if (selectedEntity != 0)
+    if (selectedEntity != 111)
     {
 
         ReScene* scene = engineAPI->GetCurrentScene();
         Camera* camera = scene->GetDefaultCamera();
-        Transform* transform = (Transform*)engineAPI->GetComponent(engineAPI->GetSelectedEntity(), "Transform");
+        Transform* transform = (Transform*)engineAPI->GetComponentForWrite(engineAPI->GetSelectedEntity(), "Transform");
 
         ImGui::Begin("Scene");
 

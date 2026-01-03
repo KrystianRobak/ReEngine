@@ -28,28 +28,17 @@ void FileBrowser::OnInit()
         }
 		});
 
-    icons[FileType::Folder] = GetTexture("icons/folder.png");
-    icons[FileType::Unknown] = GetTexture("icons/file.png");
-    icons[FileType::Code] = GetTexture("icons/code.png");
-    icons[FileType::StaticMesh] = GetTexture("icons/mesh.png");
-    icons[FileType::SkeletalMesh] = GetTexture("icons/skeleton.png");
-    icons[FileType::Texture] = GetTexture("icons/texture.png");
-    icons[FileType::Material] = GetTexture("icons/material.png");
-    icons[FileType::Scene] = GetTexture("icons/scene.png");
+    icons[FileType::Folder] = GetTexture("icons/folder.retex");
+    icons[FileType::Unknown] = GetTexture("icons/file.retex");
+    icons[FileType::Code] = GetTexture("icons/code.retex");
+    icons[FileType::StaticMesh] = GetTexture("icons/mesh.retex");
+    icons[FileType::SkeletalMesh] = GetTexture("icons/skeleton.retex");
+    icons[FileType::Texture] = GetTexture("icons/texture.retex");
+    icons[FileType::Material] = GetTexture("icons/material.retex");
+    icons[FileType::Scene] = GetTexture("icons/scene.retex");
+	icons[FileType::Animation] = GetTexture("icons/animation.retex");
 
     FindFiles(".");
-}
-
-std::string FileBrowser::GetDragPayloadType(FileType type) {
-    switch (type) {
-    case FileType::StaticMesh:   return "ASSET_STATIC_MESH";
-    case FileType::SkeletalMesh: return "ASSET_SKELETAL_MESH";
-    case FileType::Texture:      return "ASSET_TEXTURE";
-    case FileType::Material:     return "ASSET_MATERIAL";
-    case FileType::Scene:        return "ASSET_SCENE";
-    case FileType::Code:         return "ASSET_CODE";
-    default:                     return "ASSET_UNKNOWN";
-    }
 }
 
 void FileBrowser::FindFiles(const std::string& folderPath) {
@@ -94,8 +83,14 @@ void FileBrowser::FindFiles(const std::string& folderPath) {
 }
 
 void FileBrowser::RenderItem(const BrowserItem& item, float itemWidth, float itemSpacing, int itemsPerRow, int& itemsInRow) {
+    
+    if (item.type < FileType::Folder || item.type > FileType::Animation)
+    {
+        return;
+    }
     ImGui::BeginGroup();
 
+    
     ImTextureID iconID = (ImTextureID)icons[item.type]->id;
     std::string payloadType = GetDragPayloadType(item.type);
     std::string fullPath = item.entry.path().string();

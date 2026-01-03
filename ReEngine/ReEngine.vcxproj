@@ -170,7 +170,6 @@
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Private\Engine\Components\Collision\Octree.cpp" />
     <ClCompile Include="Private\Engine\Core\Application.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\GenericComponentArray.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\ComponentManager.cpp" />
@@ -207,6 +206,7 @@
     <ClInclude Include="Public\Engine\Components\MeshCollider.h" />
     <ClInclude Include="Public\Engine\Components\SkeletalMeshComponent.h" />
     <ClInclude Include="Public\Engine\Components\SkeletalMeshData.h" />
+    <ClInclude Include="Public\Engine\Components\StateMachine.h" />
     <ClInclude Include="Public\Engine\Components\StaticMesh.h" />
     <ClInclude Include="Public\EpochManager.h" />
     <ClInclude Include="Public\ReEngineExport.h" />
@@ -221,7 +221,6 @@
     <ClInclude Include="Public\Engine\Components\ReCamera.h" />
     <ClInclude Include="Public\Engine\Components\Collision.h" />
     <ClInclude Include="Public\Engine\Components\Collision\AABB.h" />
-    <ClInclude Include="Public\Engine\Components\Collision\Octree.h" />
     <ClInclude Include="Public\Engine\Components\Gravity.h" />
     <ClInclude Include="Public\Engine\Components\LightSource.h" />
     <ClInclude Include="Public\Engine\Components\MeshData.h" />

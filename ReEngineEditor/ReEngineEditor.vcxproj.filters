@@ -114,6 +114,9 @@
     <ClCompile Include="Panels\SceneView.cpp">
       <Filter>Source Files\Panels</Filter>
     </ClCompile>
+    <ClCompile Include="AnimGraphEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h">
@@ -207,6 +210,9 @@
       <Filter>Source Files\AssetManagement</Filter>
     </ClInclude>
     <ClInclude Include="Editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimGraphEditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

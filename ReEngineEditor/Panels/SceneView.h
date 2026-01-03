@@ -20,9 +20,9 @@ public:
 		viewport = engineApp->CreateNewViewport("SceneViewport", 1920, 1080);
 
 
-        RotateIcon = GetTexture("pngs/rotate.jpg");
-		TranslateIcon = GetTexture("pngs/translate.jpg");
-		ScaleIcon = GetTexture("pngs/scale.jpg");
+        RotateIcon = GetTexture("icons/rotate.retex");
+		TranslateIcon = GetTexture("icons/translate.retex");
+		ScaleIcon = GetTexture("icson/scale.retex");
 	}
 
     void resize(int32_t width, int32_t height);

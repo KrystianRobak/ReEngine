@@ -22,6 +22,10 @@ namespace fs = std::filesystem;
 
 // --- HELPERS ---
 
+static glm::quat QuatFromAssimp(const aiQuaternion& from) {
+    return glm::quat(from.w, from.x, from.y, from.z);
+}
+
 static glm::mat4 Mat4FromAssimp(const aiMatrix4x4& from) {
     glm::mat4 to;
     // Assimp is Row Major, GLM is Column Major
@@ -79,6 +83,32 @@ std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std:
             if (!scene || !scene->mRootNode) {
                 std::cerr << "[Importer] Assimp Error: " << importer.GetErrorString() << std::endl;
                 return { AssetType::Null, "" };
+            }
+
+            // --- NEW: ANIMATION EXPORT SECTION ---
+            if (scene->HasAnimations()) {
+                std::cout << "[Importer] Found " << scene->mNumAnimations << " animations." << std::endl;
+
+                for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
+                    aiAnimation* anim = scene->mAnimations[i];
+
+                    // Determine a filename for the animation
+                    std::string animName = anim->mName.C_Str();
+                    if (animName.empty()) animName = "Anim_" + std::to_string(i);
+
+                    // Clean invalid characters from filename if necessary
+                    std::replace(animName.begin(), animName.end(), ':', '_');
+                    std::replace(animName.begin(), animName.end(), '|', '_');
+
+                    std::string outFileName = filename + "_" + animName + ".reanim";
+                    std::string fullPath = (destFolder / outFileName).string();
+
+                    // Process and Save
+                    SerializedAnimation animData = ProcessAnimation(anim);
+                    if (SaveAnimation(fullPath, animData)) {
+                        std::cout << "[Importer] Saved Animation: " << outFileName << std::endl;
+                    }
+                }
             }
 
             // Heuristic: Check if any mesh has bones
@@ -179,6 +209,46 @@ MeshData AssetSerializer::ProcessMesh(aiMesh* mesh, const aiScene* scene) {
 
 void AssetSerializer::ProcessSkeletalMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData& outData)
 {
+}
+
+SerializedAnimation AssetSerializer::ProcessAnimation(const aiAnimation* anim) {
+    SerializedAnimation outAnim;
+    outAnim.name = anim->mName.C_Str();
+    outAnim.duration = (float)anim->mDuration;
+    outAnim.ticksPerSecond = (anim->mTicksPerSecond != 0) ? (float)anim->mTicksPerSecond : 25.0f;
+
+    for (unsigned int i = 0; i < anim->mNumChannels; i++) {
+        aiNodeAnim* channel = anim->mChannels[i];
+        SerializedBoneAnim boneAnim;
+        boneAnim.name = channel->mNodeName.C_Str();
+
+        // Position Keys
+        for (unsigned int k = 0; k < channel->mNumPositionKeys; k++) {
+            boneAnim.positions.push_back({
+                (float)channel->mPositionKeys[k].mTime,
+                Vec3FromAssimp(channel->mPositionKeys[k].mValue)
+                });
+        }
+
+        // Rotation Keys
+        for (unsigned int k = 0; k < channel->mNumRotationKeys; k++) {
+            boneAnim.rotations.push_back({
+                (float)channel->mRotationKeys[k].mTime,
+                QuatFromAssimp(channel->mRotationKeys[k].mValue)
+                });
+        }
+
+        // Scale Keys
+        for (unsigned int k = 0; k < channel->mNumScalingKeys; k++) {
+            boneAnim.scales.push_back({
+                (float)channel->mScalingKeys[k].mTime,
+                Vec3FromAssimp(channel->mScalingKeys[k].mValue)
+                });
+        }
+
+        outAnim.channels.push_back(boneAnim);
+    }
+    return outAnim;
 }
 
 std::shared_ptr<StaticMeshData> AssetSerializer::ImportStaticMeshAssimp(const std::string& path) {
@@ -425,6 +495,67 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
     result->boneCount = boneMapSize;
 
     return result;
+}
+
+bool AssetSerializer::SaveAnimation(const std::string& path, const SerializedAnimation& data) {
+    std::ofstream out(path, std::ios::binary);
+    if (!out.is_open()) return false;
+
+    // Header
+    AssetHeader header;
+    header.magic = ASSET_MAGIC;
+    // You might need to define AssetType::Animation in your Enum file
+    header.type = (AssetType)3; // Assuming 3 is Animation, adjust your enum accordingly!
+    header.version = 1;
+    out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
+
+    // Metadata
+    float dur = data.duration;
+    float tps = data.ticksPerSecond;
+    out.write(reinterpret_cast<const char*>(&dur), sizeof(float));
+    out.write(reinterpret_cast<const char*>(&tps), sizeof(float));
+
+    // Name
+    uint32_t nameLen = (uint32_t)data.name.size();
+    out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
+    if (nameLen > 0) out.write(data.name.c_str(), nameLen);
+
+    // Channels
+    uint32_t numChannels = (uint32_t)data.channels.size();
+    out.write(reinterpret_cast<const char*>(&numChannels), sizeof(uint32_t));
+
+    for (const auto& channel : data.channels) {
+        // Channel Name
+        uint32_t boneNameLen = (uint32_t)channel.name.size();
+        out.write(reinterpret_cast<const char*>(&boneNameLen), sizeof(uint32_t));
+        if (boneNameLen > 0) out.write(channel.name.c_str(), boneNameLen);
+
+        // Positions
+        uint32_t numPos = (uint32_t)channel.positions.size();
+        out.write(reinterpret_cast<const char*>(&numPos), sizeof(uint32_t));
+        for (const auto& key : channel.positions) {
+            out.write(reinterpret_cast<const char*>(&key.first), sizeof(float)); // Time
+            out.write(reinterpret_cast<const char*>(&key.second), sizeof(glm::vec3)); // Value
+        }
+
+        // Rotations
+        uint32_t numRot = (uint32_t)channel.rotations.size();
+        out.write(reinterpret_cast<const char*>(&numRot), sizeof(uint32_t));
+        for (const auto& key : channel.rotations) {
+            out.write(reinterpret_cast<const char*>(&key.first), sizeof(float));
+            out.write(reinterpret_cast<const char*>(&key.second), sizeof(glm::quat));
+        }
+
+        // Scales
+        uint32_t numScl = (uint32_t)channel.scales.size();
+        out.write(reinterpret_cast<const char*>(&numScl), sizeof(uint32_t));
+        for (const auto& key : channel.scales) {
+            out.write(reinterpret_cast<const char*>(&key.first), sizeof(float));
+            out.write(reinterpret_cast<const char*>(&key.second), sizeof(glm::vec3));
+        }
+    }
+
+    return true;
 }
 
 // --- TEXTURE IMPLEMENTATION ---

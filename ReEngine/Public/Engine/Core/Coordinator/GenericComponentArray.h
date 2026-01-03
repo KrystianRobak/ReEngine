@@ -58,10 +58,18 @@ public:
             }
         }
 
-        // Write new data
+        // 1. Write to WRITE buffer (Standard Update)
         memcpy(&((*currentWriteBuffer)[newIndex * mComponentSize]), componentData, mComponentSize);
 
-        // Mark as dirty (new components must sync)
+        // 2. [FIX] Write to READ buffer immediately
+        // This prevents the "Frame 1 Glitch" where the renderer sees (0,0,0) before the first sync.
+        if (mIsDoubleBuffered)
+        {
+            auto currentReadBuffer = readBufferPtr.load();
+            memcpy(&((*currentReadBuffer)[newIndex * mComponentSize]), componentData, mComponentSize);
+        }
+
+        // Mark as dirty (still needed to track future updates)
         mDirtyEntities.insert(entity);
 
         ++mSize;
@@ -114,6 +122,8 @@ public:
     {
         assert(mEntityToIndexMap.find(entity) != mEntityToIndexMap.end() &&
             "Retrieving non-existent component for write.");
+
+        mDirtyEntities.insert(entity);
 
         auto currentWriteBuffer = writeBufferPtr.load();
         return &((*currentWriteBuffer)[mEntityToIndexMap[entity] * mComponentSize]);

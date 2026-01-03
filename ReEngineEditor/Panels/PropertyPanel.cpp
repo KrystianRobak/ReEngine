@@ -68,63 +68,55 @@ void PropertyPanel::Render()
         });
 
     Entity entity = engineAPI->GetSelectedEntity();
-    Signature signature = engineAPI->GetEntitySignature(entity);
+    if (entity != 111)
+    {
+        Signature signature = engineAPI->GetEntitySignature(entity);
 
-    for (auto componentInfo : Components) {
-        // Check if the current entity has this component.
-        if (signature.test(engineAPI->GetComponentType(componentInfo->name))) {
-            // If it does, render a collapsible header for it.
-            if (ImGui::CollapsingHeader(componentInfo->name)) {
-                // Get the actual component data pointer.
-                // 1. Get BOTH pointers
-                void* readData = engineAPI->GetComponent(entity, componentInfo->name);
-                void* writeData = engineAPI->GetComponentForWrite(entity, componentInfo->name);
+        for (auto componentInfo : Components) {
+            // Check if the current entity has this component.
+            if (signature.test(engineAPI->GetComponentType(componentInfo->name))) {
+                // If it does, render a collapsible header for it.
+                if (ImGui::CollapsingHeader(componentInfo->name)) {
+                    // Get the actual component data pointer.
+                    // 1. Get BOTH pointers
+                    void* readData = engineAPI->GetComponent(entity, componentInfo->name);
+                    void* writeData = engineAPI->GetComponentForWrite(entity, componentInfo->name);
 
-                // Check if we actually have two different buffers (Double Buffering Active)
-                bool isDoubleBuffered = (readData != writeData && writeData != nullptr);
+                    // Check if we actually have two different buffers (Double Buffering Active)
+                    bool isDoubleBuffered = (readData != writeData && writeData != nullptr);
 
-                for (auto& variable : componentInfo->variables) {
-                    char* readVarPtr = (char*)readData + variable.offset;
-                    char* writeVarPtr = (isDoubleBuffered) ? (char*)writeData + variable.offset : nullptr;
+                    for (auto& variable : componentInfo->variables) {
+                        char* writeVarPtr = (char*)writeData + variable.offset;
 
-                    const char* typeName = variable.type->name;
-                    const char* varName = variable.name;
+                        const char* typeName = variable.type->name;
+                        const char* varName = variable.name;
 
-                    bool valueChanged = false;
+                        bool valueChanged = false;
 
-                    // --- Render UI based on READ pointer ---
-                    // We use the Read pointer for the UI so the user sees the current frame's state
-                    if (strcmp(typeName, "float") == 0) {
-                        if (ImGui::DragFloat(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
+                        // --- Render UI based on READ pointer ---
+                        // We use the Read pointer for the UI so the user sees the current frame's state
+                        if (strcmp(typeName, "float") == 0) {
+                            if (ImGui::DragFloat(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
+                        }
+                        else if (strcmp(typeName, "int") == 0) {
+                            if (ImGui::InputInt(varName, (int*)writeVarPtr)) valueChanged = true;
+                        }
+                        else if (strcmp(typeName, "bool") == 0) {
+                            if (ImGui::Checkbox(varName, (bool*)writeVarPtr)) valueChanged = true;
+                        }
+                        else if (strcmp(typeName, "glm::vec<3, float>") == 0 || strcmp(typeName, "glm::vec3") == 0) {
+                            if (ImGui::DragFloat3(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
+                        }
+                        else if (strcmp(typeName, "glm::vec<4, float>") == 0 || strcmp(typeName, "glm::vec4") == 0) {
+                            if (ImGui::DragFloat4(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
+                        }
+                        else if (strcmp(typeName, "glm::qua<float>") == 0) {
+                            if (ImGui::DragFloat4(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
+                        }
+
                     }
-                    else if (strcmp(typeName, "int") == 0) {
-                        if (ImGui::InputInt(varName, (int*)readVarPtr)) valueChanged = true;
-                    }
-                    else if (strcmp(typeName, "bool") == 0) {
-                        if (ImGui::Checkbox(varName, (bool*)readVarPtr)) valueChanged = true;
-                    }
-                    else if (strcmp(typeName, "glm::vec<3, float>") == 0 || strcmp(typeName, "glm::vec3") == 0) {
-                        if (ImGui::DragFloat3(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
-                    }
-                    else if (strcmp(typeName, "glm::vec<4, float>") == 0 || strcmp(typeName, "glm::vec4") == 0) {
-                        if (ImGui::DragFloat4(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
-                    }
-                    else if (strcmp(typeName, "glm::qua<float>") == 0) {
-                        if (ImGui::DragFloat4(varName, (float*)readVarPtr, 0.1f)) valueChanged = true;
-                    }
 
-                    // --- FORCE SYNC: Apply change to WRITE buffer ---
-                    if (valueChanged && isDoubleBuffered) {
-                        // Copy the modified value from Read buffer to Write buffer
-                        // We copy only the specific variable size
-                        size_t varSize = variable.type->size; // Ensure ClassInfo::Variable has size! 
-                        // If you don't have size in Variable struct, you need to deduce it from typeName
-
-                        memcpy(writeVarPtr, readVarPtr, varSize);
-                    }
-                    
                 }
-
             }
         }
     }

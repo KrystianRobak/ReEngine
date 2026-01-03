@@ -10,6 +10,7 @@
 
 #include <GL/glew.h>
 #include "GLFW/glfw3.h"
+#include <SkeletalMeshComponent.h>
 
 
 
@@ -58,10 +59,18 @@ void Application::Init()
 	threadPool.Init();
 	coordinator->Init(&threadPool);
 
+
+	systemGraph = std::make_unique<SystemGraph>(&threadPool);
+
+	m_PendingState = ApplicationState::Editor;
+	m_AppState = ApplicationState::Editor;
+
 	{
 		std::lock_guard<std::mutex> lock(initMutex);
 		renderInitialized = false;
 	}
+
+
 }
 
 void Application::StartGameThreads()
@@ -93,6 +102,27 @@ void Application::InitSystems()
 {
 	Renderer_ = reinterpret_cast<RenderSystem*>(coordinator->GetSystem("RenderOpenGL"));
 	PhysicsSystem_ = coordinator->GetSystem("Physics3D");
+
+	// --- BUILD THE GRAPH ---
+	// 1. Fetch all systems loaded by ProjectBuilder/Coordinator
+	auto systems = Reflection::Registry::Instance().GetAllSystems();
+
+	for (auto systemInfo : systems) {
+		// We get the actual runtime instance from the Coordinator
+		System* runtimeSys = coordinator->GetSystem(systemInfo->fullName);
+		if (runtimeSys) {
+			// Special case: Renderer usually needs strict handling
+			// You can either exclude it from the graph or mark it RunOnMainThread
+			if (std::strcmp(systemInfo->fullName, "RenderOpenGL") != 0 &&
+				std::strcmp(systemInfo->fullName, "Physics3D") != 0) // Physics handled by own thread in your logic
+			{
+				systemGraph->AddSystem(runtimeSys);
+			}
+		}
+	}
+
+	systemGraph->Build();
+	LOGF_INFO("System Dependency Graph Built.");
 }
 
 IViewport* Application::CreateNewViewport(std::string name, int width, int height)
@@ -152,6 +182,24 @@ void Application::Update()
 						// 4. Issue Command
 						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
 					}
+					if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("SkeletalMeshComponent")))
+					{
+						auto t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
+						auto smc = static_cast<SkeletalMeshComponent*>(coordinator->GetComponent(entity, "SkeletalMeshComponent"));
+						if (!t || !smc) continue;
+						// 2. Asset Logic: Ensure the component has a handle to the resource
+						if (!smc->MeshResource && !smc->AssetPath.empty()) {
+							smc->MeshResource = assetManager->GetSkeletalMesh(smc->AssetPath);
+						}
+						// 3. Command Packing
+						RenderPrimitive p;
+						p.ModelMatrix = ReCamera::GetModelMatrix(*t);
+						p.Entity = entity;
+						p.MaterialId = (smc->MaterialId == -1) ? 1200 : smc->MaterialId;
+						p.Mesh = smc->MeshResource; // Pass the shared_ptr
+						// 4. Issue Command
+						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
+					}
 				}
 			}
 			else if (std::strcmp(system->fullName, "Physics3D") == 0)
@@ -163,8 +211,7 @@ void Application::Update()
 				// Only update gameplay systems if we are in Play State
 				if (m_AppState == ApplicationState::Play)
 				{
-					auto sys = coordinator->GetSystem(system->fullName);
-					sys->Update(dt);
+					systemGraph->Execute(dt);
 				}
 			}
 		}
@@ -322,6 +369,31 @@ void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
 		frameCount = 0;
 	}
 	// --- End of Frame Timing & FPS Logic ---
+
+
+	ApplicationState pending = m_PendingState.load();
+	ApplicationState current = m_AppState.load();
+
+	if (pending != current)
+	{
+		if (current == ApplicationState::Editor && pending == ApplicationState::Play)
+		{
+			LOGF_INFO("Sync: Switching to PLAY mode (Backing up scene...)");
+			coordinator->EnterPlayMode();
+			m_AppState.store(ApplicationState::Play);
+		}
+		else if (current == ApplicationState::Play && pending == ApplicationState::Editor)
+		{
+			LOGF_INFO("Sync: Switching to EDITOR mode (Restoring scene...)");
+			coordinator->ExitPlayMode();
+			m_AppState.store(ApplicationState::Editor);
+		}
+		else
+		{
+			// Simple state change without scene logic (if any other states exist)
+			m_AppState.store(pending);
+		}
+	}
 
 
 	// 1. Process pending deletions *before* swapping

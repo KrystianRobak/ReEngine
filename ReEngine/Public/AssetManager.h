@@ -36,6 +36,7 @@ public:
     std::shared_ptr<MeshResource> GetSkeletalMesh(const std::string& path) override;
     std::shared_ptr<TextureResource> GetTexture(const std::string& path) override;
 
+    std::shared_ptr<MeshResource> CreateManualMesh(const std::string& name, std::shared_ptr<StaticMeshData> data) override;
     void addMaterial(int id, CompiledMaterial material) override;
     CompiledMaterial* GetMaterial(int id) override;
     int GetCurrentMaterialId() override { return LastMaterialId++; }

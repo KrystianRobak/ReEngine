@@ -130,34 +130,59 @@ void SystemsManagerPanel::Render()
                 // Call button
                 if (ImGui::Button((std::string("Call ") + func.name).c_str()))
                 {
+                    // 1. Setup containers
                     std::vector<void*> args(func.paramTypes.size(), nullptr);
+
+                    // Storage for the actual values
                     std::vector<int> intArgs;
                     std::vector<float> floatArgs;
-                    std::vector<char> boolArgs;
+                    std::vector<char> boolArgs;     // specialized vector<bool> doesn't return standard references, use char/uint8
                     std::vector<std::string> stringArgs;
 
-                    // Convert strings to real values
+                    // 2. CRITICAL FIX: Reserve memory to prevent pointer invalidation during push_back
+                    size_t paramCount = func.paramTypes.size();
+                    intArgs.reserve(paramCount);
+                    floatArgs.reserve(paramCount);
+                    boolArgs.reserve(paramCount);
+                    stringArgs.reserve(paramCount);
+
+                    // 3. Convert strings to real values
                     for (size_t i = 0; i < func.paramTypes.size(); ++i)
                     {
                         auto* type = func.paramTypes[i];
+
+                        // Safety check for empty strings to prevent std::stoi/stof crashes
+                        std::string& valStr = cache[i];
+                        if (valStr.empty()) valStr = "0";
+
                         if (strcmp(type->name, "int") == 0 || strcmp(type->name, "uint32_t") == 0 || strcmp(type->name, "Entity") == 0)
                         {
-                            intArgs.push_back(std::stoi(cache[i]));
+                            try {
+                                intArgs.push_back(std::stoi(valStr));
+                            }
+                            catch (...) { intArgs.push_back(0); } // Fallback safety
+
                             args[i] = &intArgs.back();
                         }
                         else if (strcmp(type->name, "float") == 0)
                         {
-                            floatArgs.push_back(std::stof(cache[i]));
+                            try {
+                                floatArgs.push_back(std::stof(valStr));
+                            }
+                            catch (...) { floatArgs.push_back(0.0f); }
+
                             args[i] = &floatArgs.back();
                         }
                         else if (strcmp(type->name, "bool") == 0)
                         {
-                            boolArgs.push_back(cache[i] == "1" ? 1 : 0);
+                            boolArgs.push_back(valStr == "1" ? 1 : 0);
                             args[i] = &boolArgs.back();
                         }
                         else
                         {
-                            stringArgs.push_back(cache[i]);
+                            stringArgs.push_back(valStr);
+                            // .c_str() pointers also become invalid if stringArgs resizes!
+                            // The reserve() above fixes this too.
                             args[i] = (void*)stringArgs.back().c_str();
                         }
                     }

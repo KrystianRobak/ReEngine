@@ -14,9 +14,9 @@ inline const char* GetMenuType(const MenuType menu) {
 
 void ControlPanel::OnInit()
 {
-	startIcon = GetTexture("pngs/start.png");
-	pauseIcon = GetTexture("pngs/stop.png");
-	recompileIcon = GetTexture("pngs/recompile.png");
+	startIcon = GetTexture("icons/start.retex");
+	pauseIcon = GetTexture("icons/stop.retex");
+	recompileIcon = GetTexture("icons/recompile.retex");
 }
 
 void ControlPanel::Render()

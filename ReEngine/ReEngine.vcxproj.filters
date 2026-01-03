@@ -147,9 +147,6 @@
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
       <Filter>Source Files\Private\Engine\Components\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Private\Engine\Components\Collision\Octree.cpp">
-      <Filter>Source Files\Private\Engine\Components\Collision</Filter>
-    </ClCompile>
     <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp">
       <Filter>Source Files\Private\Engine\Systems\Animation</Filter>
     </ClCompile>
@@ -275,9 +272,6 @@
     <ClInclude Include="Public\Engine\Components\Collision\AABB.h">
       <Filter>Source Files\Public\Engine\Components\Collision</Filter>
     </ClInclude>
-    <ClInclude Include="Public\Engine\Components\Collision\Octree.h">
-      <Filter>Source Files\Public\Engine\Components\Collision</Filter>
-    </ClInclude>
     <ClInclude Include="Public\Engine\Components\BehaviourScript.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
@@ -378,6 +372,9 @@
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="SphereCollider.h">
+      <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\Engine\Components\StateMachine.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
   </ItemGroup>

@@ -151,6 +151,7 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imnodes.cpp" />
+    <ClCompile Include="AnimGraphEditor.cpp" />
     <ClCompile Include="ApplicationWrapper.cpp" />
     <ClCompile Include="AssetManagement\AssetSerializer.cpp" />
     <ClCompile Include="CoordinatorWrapper.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="..\Libs\Include\stb\stb_image.h" />
+    <ClInclude Include="AnimGraphEditor.h" />
     <ClInclude Include="ApplicationWrapper.h" />
     <ClInclude Include="AssetManagement\AssetSerializer.h" />
     <ClInclude Include="CoordinatorWrapper.h" />

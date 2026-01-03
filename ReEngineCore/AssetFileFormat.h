@@ -13,7 +13,8 @@ enum class FileType {
     SkeletalMesh,   // .reskel
     Texture,        // .retex
     Material,       // .material
-    Scene           // .scene (or .json)
+    Scene,          // .scene (or .json)
+    Animation
 };
 
 static const std::map<std::string, FileType> ExtensionMap = {
@@ -25,7 +26,8 @@ static const std::map<std::string, FileType> ExtensionMap = {
     { ".retex",     FileType::Texture },      // Your custom texture
     { ".material",  FileType::Material },
     { ".scene",     FileType::Scene },        // Renamed .json to .scene for clarity?
-    { ".json",      FileType::Scene }
+    { ".json",      FileType::Scene },
+    { ".reanim",    FileType::Animation }
 };
 
 inline static FileType GetFileType(const std::string& extension) {
@@ -35,11 +37,24 @@ inline static FileType GetFileType(const std::string& extension) {
     return FileType::Unknown;
 }
 
+inline static std::string GetDragPayloadType(FileType type) {
+    switch (type) {
+    case FileType::StaticMesh:   return "ASSET_STATIC_MESH";
+    case FileType::SkeletalMesh: return "ASSET_SKELETAL_MESH";
+    case FileType::Texture:      return "ASSET_TEXTURE";
+    case FileType::Material:     return "ASSET_MATERIAL";
+    case FileType::Scene:        return "ASSET_SCENE";
+    case FileType::Code:         return "ASSET_CODE";
+    default:                     return "ASSET_UNKNOWN";
+    }
+}
+
 enum class AssetType : uint32_t {
     Null = -1,
     StaticMesh = 0,
     SkeletalMesh = 1,
-    Texture = 2
+    Texture = 2,
+	Animation = 3
 };
 
 struct AssetHeader {
@@ -62,4 +77,20 @@ struct MeshSectionHeader {
     uint32_t indexCount;
     uint32_t materialIndex; // If you track materials by index
     // We don't store pointers here, only counts!
+};
+
+struct SerializedBoneAnim {
+    std::string name;
+    std::vector<std::pair<float, glm::vec3>> positions; // Time, Value
+    std::vector<std::pair<float, glm::quat>> rotations;
+    std::vector<std::pair<float, glm::vec3>> scales;
+};
+
+struct SerializedAnimation {
+    std::string name;
+    float duration;
+    float ticksPerSecond;
+    std::vector<SerializedBoneAnim> channels;
+    // Note: Hierarchy is usually derived from the Mesh, but can be stored here if needed.
+    // For now, we store the curves which drive the skeleton.
 };

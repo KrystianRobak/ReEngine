@@ -99,3 +99,7 @@ namespace Events::Editor::MaterialSystem {
     constexpr inline EventType CREATE_MATERIAL_FILE = "Events::Editor::MaterialSystem::CREATE_MATERIAL_FILE";
     constexpr inline EventType OPEN_MATERIAL_FILE = "Events::Editor::MaterialSystem::OPEN_MATERIAL_FILE";
 }
+
+namespace Events::Physics {
+    constexpr inline EventType COLLISION_HAPPENED = "Events::Physics::COLLISION_HPPENED";
+}

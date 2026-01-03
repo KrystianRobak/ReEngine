@@ -152,6 +152,7 @@
     <ClCompile Include="Window\RenderContext.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AnimGraph.h" />
     <ClInclude Include="Api\AssetManagerApi.h" />
     <ClInclude Include="Api\EngineApi\CoordinatorEditorApi.h" />
     <ClInclude Include="Api\IApplicationApi.h" />
@@ -173,6 +174,7 @@
     <ClInclude Include="RenderInterface.h" />
     <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="SystemGraph.h" />
     <ClInclude Include="System\System.h" />
     <ClInclude Include="ReTypes.h" />
     <ClInclude Include="TextureData.h" />

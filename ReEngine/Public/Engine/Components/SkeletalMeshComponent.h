@@ -1,8 +1,9 @@
 #pragma once
 #include "ReflectionMacros.h"
-#include "SkeletalMeshData.h"
 #include <vector>
 #include <memory>
+
+struct MeshResource;
 
 REFCOMPONENT()
 struct SkeletalMeshComponent
@@ -13,18 +14,15 @@ struct SkeletalMeshComponent
     REFVARIABLE()
         int MaterialId = -1;
 
-    // Runtime data
-    std::shared_ptr<SkeletalMeshData> MeshResource;
+    // The visual asset
+    std::shared_ptr<MeshResource> MeshResource; //
 
-    // The final matrices sent to the shader this frame
-    std::vector<glm::mat4> FinalBoneMatrices;
+    // The output for the shader
+    std::vector<glm::mat4> FinalBoneMatrices;   //
 
-    // Animation State
-    float CurrentTime = 0.0f;
-    float AnimationSpeed = 1.0f;
-    
-    REFVARIABLE()
-    std::string CurrentAnimationName;
-
-    // TODO: Add reference to an AnimationClip resource here
+    // Playback "Registers" (The Brain writes to these)
+    std::string CurrentAnimationName;           //
+    float CurrentTime = 0.0f;                   //
+    float AnimationSpeed = 1.0f;                //
+    bool IsLooping = true;
 };

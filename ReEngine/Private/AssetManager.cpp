@@ -45,6 +45,54 @@ void AssetManager::DispatchUploads() {
 //  STATIC MESH (Async Load)
 // -----------------------------------------------------------------------
 
+std::shared_ptr<MeshResource> AssetManager::CreateManualMesh(const std::string& name, std::shared_ptr<StaticMeshData> data) {
+    std::lock_guard<std::mutex> lock(assetMutex);
+
+        auto resource = std::make_shared<MeshResource>();
+        resource->cpuMesh = data;
+        resource->uploaded = false;
+        meshCache[name] = resource;
+
+        // Directly Enqueue the Upload (This will run on the Render Thread)
+        this->EnqueueUpload([resource]() {
+            if (!resource->cpuMesh) return;
+
+    size_t numSubMeshes = resource->cpuMesh->meshes.size();
+        resource->VAOs.resize(numSubMeshes);
+        resource->VBOs.resize(numSubMeshes);
+        resource->EBOs.resize(numSubMeshes);
+        resource->indexCounts.resize(numSubMeshes);
+
+        for (size_t i = 0; i < numSubMeshes; ++i) {
+            auto& mesh = resource->cpuMesh->meshes[i];
+
+                glGenVertexArrays(1, &resource->VAOs[i]);
+                glGenBuffers(1, &resource->VBOs[i]);
+                glGenBuffers(1, &resource->EBOs[i]);
+
+                glBindVertexArray(resource->VAOs[i]);
+
+                glBindBuffer(GL_ARRAY_BUFFER, resource->VBOs[i]);
+                glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
+
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, resource->EBOs[i]);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
+
+                // Attribute pointers (Position, Normal, UV, etc.)
+                glEnableVertexAttribArray(0); glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Position)); 
+                glEnableVertexAttribArray(1); glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+                glEnableVertexAttribArray(2); glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+                resource->indexCounts[i] = (uint32_t)mesh.indices.size();
+        }
+
+    glBindVertexArray(0);
+        resource->uploaded = true;
+            });
+
+    return resource;
+}
+
 std::shared_ptr<MeshResource> AssetManager::GetMesh(const std::string& path) {
     std::lock_guard<std::mutex> lock(assetMutex);
     // Return existing handle if already requested
@@ -67,7 +115,6 @@ std::shared_ptr<MeshResource> AssetManager::GetMesh(const std::string& path) {
             std::cerr << "[AssetManager] Failed to load cooked mesh: " << cookedPath << "\n";
             return;
         }
-
         resource->cpuMesh = cpuMesh;
 
         // Once IO is done, queue the GPU Upload for the Main Thread
@@ -222,7 +269,7 @@ std::shared_ptr<MeshResource> AssetManager::GetSkeletalMesh(const std::string& p
     meshCache[path] = resource;
 
     pool->submit(JobType::Background, [this, path, resource]() {
-        std::string cookedPath = path + COOKED_EXT;
+        std::string cookedPath = path;
         auto cpuMesh = LoadBinarySkeletalMesh(cookedPath);
         if (!cpuMesh) return;
 

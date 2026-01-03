@@ -33,6 +33,7 @@ private:
 
 	Camera MainCamera;
 
+	const std::string PlayModeBackupPath = "Temp/PlayModeBackup.scene";
 	std::set<Entity> PendingEntityDeletions;
 
 	AnimationSequencer mReSequencer;
@@ -111,6 +112,11 @@ public:
 
 	void DestroyEntity(Entity entity) override
 	{
+		if (!mEntityManager->IsAlive(entity))
+		{
+			return;
+		}
+
 		mEntityManager->DestroyEntity(entity);
 
 		mComponentManager->EntityDestroyed(entity);
@@ -266,6 +272,55 @@ public:
 
 	//SceneManager
 
+	// --- Play Mode Logic ---
+
+	void EnterPlayMode()
+	{
+		// 1. Save the current state to a temp file
+		std::cout << "[Coordinator] Entering Play Mode: Backing up scene..." << std::endl;
+		SaveScene(PlayModeBackupPath);
+	}
+
+	void ExitPlayMode()
+	{
+		std::cout << "[Coordinator] Exiting Play Mode: Restoring scene..." << std::endl;
+		// 1. Clear the simulation state (destroy all entities)
+		ClearScene();
+
+		// 2. Load the original state
+		if (std::filesystem::exists(PlayModeBackupPath))
+		{
+			OpenScene(PlayModeBackupPath);
+		}
+		else
+		{
+			std::cerr << "[Coordinator] Error: Backup scene file not found!" << std::endl;
+		}
+	}
+
+	void ClearScene()
+	{
+		// Iterate 0 to MAX_ENTITIES safely
+		for (Entity i = 0; i < MAX_ENTITIES; ++i)
+		{
+			// Safely check if entity is valid before destroying
+			if (mEntityManager->IsAlive(i))
+			{
+				DestroyEntity(i);
+			}
+		}
+		// Flush any pending removals immediately
+		ProcessPendingEntityDeletions();
+
+		// 2. HARD RESET the EntityManager.
+		// This resets the ID counter to 0 and clears the internal queue
+		// so the next created entity is guaranteed to be 0 (or the first available).
+		mEntityManager->Reset();
+
+		// Reset selection
+		SetSelectedEntity(MAX_ENTITIES + 1);
+	}
+
 	ReScene* GetCurrentScene() override
 	{
 		return mSceneManager->currentScene_;
@@ -274,6 +329,9 @@ public:
 	void OpenScene(const std::string& path) override
 	{
 		mSceneManager->LoadScene(path, mEntityManager, this);
+
+
+		SetSelectedEntity(MAX_ENTITIES + 1);
 	}
 
 	void SaveScene(const std::string& path)

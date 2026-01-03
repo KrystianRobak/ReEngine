@@ -5,6 +5,8 @@
 #include "SceneView.h"
 #include "StaticMesh.h"
 #include "Transform.h"
+#include <SkeletalMeshComponent.h>
+#include <AssetFileFormat.h>
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -57,58 +59,67 @@ void SceneView::Render()
         // Keep the flag true until the user makes a choice
     }
 
-    if (ImGui::BeginPopupModal("Select Import Type", &showImportTypePopup, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        ImGui::Text("File: %s", pendingImportName.c_str());
-        ImGui::Separator();
-        ImGui::Text("Select the type of mesh to import:");
+    if (ImGui::BeginDragDropTarget()) {
 
-        // Static Mesh Button
-        if (ImGui::Button("Static Mesh", ImVec2(120, 0))) {
+        // 1. Detect STATIC MESH Drop
+        // We use the helper from AssetFileFormat to get the correct string string "ASSET_STATIC_MESH"
+        const std::string staticPayloadID = GetDragPayloadType(FileType::StaticMesh);
 
-            Entity entity = engineAPI->CreateEntity();
-            engineAPI->AddComponent(entity, "Transform");
-            auto t = (Transform*)engineAPI->GetComponent(entity, "Transform");
-            t->scale = { 1, 1, 1 };
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(staticPayloadID.c_str())) {
+            if (payload->DataSize > 0) {
+                std::string nameWithPath(static_cast<const char*>(payload->Data));
+                std::vector<std::string> parts = splitString(nameWithPath, '|');
 
-            // Load using loadFBX (Static)
-            engineAPI->AddComponent(entity, "StaticMesh");
-            auto sm = (StaticMesh*)engineAPI->GetComponent(entity, "StaticMesh");
-            sm->MeshResource = engineAPI->GetAssetManager()->GetMesh(pendingImportPath);
+                if (parts.size() == 2) {
+                    std::string path = parts[1];
 
-            engineAPI->AddComponent(entity, "BoxCollider");
-            engineAPI->AddComponent(entity, "RigidBody");
+                    // Create Entity immediately as Static Mesh
+                    Entity entity = engineAPI->CreateEntity();
+                    engineAPI->AddComponent(entity, "Transform");
+                    auto t = (Transform*)engineAPI->GetComponentForWrite(entity, "Transform");
+                    t->scale = { 1, 1, 1 };
 
-            ImGui::CloseCurrentPopup();
-            showImportTypePopup = false;
+                    engineAPI->AddComponent(entity, "StaticMesh");
+                    auto sm = (StaticMesh*)engineAPI->GetComponent(entity, "StaticMesh");
+                    sm->MeshResource = engineAPI->GetAssetManager()->GetMesh(path);
+                    sm->AssetPath = path;
+
+                    engineAPI->AddComponent(entity, "BoxCollider");
+                    engineAPI->AddComponent(entity, "RigidBody");
+                }
+            }
         }
 
-        ImGui::SameLine();
+        // 2. Detect SKELETAL MESH Drop
+        // We use the helper to get "ASSET_SKELETAL_MESH"
+        const std::string skeletalPayloadID = GetDragPayloadType(FileType::SkeletalMesh);
 
-        // Skeletal Mesh Button
-        if (ImGui::Button("Skeletal Mesh", ImVec2(120, 0))) {
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(skeletalPayloadID.c_str())) {
+            if (payload->DataSize > 0) {
+                std::string nameWithPath(static_cast<const char*>(payload->Data));
+                std::vector<std::string> parts = splitString(nameWithPath, '|');
 
-            Entity entity = engineAPI->CreateEntity();
-            engineAPI->AddComponent(entity, "Transform");
+                if (parts.size() == 2) {
+                    std::string path = parts[1];
 
-            // Add Skeletal Mesh Component instead of Static Mesh Component
-            engineAPI->AddComponent(entity, "SkeletalMeshComponent");
+                    // Create Entity immediately as Skeletal Mesh
+                    Entity entity = engineAPI->CreateEntity();
+                    engineAPI->AddComponent(entity, "Transform");
+                    auto t = (Transform*)engineAPI->GetComponentForWrite(entity, "Transform");
+                    t->scale = { 1, 1, 1 };
 
-            //// Load using loadSkeletalFBX (Skeletal)
-            //auto future = engineAPI->GetAssetManager()->loadSkeletalFBX(pendingImportPath);
-            //engineAPI->GetAssetManager()->AddPendingSkeletalMesh(entity, std::move(future)); // Still use AddPendingMesh
+                    engineAPI->AddComponent(entity, "SkeletalMeshComponent");
+                    auto smc = (SkeletalMeshComponent*)engineAPI->GetComponent(entity, "SkeletalMeshComponent");
+                    smc->MeshResource = engineAPI->GetAssetManager()->GetSkeletalMesh(path);
+                    smc->AssetPath = path;
 
-            ImGui::CloseCurrentPopup();
-            showImportTypePopup = false;
+                    engineAPI->AddComponent(entity, "BoxCollider");
+                    engineAPI->AddComponent(entity, "RigidBody");
+                }
+            }
         }
 
-        // Optional: Cancel Button
-        if (ImGui::Button("Cancel", ImVec2(100, 0))) {
-            ImGui::CloseCurrentPopup();
-            showImportTypePopup = false;
-        }
-
-        ImGui::EndPopup();
+        ImGui::EndDragDropTarget();
     }
 
     // ---------- Overlay Gizmo Buttons (Top-Right of Scene Window) ----------

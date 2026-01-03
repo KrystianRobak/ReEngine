@@ -20,6 +20,7 @@
 #include <functional>
 #include <barrier>
 #include "InputManager.h"
+#include <SystemGraph.h>
 
 
 class ENGINE_API Application : public IApplicationApi
@@ -46,8 +47,7 @@ public:
 	// --- State Implementation ---
 	void SetState(ApplicationState newState) override
 	{
-		m_AppState = newState;
-		// Optional: Reset scene or reload logic here if switching Editor -> Play
+		m_PendingState.store(newState);
 	}
 
 	ApplicationState GetState() override
@@ -108,8 +108,11 @@ private:
 	float dt = 0.0f;
 	std::atomic<bool> running{ true };
 
-	// Default to Editor mode so the game doesn't auto-start
+	// Actual current state
 	std::atomic<ApplicationState> m_AppState{ ApplicationState::Editor };
+
+	// Desired state (checked during sync)
+	std::atomic<ApplicationState> m_PendingState{ ApplicationState::Editor };
 
 	std::mutex initMutex;
 	std::condition_variable initCondition;
@@ -122,6 +125,8 @@ private:
 	std::shared_ptr<Coordinator> coordinator;
 	RenderSystem* Renderer_;
 	System* PhysicsSystem_;
+
+	std::unique_ptr<SystemGraph> systemGraph;
 
 	std::unique_ptr<InputManager> inputManager;
 

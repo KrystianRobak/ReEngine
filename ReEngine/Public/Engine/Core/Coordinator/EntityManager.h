@@ -3,19 +3,18 @@
 #include <array>
 #include <cassert>
 #include <queue>
-
+#include <vector>
 
 class EntityManager
 {
 public:
 	EntityManager()
 	{
-		for (Entity entity = 0; entity < MAX_LIGHT_ENTITIES; entity++)
-		{
-			mAvailableLightEntities.push(entity);
-		}
+		// Initialize the alive tracker
+		mAliveEntities.resize(MAX_ENTITIES, false);
 
-		for (Entity entity = MAX_LIGHT_ENTITIES+1; entity < MAX_ENTITIES; ++entity)
+		// Fill the single pool with all available IDs
+		for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
 		{
 			mAvailableEntities.push(entity);
 		}
@@ -29,40 +28,71 @@ public:
 		mAvailableEntities.pop();
 		++mLivingEntityCount;
 
+		mAliveEntities[id] = true; // Mark alive
+
 		return id;
 	}
 
+	// Wrapper: No distinction in storage, just creates a standard entity
 	Entity CreateLightEntity()
 	{
-		assert(mLivingLightEntityCount < MAX_LIGHT_ENTITIES && "Too many entities in existence.");
-
-		Entity id = mAvailableLightEntities.front();
-		mAvailableLightEntities.pop();
-		++mLivingLightEntityCount;
-
-		return id;
+		return CreateEntity();
 	}
 
 	void DestroyEntity(Entity entity)
 	{
 		assert(entity < MAX_ENTITIES && "Entity out of range.");
 
+		// Safe guard: Do not destroy if already dead
+		if (!mAliveEntities[entity])
+		{
+			return;
+		}
+
 		mSignatures[entity].reset();
+		mAliveEntities[entity] = false; // Mark dead
+
+		// Always return ID to the main pool
 		mAvailableEntities.push(entity);
 		--mLivingEntityCount;
 	}
 
+	// --- NEW: HARD RESET ---
+	void Reset()
+	{
+		// 1. Reset counters
+		mLivingEntityCount = 0;
+
+		// 2. Clear the queue
+		std::queue<Entity> empty;
+		std::swap(mAvailableEntities, empty);
+
+		// 3. Refill queue from 0 to MAX_ENTITIES to restore order (0, 1, 2...)
+		for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+		{
+			mAvailableEntities.push(entity);
+		}
+
+		// 4. Reset alive tracking
+		std::fill(mAliveEntities.begin(), mAliveEntities.end(), false);
+
+		// 5. Reset signatures
+		for (auto& sig : mSignatures)
+		{
+			sig.reset();
+		}
+	}
+	// -----------------------
+
 	void SetSignature(Entity entity, Signature signature)
 	{
 		assert(entity < MAX_ENTITIES && "Entity out of range.");
-
 		mSignatures[entity] = signature;
 	}
 
 	Signature GetSignature(Entity entity)
 	{
 		assert(entity < MAX_ENTITIES && "Entity out of range.");
-
 		return mSignatures[entity];
 	}
 
@@ -73,10 +103,10 @@ public:
 
 	std::uint32_t GetLightEntityCount()
 	{
-		return mLivingLightEntityCount;
+		return mLivingEntityCount;
 	}
 
-	void SetSelectedEntity(std::uint32_t entity) 
+	void SetSelectedEntity(std::uint32_t entity)
 	{
 		this->selectedEntity = entity;
 	}
@@ -85,13 +115,19 @@ public:
 		return this->selectedEntity;
 	}
 
+	bool IsAlive(Entity entity) const
+	{
+		if (entity >= MAX_ENTITIES) return false;
+		return mAliveEntities[entity];
+	}
+
 private:
 	std::queue<Entity> mAvailableEntities{};
-	std::queue<Entity> mAvailableLightEntities{};
 	std::array<Signature, MAX_ENTITIES> mSignatures{};
+	std::vector<bool> mAliveEntities; // Added for safety checks
+
 	std::uint32_t mLivingEntityCount{};
-	std::uint32_t mLivingLightEntityCount{};
-	std::uint32_t selectedEntity = 0;
+	std::uint32_t selectedEntity = MAX_ENTITIES + 1;
 
 	friend class SceneManager;
 };

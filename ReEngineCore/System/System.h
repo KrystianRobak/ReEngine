@@ -45,7 +45,13 @@ public:
 	{
 		return this->mEntities;
 	}
-
+	// --- Graph Dependencies (Populated by ProjectBuilder) ---
+	std::string SystemName;
+	std::vector<std::string> RunAfter;
+	std::vector<std::string> RunBefore;
+	std::vector<std::string> WriteComponents;
+	bool RunOnMainThread = false; // Optional: Force main thread for Rendering/UI
+	bool IsEditorSystem = false; // Optional: Only run in editor mode
 protected:
 	std::set<Entity> mEntities;
 	Editor::IEngineEditorApi* engine_;
