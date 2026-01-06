@@ -124,20 +124,28 @@ void ProjectBuilder::ParseConfig() {
 
     for (auto system : systems)
     {
+        bool isEditorOnly = false;
+        // 2. Register System
         System* registeredSystem = engineAPI_->RegisterSystem(system);
         SystemsLoaded_.push_back(registeredSystem);
 
         registeredSystem->InitApi(engineAPI_, engineAPI_->GetAssetManager());
 
-        // Set internal Name for Graph
+        // 3. Set Internal Name for Graph
         registeredSystem->SystemName = system->fullName;
+        if (isEditorOnly)
+        {
+            registeredSystem->IsEditorSystem = true;
+        }
+           
 
         Signature signature;
         LOGF_INFO("Setting up system: %s", system->fullName)
 
+            // 4. Parse Variables
             for (auto variable : system->variables)
             {
-                // 1. Component Registration (Existing Logic)
+                // A. Components
                 if (std::strcmp(variable.name, "ComponentsToRegister") == 0)
                 {
                     std::vector<std::string> components = splitBracedList(variable.defaultValue);
@@ -147,17 +155,16 @@ void ProjectBuilder::ParseConfig() {
                     }
                 }
 
-                // 2. Dependency: RunAfter
+                // B. RunAfter
                 else if (std::strcmp(variable.name, "SystemsToRunAfter") == 0)
                 {
                     std::vector<std::string> deps = splitBracedList(variable.defaultValue);
                     for (std::string dep : deps) {
                         registeredSystem->RunAfter.push_back(dep);
-                        LOGF_INFO("Dependency: %s runs after %s", system->fullName, dep.c_str());
                     }
                 }
 
-                // 3. Dependency: RunBefore
+                // C. RunBefore
                 else if (std::strcmp(variable.name, "SystemsToRunBefore") == 0)
                 {
                     std::vector<std::string> deps = splitBracedList(variable.defaultValue);
@@ -166,11 +173,18 @@ void ProjectBuilder::ParseConfig() {
                     }
                 }
 
-                // 4. Thread Safety: WriteComponents (Optional but good for graph validation)
+                // D. WriteComponents
                 else if (std::strcmp(variable.name, "WriteComponents") == 0)
                 {
                     std::vector<std::string> comps = splitBracedList(variable.defaultValue);
                     for (std::string c : comps) registeredSystem->WriteComponents.push_back(c);
+                }
+
+                // E. RunOnMainThread
+                else if (std::strcmp(variable.name, "RunOnMainThread") == 0)
+                {
+                    if (variable.defaultValue == "true" || variable.defaultValue == "1")
+                        registeredSystem->RunOnMainThread = true;
                 }
             }
 

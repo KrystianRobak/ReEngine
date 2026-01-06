@@ -18,6 +18,7 @@ struct StateMachine
     int CurrentNodeID = -1;
 
     // The "Blackboard" - specific to THIS entity instance
+    REFVARIABLE()
     std::unordered_map<std::string, AnimVar> Blackboard;
 
     // --- 3. The Interrupt Slot ---

@@ -152,6 +152,10 @@
     <ClCompile Include="Window\RenderContext.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Animation\Animation.h" />
+    <ClInclude Include="Animation\AnimHelpers.h" />
+    <ClInclude Include="Animation\AssimpNodeData.h" />
+    <ClInclude Include="Animation\Bone.h" />
     <ClInclude Include="AnimGraph.h" />
     <ClInclude Include="Api\AssetManagerApi.h" />
     <ClInclude Include="Api\EngineApi\CoordinatorEditorApi.h" />

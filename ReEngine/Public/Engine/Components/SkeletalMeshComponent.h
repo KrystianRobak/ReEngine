@@ -2,6 +2,7 @@
 #include "ReflectionMacros.h"
 #include <vector>
 #include <memory>
+#include <string>
 
 struct MeshResource;
 
@@ -9,10 +10,10 @@ REFCOMPONENT()
 struct SkeletalMeshComponent
 {
     REFVARIABLE()
-        std::string AssetPath;
+    std::string AssetPath;
 
     REFVARIABLE()
-        int MaterialId = -1;
+    int MaterialId = -1;
 
     // The visual asset
     std::shared_ptr<MeshResource> MeshResource; //

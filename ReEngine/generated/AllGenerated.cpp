@@ -10,6 +10,7 @@
 #include "SkeletalMeshComponent.h.gen.cpp"
 #include "SphereCollider.h.gen.cpp"
 #include "Sprite.h.gen.cpp"
+#include "StateMachine.h.gen.cpp"
 #include "StaticMesh.h.gen.cpp"
 #include "Transform.h.gen.cpp"
 

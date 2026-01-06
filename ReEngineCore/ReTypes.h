@@ -100,6 +100,16 @@ namespace Events::Editor::MaterialSystem {
     constexpr inline EventType OPEN_MATERIAL_FILE = "Events::Editor::MaterialSystem::OPEN_MATERIAL_FILE";
 }
 
+namespace Events::Editor::StateMachineGraph {
+    constexpr inline EventType CREATE_STATEMACHINE_FILE = "Events::Editor::StateMachineGraph::CREATE_STATEMACHINE_FILE";
+    constexpr inline EventType OPEN_STATEMACHINE_FILE = "Events::Editor::StateMachineGraph::OPEN_STATEMACHINE_FILE";
+}
+
+namespace Events::Editor::FileBrowser {
+    // Used to highlight/jump to a specific file in the browser
+    constexpr inline EventType LOCATE_FILE = "Events::Editor::FileBrowser::LOCATE_FILE";
+}
+
 namespace Events::Physics {
     constexpr inline EventType COLLISION_HAPPENED = "Events::Physics::COLLISION_HPPENED";
 }

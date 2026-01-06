@@ -39,7 +39,16 @@ public:
     inline float GetDuration() const { return m_Duration; }
     inline const AssimpNodeData& GetRootNode() const { return m_RootNode; }
     inline std::string GetName() const { return m_Name; }
-    
+    void SetRootNode(const AssimpNodeData& node) { m_RootNode = node; }
+
+	void SetDuration(float duration) { m_Duration = duration; }
+	void SetTicksPerSecond(int ticksPerSecond) { m_TicksPerSecond = ticksPerSecond; }
+
+    void AddBone(const Bone& bone)
+    {
+        m_Bones.push_back(bone);
+	}
+
 private:
     void ReadMissingBones(const aiAnimation* animation, const aiScene* scene)
     {

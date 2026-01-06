@@ -7,7 +7,11 @@
 #include "Engine/Components/Animated.h"
 #include "Engine/Components/LightSource.h"
 #include <Engine/Components/BehaviourScript.h>
+#include <filesystem>
 
+#include "StaticMesh.h"
+#include "SkeletalMeshComponent.h"
+#include "StateMachine.h"
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -21,6 +25,11 @@ inline std::vector<std::string> splitString(const std::string& str, char delimit
 }
 
 void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature) 
+{
+
+}
+
+void PropertyPanel::OnInit()
 {
 
 }
@@ -113,7 +122,42 @@ void PropertyPanel::Render()
                         else if (strcmp(typeName, "glm::qua<float>") == 0) {
                             if (ImGui::DragFloat4(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
                         }
+                        else if (strcmp(typeName, "std::string") == 0 || strcmp(typeName, "std::basic_string<char>") == 0) {
+                            std::string* strPtr = (std::string*)writeVarPtr;
 
+                            // 1. Static Mesh Asset
+                            if (strcmp(componentInfo->name, "StaticMesh") == 0 && strcmp(varName, "AssetPath") == 0) {
+                                if (DrawAssetSlot(varName, *strPtr, "ASSET_STATIC_MESH", FileType::StaticMesh)) {
+                                    // FORCE UPDATE: Clear the resource handle so the System re-fetches it next frame
+                                    ((StaticMesh*)writeData)->MeshResource = engineAPI->GetAssetManager()->GetMesh(*strPtr);
+                                    //engineAPI->MarkEntityDirty(entity, componentInfo->name);
+                                }
+                            }
+                            // 2. Skeletal Mesh Asset
+                            else if (strcmp(componentInfo->name, "SkeletalMeshComponent") == 0 && strcmp(varName, "AssetPath") == 0) {
+                                if (DrawAssetSlot(varName, *strPtr, "ASSET_SKELETAL_MESH", FileType::SkeletalMesh)) {
+                                    // FORCE UPDATE
+                                    ((SkeletalMeshComponent*)writeData)->MeshResource = engineAPI->GetAssetManager()->GetMesh(*strPtr);
+                                    //engineAPI->MarkEntityDirty(entity, componentInfo->name);
+                                }
+                            }
+                            // 3. Animation Graph (State Machine)
+                            else if (strcmp(componentInfo->name, "StateMachine") == 0 && strcmp(varName, "GraphAssetPath") == 0) {
+                                if (DrawAssetSlot(varName, *strPtr, "ASSET_ANIMATION", FileType::Animation)) {
+                                    // FORCE UPDATE
+                                    ((StateMachine*)writeData)->GraphResource = engineAPI->GetAssetManager()->GetAnimationGraph(*strPtr);
+                                    //engineAPI->MarkEntityDirty(entity, componentInfo->name);
+                                }
+                            }
+                            // 4. Fallback for generic strings
+                            else {
+                                static char buf[256];
+                                strncpy_s(buf, strPtr->c_str(), 256);
+                                if (ImGui::InputText(varName, buf, 256)) {
+                                    *strPtr = std::string(buf);
+                                }
+                            }
+                        }
                     }
 
                 }
@@ -123,3 +167,4 @@ void PropertyPanel::Render()
 
 	ImGui::End();
 }
+

@@ -17,6 +17,7 @@
 #include "Transform.h"
 #include "RigidBody.h" 
 #include "StaticMesh.h"
+#include "StateMachine.h" //
 
 using json = nlohmann::json;
 
@@ -29,7 +30,7 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    // LOAD SCENE (With Debug Prints)
+    // LOAD SCENE
     // ------------------------------------------------------------------------
     ReScene LoadScene(std::string name, std::shared_ptr<EntityManager> manager, Editor::IEngineEditorApi* engine)
     {
@@ -45,7 +46,7 @@ public:
         in >> sceneJson;
         in.close();
 
-        // --- Asset Loading (Unchanged) ---
+        // --- Asset Loading ---
         if (sceneJson.contains("assets")) {
             for (const auto& assetJson : sceneJson["assets"]) {
                 std::string path = assetJson.get<std::string>();
@@ -69,7 +70,6 @@ public:
         for (auto& entityJson : sceneJson["entities"])
         {
             Entity entity = manager->CreateEntity();
-			
 
             for (auto& compJson : entityJson["components"])
             {
@@ -86,7 +86,35 @@ public:
                 {
                     FillStructFromJson(compInfo, compPtr, compJson["data"]);
 
-                    // Asset Path fixup (Unchanged)
+                    // --- Post-Load Logic for StateMachine ---
+                    if (compType == "StateMachine")
+                    {
+                        auto sm = static_cast<StateMachine*>(compPtr);
+
+                        // 1. Load the Resource (Nodes/Transitions) from the path
+                        if (!sm->GraphAssetPath.empty())
+                        {
+                            sm->GraphResource = engine->GetAssetManager()->GetAnimationGraph(sm->GraphAssetPath);
+
+                            // 2. Initialize defaults from resource
+                            if (sm->GraphResource) {
+                                // Only fill keys that weren't loaded from the scene JSON (Runtime Overrides)
+                                for (auto& [key, val] : sm->GraphResource->DefaultBlackboard) {
+                                    if (sm->Blackboard.find(key) == sm->Blackboard.end()) {
+                                        sm->Blackboard[key] = val;
+                                    }
+                                }
+
+                                // If NodeID was -1 (default) or invalid, set to entry
+                                bool validNode = false;
+                                for (auto& n : sm->GraphResource->Nodes) { if (n.ID == sm->CurrentNodeID) validNode = true; }
+
+                                if (!validNode) sm->CurrentNodeID = sm->GraphResource->EntryNodeID;
+                            }
+                        }
+                    }
+
+                    // Asset Path fixup for Meshes
                     if (compJson["data"].contains("AssetPath")) {
                         std::string path = compJson["data"]["AssetPath"].get<std::string>();
                         if (!path.empty()) {
@@ -103,44 +131,6 @@ public:
             }
         }
 
-        // ------------------------------------------------------------------------
-        // DEBUG: Explicit Casting & Printing AFTER Load
-        // ------------------------------------------------------------------------
-        std::cout << "\n--------------------------------------------------\n";
-        std::cout << "[DEBUG] Post-Load Verification (Explicit Casting)\n";
-        std::cout << "--------------------------------------------------\n";
-
-        for (uint32_t i = 0; i < manager->GetEntityCount(); ++i)
-        {
-            if (!manager->GetSignature(i).any()) continue;
-
-            // Debug Transform
-            if (engine->HasComponent(i, "Transform"))
-            {
-                // Explicit Cast
-                void* rawPtr = engine->GetComponent(i, "Transform");
-                Transform* t = static_cast<Transform*>(rawPtr);
-
-                std::cout << "Entity [" << i << "] Transform:\n";
-                std::cout << "  Position: " << t->position.x << ", " << t->position.y << ", " << t->position.z << "\n";
-                std::cout << "  Rotation: " << t->rotation.w << ", " << t->rotation.x << ", " << t->rotation.y << ", " << t->rotation.z << "\n";
-                std::cout << "  Scale   : " << t->scale.x << ", " << t->scale.y << ", " << t->scale.z << "\n";
-            }
-
-            // Debug RigidBody
-            if (engine->HasComponent(i, "RigidBody"))
-            {
-                // Explicit Cast
-                void* rawPtr = engine->GetComponent(i, "RigidBody");
-                RigidBody* rb = static_cast<RigidBody*>(rawPtr);
-
-                std::cout << "Entity [" << i << "] RigidBody:\n";
-                std::cout << "  Mass: " << rb->mass << " | IsStatic: " << rb->isStatic << "\n";
-                std::cout << "  Velocity: " << rb->velocity.x << ", " << rb->velocity.y << ", " << rb->velocity.z << "\n";
-            }
-        }
-        std::cout << "--------------------------------------------------\n\n";
-
         ReScene newScene(name, new Camera());
         if (currentScene_) delete currentScene_;
         currentScene_ = new ReScene(newScene);
@@ -148,7 +138,7 @@ public:
     }
 
     // ------------------------------------------------------------------------
-    // SAVE SCENE (With Debug Prints)
+    // SAVE SCENE
     // ------------------------------------------------------------------------
     bool SerializeScene(std::string name, std::shared_ptr<EntityManager> manager, Editor::IEngineEditorApi* engine)
     {
@@ -196,55 +186,10 @@ public:
         }
 
         std::ofstream out(filename);
-        if (!out.is_open())
-        {
-            std::cerr << "[SceneManager] Failed to open " << filename << " for writing.\n";
-            return false;
-        }
+        if (!out.is_open()) return false;
 
         out << sceneJson.dump(4);
         out.close();
-
-        std::cout << "[SceneManager] Scene serialized to " << std::filesystem::absolute(filename) << "\n";
-
-        // ------------------------------------------------------------------------
-        // DEBUG: Explicit Casting & Printing AFTER Serialization
-        // ------------------------------------------------------------------------
-        std::cout << "\n--------------------------------------------------\n";
-        std::cout << "[DEBUG] Post-Serialization Verification (Explicit Casting)\n";
-        std::cout << "--------------------------------------------------\n";
-
-        for (uint32_t i = 0; i < entityCount; ++i)
-        {
-            Signature sig = manager->GetSignature(i);
-            if (sig.none()) continue;
-
-            // Debug Transform
-            if (engine->HasComponent(i, "Transform"))
-            {
-                // Explicit Cast
-                void* rawPtr = engine->GetComponent(i, "Transform");
-                Transform* t = static_cast<Transform*>(rawPtr);
-
-                std::cout << "Entity [" << i << "] Transform:\n";
-                std::cout << "  Position: " << t->position.x << ", " << t->position.y << ", " << t->position.z << "\n";
-                std::cout << "  Rotation: " << t->rotation.w << ", " << t->rotation.x << ", " << t->rotation.y << ", " << t->rotation.z << "\n";
-                std::cout << "  Scale   : " << t->scale.x << ", " << t->scale.y << ", " << t->scale.z << "\n";
-            }
-
-            // Debug RigidBody
-            if (engine->HasComponent(i, "RigidBody"))
-            {
-                // Explicit Cast
-                void* rawPtr = engine->GetComponent(i, "RigidBody");
-                RigidBody* rb = static_cast<RigidBody*>(rawPtr);
-
-                std::cout << "Entity [" << i << "] RigidBody:\n";
-                std::cout << "  Mass: " << rb->mass << " | Friction: " << rb->friction << "\n";
-                std::cout << "  Velocity: " << rb->velocity.x << ", " << rb->velocity.y << ", " << rb->velocity.z << "\n";
-            }
-        }
-        std::cout << "--------------------------------------------------\n\n";
 
         return true;
     }
@@ -254,7 +199,7 @@ public:
 
 private:
     // ------------------------------------------------------------------------
-    // FIX: WriteStructToJson (Correctly handles Quaternions)
+    // WriteStructToJson
     // ------------------------------------------------------------------------
     static void WriteStructToJson(const Reflection::ClassInfo* classInfo, void* basePtr, json& outJson)
     {
@@ -264,10 +209,13 @@ private:
             void* fieldPtr = reinterpret_cast<char*>(basePtr) + var.offset;
             std::string tname = t->name ? t->name : "";
 
+            // Skip pointers to resources (Runtime only)
             if (tname.find("StaticMeshData") != std::string::npos ||
                 tname.find("MeshResource") != std::string::npos ||
-                tname.find("TextureResource") != std::string::npos) continue;
+                tname.find("TextureResource") != std::string::npos ||
+                tname.find("AnimationGraphResource") != std::string::npos) continue; //
 
+            // --- 1. Basic Types ---
             if (tname == "float") outJson[var.name] = *(float*)fieldPtr;
             else if (tname == "double") outJson[var.name] = *(double*)fieldPtr;
             else if (tname == "int" || tname == "int32_t") outJson[var.name] = *(int*)fieldPtr;
@@ -275,30 +223,39 @@ private:
             else if (tname == "bool") outJson[var.name] = *(bool*)fieldPtr;
             else if (tname == "std::string" || tname == "string" || tname == "std::basic_string<char>") outJson[var.name] = *(std::string*)fieldPtr;
 
-            // GLM Types
-            else if (tname == "glm::vec2" || tname == "vec2" || tname == "glm::vec<2, float>") {
-                glm::vec2 v = *(glm::vec2*)fieldPtr;
-                outJson[var.name] = { v.x, v.y };
+            // --- 2. GLM Types ---
+            else if (tname == "glm::vec3" || tname == "vec3") {
+                glm::vec3 v = *(glm::vec3*)fieldPtr; outJson[var.name] = { v.x, v.y, v.z };
             }
-            else if (tname == "glm::vec3" || tname == "vec3" || tname == "glm::vec<3, float>") {
-                glm::vec3 v = *(glm::vec3*)fieldPtr;
-                outJson[var.name] = { v.x, v.y, v.z };
+            else if (tname == "glm::vec4" || tname == "vec4") {
+                glm::vec4 v = *(glm::vec4*)fieldPtr; outJson[var.name] = { v.x, v.y, v.z, v.w };
             }
-            else if (tname == "glm::vec4" || tname == "vec4" || tname == "glm::vec<4, float>") {
-                glm::vec4 v = *(glm::vec4*)fieldPtr;
-                outJson[var.name] = { v.x, v.y, v.z, v.w };
+            else if (tname == "glm::quat" || tname == "quat") {
+                glm::quat q = *(glm::quat*)fieldPtr; outJson[var.name] = { q.w, q.x, q.y, q.z };
             }
-            // *** FIXED QUAT HANDLING ***
-            else if (tname == "glm::quat" || tname == "quat" || tname == "glm::qua<float>") {
-                glm::quat q = *(glm::quat*)fieldPtr;
-                // Serialize as [w, x, y, z] to match constructor order usually
-                outJson[var.name] = { q.w, q.x, q.y, q.z };
+
+            // --- 3. SPECIAL: StateMachine Blackboard ---
+            // The reflection engine likely returns a complex mangled name for the map, 
+            // so we check the variable name directly for safety.
+            else if (var.name == "Blackboard")
+            {
+                auto& bb = *(std::unordered_map<std::string, AnimVar>*)fieldPtr;
+                json bbJson = json::object();
+                for (auto& [key, animVar] : bb) {
+                    json varJson;
+                    varJson["type"] = (int)animVar.Type; // Save Type Enum
+
+                    // Save Value based on Type
+                    if (animVar.Type == AnimVarType::Float) varJson["value"] = animVar.fVal;
+                    else if (animVar.Type == AnimVarType::Int) varJson["value"] = animVar.iVal;
+                    else varJson["value"] = animVar.bVal; // Bool and Trigger
+
+                    bbJson[key] = varJson;
+                }
+                outJson[var.name] = bbJson;
             }
-            else if (tname == "glm::mat4" || tname == "mat4") {
-                glm::mat4 m = *(glm::mat4*)fieldPtr;
-                outJson[var.name] = json::array();
-                for (int i = 0; i < 4; ++i) outJson[var.name].push_back({ m[i][0], m[i][1], m[i][2], m[i][3] });
-            }
+
+            // --- 4. Recursive Reflected Structs ---
             else {
                 const Reflection::ClassInfo* subClass = Reflection::Registry::Instance().FindClass(tname);
                 if (subClass) {
@@ -311,7 +268,7 @@ private:
     }
 
     // ------------------------------------------------------------------------
-    // FIX: FillStructFromJson (Correctly handles Quaternions)
+    // FillStructFromJson
     // ------------------------------------------------------------------------
     static void FillStructFromJson(const Reflection::ClassInfo* classInfo, void* basePtr, const json& inJson)
     {
@@ -324,38 +281,50 @@ private:
             if (!inJson.contains(var.name)) continue;
             const json& val = inJson.at(var.name);
 
+            // --- 1. Basic Types ---
             if (tname == "float") *(float*)fieldPtr = val.get<float>();
-            else if (tname == "double") *(double*)fieldPtr = val.get<double>();
             else if (tname == "int" || tname == "int32_t") *(int*)fieldPtr = val.get<int>();
-            else if (tname == "unsigned int" || tname == "uint32_t") *(unsigned int*)fieldPtr = val.get<unsigned int>();
+            else if (tname == "unsigned int") *(unsigned int*)fieldPtr = val.get<unsigned int>();
             else if (tname == "bool") *(bool*)fieldPtr = val.get<bool>();
             else if (tname == "std::string" || tname == "string") *(std::string*)fieldPtr = val.get<std::string>();
 
-            // GLM Types
-            else if (tname == "glm::vec2" || tname == "vec2" || tname == "glm::vec<2, float>") {
-                if (val.is_array() && val.size() == 2) *(glm::vec2*)fieldPtr = glm::vec2(val[0], val[1]);
-            }
-            else if (tname == "glm::vec3" || tname == "vec3" || tname == "glm::vec<3, float>") {
+            // --- 2. GLM Types ---
+            else if (tname == "glm::vec3" || tname == "vec3") {
                 if (val.is_array() && val.size() == 3) *(glm::vec3*)fieldPtr = glm::vec3(val[0], val[1], val[2]);
             }
-            else if (tname == "glm::vec4" || tname == "vec4" || tname == "glm::vec<4, float>") {
+            else if (tname == "glm::vec4" || tname == "vec4") {
                 if (val.is_array() && val.size() == 4) *(glm::vec4*)fieldPtr = glm::vec4(val[0], val[1], val[2], val[3]);
             }
-            // *** FIXED QUAT HANDLING ***
-            else if (tname == "glm::quat" || tname == "quat" || tname == "glm::qua<float>") {
-                if (val.is_array() && val.size() == 4) {
-                    // JSON was saved as {w, x, y, z}
-                    *(glm::quat*)fieldPtr = glm::quat(val[0], val[1], val[2], val[3]);
+            else if (tname == "glm::quat" || tname == "quat") {
+                if (val.is_array() && val.size() == 4) *(glm::quat*)fieldPtr = glm::quat(val[0], val[1], val[2], val[3]);
+            }
+
+            // --- 3. SPECIAL: StateMachine Blackboard ---
+            else if (var.name == "Blackboard")
+            {
+                auto& bb = *(std::unordered_map<std::string, AnimVar>*)fieldPtr;
+                bb.clear(); // Clear existing to overwrite with saved data
+
+                if (val.is_object()) {
+                    for (auto& [key, varJson] : val.items()) {
+                        int type = varJson["type"];
+
+                        if (type == (int)AnimVarType::Float) {
+                            bb[key] = AnimVar(varJson["value"].get<float>());
+                        }
+                        else if (type == (int)AnimVarType::Int) {
+                            bb[key] = AnimVar(varJson["value"].get<int>());
+                        }
+                        else {
+                            // Bool or Trigger
+                            bb[key] = AnimVar(varJson["value"].get<bool>());
+                            bb[key].Type = (AnimVarType)type; // Force type if it was Trigger
+                        }
+                    }
                 }
             }
-            else if (tname == "glm::mat4" || tname == "mat4") {
-                glm::mat4 m(1.0f);
-                if (val.is_array() && val.size() == 4) {
-                    for (int i = 0; i < 4; ++i)
-                        for (int j = 0; j < 4; ++j) m[i][j] = val[i][j];
-                }
-                *(glm::mat4*)fieldPtr = m;
-            }
+
+            // --- 4. Recursive Reflected Structs ---
             else {
                 const Reflection::ClassInfo* subClass = Reflection::Registry::Instance().FindClass(tname);
                 if (subClass && val.is_object()) FillStructFromJson(subClass, fieldPtr, val);

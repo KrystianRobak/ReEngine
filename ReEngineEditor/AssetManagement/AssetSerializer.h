@@ -11,6 +11,7 @@
 struct aiScene;
 struct aiMesh;
 struct aiNode;
+struct aiAnimation;
 
 class ENGINE_API AssetSerializer {
 public:
@@ -37,5 +38,9 @@ private:
     // Helpers
     static MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene);
     static void ProcessSkeletalMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData& outData);
-    static SerializedAnimation ProcessAnimation(const struct aiAnimation* anim);
+    // --- UPDATED: Takes scene to extract RootNode ---
+    static SerializedAnimation ProcessAnimation(const aiAnimation* anim, const aiScene* scene);
+
+    // --- NEW: Helper to extract node hierarchy ---
+    static void ConvertAssimpNode(const aiNode* src, SerializedNode& dst);
 };

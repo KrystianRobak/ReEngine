@@ -41,16 +41,6 @@ struct SkeletalMeshComponent_AutoRegister {
             };
             SkeletalMeshComponent_Variables.push_back(std::move(rv));
         }
-         vType = Reflection::Registry::Instance().GetOrCreateType("std::basic_string<char>");
-        {
-            Reflection::ReflectedVariable rv = {
-                "CurrentAnimationName", "public",
-                false,
-                offsetof(SkeletalMeshComponent, CurrentAnimationName),
-                vType
-            };
-            SkeletalMeshComponent_Variables.push_back(std::move(rv));
-        }
         ci.variables = SkeletalMeshComponent_Variables;
         Reflection::Registry::Instance().RegisterComponent(std::move(ci));
     }

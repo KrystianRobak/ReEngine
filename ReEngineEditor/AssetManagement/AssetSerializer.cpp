@@ -76,6 +76,9 @@ std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std:
         try {
             // 1. Peek at the file using Assimp to decide if it's Static or Skeletal
             Assimp::Importer importer;
+
+            importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+
             // Preserving hierarchy is often useful for skeletal meshes
             const aiScene* scene = importer.ReadFile(sourcePath,
                 aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_LimitBoneWeights);
@@ -104,7 +107,7 @@ std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std:
                     std::string fullPath = (destFolder / outFileName).string();
 
                     // Process and Save
-                    SerializedAnimation animData = ProcessAnimation(anim);
+                    SerializedAnimation animData = ProcessAnimation(anim, scene);
                     if (SaveAnimation(fullPath, animData)) {
                         std::cout << "[Importer] Saved Animation: " << outFileName << std::endl;
                     }
@@ -211,45 +214,47 @@ void AssetSerializer::ProcessSkeletalMesh(aiMesh* mesh, const aiScene* scene, Sk
 {
 }
 
-SerializedAnimation AssetSerializer::ProcessAnimation(const aiAnimation* anim) {
+void AssetSerializer::ConvertAssimpNode(const aiNode* src, SerializedNode& dst) {
+    dst.name = src->mName.C_Str();
+    dst.transformation = Mat4FromAssimp(src->mTransformation);
+
+    for (unsigned int i = 0; i < src->mNumChildren; i++) {
+        SerializedNode child;
+        ConvertAssimpNode(src->mChildren[i], child);
+        dst.children.push_back(child);
+    }
+}
+
+SerializedAnimation AssetSerializer::ProcessAnimation(const aiAnimation* anim, const aiScene* scene) {
     SerializedAnimation outAnim;
     outAnim.name = anim->mName.C_Str();
     outAnim.duration = (float)anim->mDuration;
     outAnim.ticksPerSecond = (anim->mTicksPerSecond != 0) ? (float)anim->mTicksPerSecond : 25.0f;
 
+    // 1. Process Channels (Existing code)
     for (unsigned int i = 0; i < anim->mNumChannels; i++) {
         aiNodeAnim* channel = anim->mChannels[i];
         SerializedBoneAnim boneAnim;
         boneAnim.name = channel->mNodeName.C_Str();
 
-        // Position Keys
         for (unsigned int k = 0; k < channel->mNumPositionKeys; k++) {
-            boneAnim.positions.push_back({
-                (float)channel->mPositionKeys[k].mTime,
-                Vec3FromAssimp(channel->mPositionKeys[k].mValue)
-                });
+            boneAnim.positions.push_back({ (float)channel->mPositionKeys[k].mTime, Vec3FromAssimp(channel->mPositionKeys[k].mValue) });
         }
-
-        // Rotation Keys
         for (unsigned int k = 0; k < channel->mNumRotationKeys; k++) {
-            boneAnim.rotations.push_back({
-                (float)channel->mRotationKeys[k].mTime,
-                QuatFromAssimp(channel->mRotationKeys[k].mValue)
-                });
+            boneAnim.rotations.push_back({ (float)channel->mRotationKeys[k].mTime, QuatFromAssimp(channel->mRotationKeys[k].mValue) });
         }
-
-        // Scale Keys
         for (unsigned int k = 0; k < channel->mNumScalingKeys; k++) {
-            boneAnim.scales.push_back({
-                (float)channel->mScalingKeys[k].mTime,
-                Vec3FromAssimp(channel->mScalingKeys[k].mValue)
-                });
+            boneAnim.scales.push_back({ (float)channel->mScalingKeys[k].mTime, Vec3FromAssimp(channel->mScalingKeys[k].mValue) });
         }
-
         outAnim.channels.push_back(boneAnim);
     }
+
+    // 2. Process Hierarchy (NEW)
+    ConvertAssimpNode(scene->mRootNode, outAnim.rootNode);
+
     return outAnim;
 }
+
 
 std::shared_ptr<StaticMeshData> AssetSerializer::ImportStaticMeshAssimp(const std::string& path) {
     Assimp::Importer importer;
@@ -497,25 +502,39 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
     return result;
 }
 
+// --- NEW HELPER: Recursive Node Write ---
+void WriteSerializedNode(std::ofstream& out, const SerializedNode& node) {
+    // Name
+    uint32_t nameLen = (uint32_t)node.name.size();
+    out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
+    if (nameLen > 0) out.write(node.name.c_str(), nameLen);
+
+    // Transform
+    out.write(reinterpret_cast<const char*>(&node.transformation), sizeof(glm::mat4));
+
+    // Children
+    uint32_t childCount = (uint32_t)node.children.size();
+    out.write(reinterpret_cast<const char*>(&childCount), sizeof(uint32_t));
+
+    for (const auto& child : node.children) {
+        WriteSerializedNode(out, child);
+    }
+}
 bool AssetSerializer::SaveAnimation(const std::string& path, const SerializedAnimation& data) {
     std::ofstream out(path, std::ios::binary);
     if (!out.is_open()) return false;
 
-    // Header
     AssetHeader header;
     header.magic = ASSET_MAGIC;
-    // You might need to define AssetType::Animation in your Enum file
-    header.type = (AssetType)3; // Assuming 3 is Animation, adjust your enum accordingly!
+    header.type = (AssetType)3; // Animation
     header.version = 1;
     out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
     // Metadata
-    float dur = data.duration;
-    float tps = data.ticksPerSecond;
-    out.write(reinterpret_cast<const char*>(&dur), sizeof(float));
-    out.write(reinterpret_cast<const char*>(&tps), sizeof(float));
+    out.write(reinterpret_cast<const char*>(&data.duration), sizeof(float));
+    out.write(reinterpret_cast<const char*>(&data.ticksPerSecond), sizeof(float));
 
-    // Name
+    // Animation Name
     uint32_t nameLen = (uint32_t)data.name.size();
     out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
     if (nameLen > 0) out.write(data.name.c_str(), nameLen);
@@ -526,34 +545,39 @@ bool AssetSerializer::SaveAnimation(const std::string& path, const SerializedAni
 
     for (const auto& channel : data.channels) {
         // Channel Name
-        uint32_t boneNameLen = (uint32_t)channel.name.size();
-        out.write(reinterpret_cast<const char*>(&boneNameLen), sizeof(uint32_t));
-        if (boneNameLen > 0) out.write(channel.name.c_str(), boneNameLen);
+        uint32_t bLen = (uint32_t)channel.name.size();
+        out.write(reinterpret_cast<const char*>(&bLen), sizeof(uint32_t));
+        if (bLen > 0) out.write(channel.name.c_str(), bLen);
 
-        // Positions
-        uint32_t numPos = (uint32_t)channel.positions.size();
-        out.write(reinterpret_cast<const char*>(&numPos), sizeof(uint32_t));
-        for (const auto& key : channel.positions) {
-            out.write(reinterpret_cast<const char*>(&key.first), sizeof(float)); // Time
-            out.write(reinterpret_cast<const char*>(&key.second), sizeof(glm::vec3)); // Value
+        // --- FIXED: Write Loop (Prevents Padding Corruption) ---
+
+        // 1. Positions
+        uint32_t nPos = (uint32_t)channel.positions.size();
+        out.write(reinterpret_cast<const char*>(&nPos), sizeof(uint32_t));
+        for (const auto& val : channel.positions) {
+            out.write(reinterpret_cast<const char*>(&val.first), sizeof(float));      // Time
+            out.write(reinterpret_cast<const char*>(&val.second), sizeof(glm::vec3)); // Value
         }
 
-        // Rotations
-        uint32_t numRot = (uint32_t)channel.rotations.size();
-        out.write(reinterpret_cast<const char*>(&numRot), sizeof(uint32_t));
-        for (const auto& key : channel.rotations) {
-            out.write(reinterpret_cast<const char*>(&key.first), sizeof(float));
-            out.write(reinterpret_cast<const char*>(&key.second), sizeof(glm::quat));
+        // 2. Rotations
+        uint32_t nRot = (uint32_t)channel.rotations.size();
+        out.write(reinterpret_cast<const char*>(&nRot), sizeof(uint32_t));
+        for (const auto& val : channel.rotations) {
+            out.write(reinterpret_cast<const char*>(&val.first), sizeof(float));
+            out.write(reinterpret_cast<const char*>(&val.second), sizeof(glm::quat));
         }
 
-        // Scales
-        uint32_t numScl = (uint32_t)channel.scales.size();
-        out.write(reinterpret_cast<const char*>(&numScl), sizeof(uint32_t));
-        for (const auto& key : channel.scales) {
-            out.write(reinterpret_cast<const char*>(&key.first), sizeof(float));
-            out.write(reinterpret_cast<const char*>(&key.second), sizeof(glm::vec3));
+        // 3. Scales
+        uint32_t nScl = (uint32_t)channel.scales.size();
+        out.write(reinterpret_cast<const char*>(&nScl), sizeof(uint32_t));
+        for (const auto& val : channel.scales) {
+            out.write(reinterpret_cast<const char*>(&val.first), sizeof(float));
+            out.write(reinterpret_cast<const char*>(&val.second), sizeof(glm::vec3));
         }
     }
+
+    // Hierarchy
+    WriteSerializedNode(out, data.rootNode);
 
     return true;
 }

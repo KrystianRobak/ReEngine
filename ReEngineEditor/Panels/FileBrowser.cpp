@@ -26,17 +26,8 @@ void FileBrowser::OnInit()
             case AssetType::Texture:
                 engineAPI->GetAssetManager()->GetTexture(AssetImportedType.second);
         }
+        FindFiles(currentPath);
 		});
-
-    icons[FileType::Folder] = GetTexture("icons/folder.retex");
-    icons[FileType::Unknown] = GetTexture("icons/file.retex");
-    icons[FileType::Code] = GetTexture("icons/code.retex");
-    icons[FileType::StaticMesh] = GetTexture("icons/mesh.retex");
-    icons[FileType::SkeletalMesh] = GetTexture("icons/skeleton.retex");
-    icons[FileType::Texture] = GetTexture("icons/texture.retex");
-    icons[FileType::Material] = GetTexture("icons/material.retex");
-    icons[FileType::Scene] = GetTexture("icons/scene.retex");
-	icons[FileType::Animation] = GetTexture("icons/animation.retex");
 
     FindFiles(".");
 }
@@ -140,6 +131,12 @@ void FileBrowser::RenderItem(const BrowserItem& item, float itemWidth, float ite
             // Load Scene
             engineAPI->OpenScene(fullPath);
         }
+        else if (item.type == FileType::Animation) {
+            // Trigger the Event
+            Event event(Events::Editor::StateMachineGraph::OPEN_STATEMACHINE_FILE);
+            event.SetParam<std::string>("PATH", fullPath);
+            engineAPI->SendEvent(event);
+        }
     }
 
     // Layout Logic
@@ -217,6 +214,49 @@ void FileBrowser::Render() {
             Event event(Events::Editor::MaterialSystem::CREATE_MATERIAL_FILE);
             event.SetParam<std::string>("PATH", materialPath.string());
             engineAPI->SendEvent(event);
+            FindFiles(currentPath);
+        }
+        // --- NEW: CREATE ANIMATION GRAPH ---
+        if (ImGui::MenuItem("Create Animation Graph"))
+        {
+            std::string fileName = "NewStateGraph.rsm"; // .rsm = ReEngine State Machine
+            std::filesystem::path filePath = std::filesystem::path(currentPath) / fileName;
+
+            // 1. Ensure Unique Filename
+            int counter = 1;
+            while (std::filesystem::exists(filePath))
+            {
+                fileName = "NewStateGraph_" + std::to_string(counter++) + ".rsm";
+                filePath = std::filesystem::path(currentPath) / fileName;
+            }
+
+            // 2. Create Default JSON Structure
+            json j;
+            j["entryNodeId"] = -1;       // No entry state set
+            j["nodes"] = json::array();  // Empty list of states
+            j["transitions"] = json::array();
+
+            // Default Blackboard parameters
+            j["parameters"] = {
+                {"floats", json::object()},
+                {"bools", json::object()}
+            };
+
+            // 3. Write to Disk
+            std::ofstream file(filePath, std::ios::out | std::ios::trunc);
+            if (file)
+            {
+                file << j.dump(4); // Pretty print
+                file.close();
+                LOGF_INFO("Created Animation Graph: %s", filePath.string().c_str());
+            }
+            else
+            {
+                LOGF_ERROR("Failed to create file: %s", filePath.string().c_str());
+            }
+
+            // 4. Refresh Browser to show new file
+            FindFiles(currentPath);
         }
         ImGui::EndPopup();
     }

@@ -11,6 +11,8 @@ class StaticMeshData;
 class SkeletalMeshData;
 struct TextureData;
 struct TextureResource;
+struct AnimationGraphResource;
+class Animation;
 
 struct MeshResource {
     // Keep CPU data alive for context recovery or picking, 
@@ -48,6 +50,9 @@ public:
     virtual std::shared_ptr<MeshResource> CreateManualMesh(const std::string& name, std::shared_ptr<StaticMeshData> data) = 0;
     virtual std::shared_ptr<MeshResource> GetMesh(const std::string& path) = 0;
     virtual std::shared_ptr<MeshResource> GetSkeletalMesh(const std::string& path) = 0;
+
+    virtual std::shared_ptr<AnimationGraphResource> GetAnimationGraph(const std::string& path) = 0;
+    virtual std::shared_ptr<Animation> GetAnimation(const std::string& path) = 0;
 
     // --- Texture API ---
     virtual std::shared_ptr<TextureResource> GetTexture(const std::string& path) = 0;

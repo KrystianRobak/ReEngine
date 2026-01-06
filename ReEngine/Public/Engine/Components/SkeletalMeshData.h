@@ -2,7 +2,6 @@
 #include "MeshData.h"
 #include "StaticMeshData.h"
 #include <map>
-#include "../Animation/Animation.h"
 #include <vector>
 #include <memory>
 #include <future>
@@ -44,8 +43,6 @@ struct SkeletalMeshData : public StaticMeshData {
 
     std::map<std::string, BoneInfo> boneInfoMap;
     int boneCount = 0;
-
-    std::map<std::string, Animation> animations;
 
     // The root node of the Assimp scene hierarchy (needed for traversing animation)
     // You might need a custom Node struct if you don't want to store raw aiNode*

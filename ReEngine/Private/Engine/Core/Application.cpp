@@ -75,21 +75,24 @@ void Application::Init()
 
 void Application::StartGameThreads()
 {
-	const int participantCount = 3; // Game + Render + Physics
+	running.store(true);
+
+	const int participantCount = 2; // Game + Render + Physics
 	mSyncBarrier = std::make_unique<std::barrier<BarrierCompletion>>(
 		participantCount,
 		BarrierCompletion{ this }
 	);
+	// 4. Simplified Threading
+	// We only launch the Main Loop. The ThreadPool handles the rest.
+	// If you want Render to be strictly separate, you can keep RenderThread, 
+	// but typically the Graph handles Logic+Physics+Animation.
 
-	running.store(true);
-
-	// We start all threads even if in Editor mode.
-	// The individual thread loops will decide whether to work or idle based on m_AppState.
 	GameThread = std::make_unique<std::thread>(std::thread(&Application::Update, this));
-	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
-	PhysicsThread = std::make_unique<std::thread>(std::thread(&Application::PhysicsTick, this));
 
-	LOGF_INFO("Threads started (Game Mode Ready)");
+	// If RenderOpenGL is NOT in the graph (handled manually), keep this:
+	RenderThread = std::make_unique<std::thread>(std::thread(&Application::Render, this));
+
+	LOGF_INFO("Game Loop Started.");
 }
 
 void Application::StartEditorThreads()
@@ -100,29 +103,22 @@ void Application::StartEditorThreads()
 
 void Application::InitSystems()
 {
+	// Fetch Renderer (still need explicit handle for CreateViewport)
 	Renderer_ = reinterpret_cast<RenderSystem*>(coordinator->GetSystem("RenderOpenGL"));
-	PhysicsSystem_ = coordinator->GetSystem("Physics3D");
 
-	// --- BUILD THE GRAPH ---
-	// 1. Fetch all systems loaded by ProjectBuilder/Coordinator
+	// 2. Populate Graph
 	auto systems = Reflection::Registry::Instance().GetAllSystems();
 
 	for (auto systemInfo : systems) {
-		// We get the actual runtime instance from the Coordinator
 		System* runtimeSys = coordinator->GetSystem(systemInfo->fullName);
 		if (runtimeSys) {
-			// Special case: Renderer usually needs strict handling
-			// You can either exclude it from the graph or mark it RunOnMainThread
-			if (std::strcmp(systemInfo->fullName, "RenderOpenGL") != 0 &&
-				std::strcmp(systemInfo->fullName, "Physics3D") != 0) // Physics handled by own thread in your logic
-			{
-				systemGraph->AddSystem(runtimeSys);
-			}
+			systemGraph->AddSystem(runtimeSys);
 		}
 	}
 
+	// 3. Compile Graph (Calculates Waves)
 	systemGraph->Build();
-	LOGF_INFO("System Dependency Graph Built.");
+	LOGF_INFO("ECS Dependency Graph Built.");
 }
 
 IViewport* Application::CreateNewViewport(std::string name, int width, int height)
@@ -197,6 +193,7 @@ void Application::Update()
 						p.Entity = entity;
 						p.MaterialId = (smc->MaterialId == -1) ? 1200 : smc->MaterialId;
 						p.Mesh = smc->MeshResource; // Pass the shared_ptr
+						p.FinalBoneMatrices = smc->FinalBoneMatrices;
 						// 4. Issue Command
 						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
 					}

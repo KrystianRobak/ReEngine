@@ -49,6 +49,9 @@
     <Filter Include="Pliki nagłówkowe\Input">
       <UniqueIdentifier>{38e2b05e-5aa0-4387-995f-c07d2a6117bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Pliki nagłówkowe\Animation">
+      <UniqueIdentifier>{d61ec87c-12fc-4d34-b767-0e4baa809c46}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="System\System.cpp">
@@ -184,6 +187,18 @@
     </ClInclude>
     <ClInclude Include="SystemGraph.h">
       <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="Animation\Animation.h">
+      <Filter>Pliki nagłówkowe\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Animation\AnimHelpers.h">
+      <Filter>Pliki nagłówkowe\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Animation\AssimpNodeData.h">
+      <Filter>Pliki nagłówkowe\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Animation\Bone.h">
+      <Filter>Pliki nagłówkowe\Animation</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

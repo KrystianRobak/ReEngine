@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
-
+#include <map>
+#include <vector>
 // Unique signature to identify your files (e.g., "REAM" = RE Asset Mesh)
 constexpr uint32_t ASSET_MAGIC = 0x4D414552;
 constexpr uint32_t ASSET_VERSION = 1;
@@ -27,7 +28,8 @@ static const std::map<std::string, FileType> ExtensionMap = {
     { ".material",  FileType::Material },
     { ".scene",     FileType::Scene },        // Renamed .json to .scene for clarity?
     { ".json",      FileType::Scene },
-    { ".reanim",    FileType::Animation }
+    { ".reanim",    FileType::Animation },
+    { ".rsm",       FileType::Animation }
 };
 
 inline static FileType GetFileType(const std::string& extension) {
@@ -45,6 +47,7 @@ inline static std::string GetDragPayloadType(FileType type) {
     case FileType::Material:     return "ASSET_MATERIAL";
     case FileType::Scene:        return "ASSET_SCENE";
     case FileType::Code:         return "ASSET_CODE";
+    case FileType::Animation:    return "ASSET_ANIMATION";
     default:                     return "ASSET_UNKNOWN";
     }
 }
@@ -79,9 +82,16 @@ struct MeshSectionHeader {
     // We don't store pointers here, only counts!
 };
 
+// --- NEW: Serialized Node Hierarchy ---
+struct SerializedNode {
+    std::string name;
+    glm::mat4 transformation;
+    std::vector<SerializedNode> children;
+};
+
 struct SerializedBoneAnim {
     std::string name;
-    std::vector<std::pair<float, glm::vec3>> positions; // Time, Value
+    std::vector<std::pair<float, glm::vec3>> positions;
     std::vector<std::pair<float, glm::quat>> rotations;
     std::vector<std::pair<float, glm::vec3>> scales;
 };
@@ -91,6 +101,7 @@ struct SerializedAnimation {
     float duration;
     float ticksPerSecond;
     std::vector<SerializedBoneAnim> channels;
-    // Note: Hierarchy is usually derived from the Mesh, but can be stored here if needed.
-    // For now, we store the curves which drive the skeleton.
+
+    // --- NEW: The Skeleton Hierarchy ---
+    SerializedNode rootNode;
 };

@@ -15,6 +15,7 @@ struct RenderPrimitive {
 
     // Direct handle to the mesh resource (including VAO and uploaded flag)
     std::shared_ptr<MeshResource> Mesh;
+    std::vector<glm::mat4> FinalBoneMatrices;
 };
 
 struct RenderCommand : public Command

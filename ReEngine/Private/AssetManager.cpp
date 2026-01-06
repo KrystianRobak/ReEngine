@@ -2,6 +2,8 @@
 #include <GL/glew.h>
 #include <iostream>
 #include <algorithm>
+#include "Animation/Animation.h"
+#include "Animation/AssimpNodeData.h"
 
 namespace fs = std::filesystem;
 
@@ -18,6 +20,31 @@ void AssetManager::shutdown() {
     textureCache.clear();
 }
 
+
+// --- NEW HELPER: Recursive Node Read ---
+void ReadSerializedNode(std::ifstream& in, AssimpNodeData& node) {
+    // Name
+    uint32_t nameLen;
+    in.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
+    if (nameLen > 0) {
+        node.name.resize(nameLen);
+        in.read(&node.name[0], nameLen);
+    }
+
+    // Transform
+    in.read(reinterpret_cast<char*>(&node.transformation), sizeof(glm::mat4));
+
+    // Children
+    uint32_t childCount;
+    in.read(reinterpret_cast<char*>(&childCount), sizeof(uint32_t));
+    node.childrenCount = (int)childCount;
+
+    for (uint32_t i = 0; i < childCount; ++i) {
+        AssimpNodeData child;
+        ReadSerializedNode(in, child);
+        node.children.push_back(child);
+    }
+}
 // -----------------------------------------------------------------------
 //  UPLOAD SYSTEM (Render Thread)
 // -----------------------------------------------------------------------
@@ -260,6 +287,117 @@ std::unique_ptr<AssetManager::TextureLoadResult> AssetManager::LoadBinaryTexture
     return result;
 }
 
+std::shared_ptr<Animation> AssetManager::LoadBinaryAnimation(const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    if (!in.is_open()) {
+        std::cerr << "[AssetManager] Failed to open animation file: " << path << "\n";
+        return nullptr;
+    }
+
+    AssetHeader header;
+    in.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
+
+    if (header.magic != ASSET_MAGIC) {
+        std::cerr << "[AssetManager] Invalid Magic Header in: " << path << "\n";
+        return nullptr;
+    }
+
+    // 1. Read Metadata
+    float duration, tps;
+    in.read(reinterpret_cast<char*>(&duration), sizeof(float));
+    in.read(reinterpret_cast<char*>(&tps), sizeof(float));
+
+    std::cout << "[AssetManager] Loading Animation - Duration: " << duration << ", TPS: " << tps << "\n";
+
+    // 2. Read Animation Name
+    uint32_t nameLen;
+    in.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
+    std::string animName;
+    if (nameLen > 0 && nameLen < 500) {
+        animName.resize(nameLen);
+        in.read(&animName[0], nameLen);
+        std::cout << "[AssetManager] Animation Name: " << animName << "\n";
+    }
+
+    auto animation = std::make_shared<Animation>();
+    animation->SetDuration(duration);
+    animation->SetTicksPerSecond((int)tps);
+
+    // 3. Read Channels (Bone Animations)
+    uint32_t numChannels;
+    in.read(reinterpret_cast<char*>(&numChannels), sizeof(uint32_t));
+    std::cout << "[AssetManager] Loading " << numChannels << " animation channels\n";
+
+    for (uint32_t i = 0; i < numChannels; ++i) {
+        // Read Bone Name
+        uint32_t boneNameLen;
+        in.read(reinterpret_cast<char*>(&boneNameLen), sizeof(uint32_t));
+
+        std::string boneName;
+        if (boneNameLen > 0 && boneNameLen < 500) {
+            boneName.resize(boneNameLen);
+            in.read(&boneName[0], boneNameLen);
+        }
+        else {
+            std::cerr << "[AssetManager] Invalid bone name length: " << boneNameLen << "\n";
+            return nullptr;
+        }
+
+        std::vector<KeyPosition> positions;
+        std::vector<KeyRotation> rotations;
+        std::vector<KeyScale> scales;
+
+        // Read Position Keys
+        uint32_t numPos;
+        in.read(reinterpret_cast<char*>(&numPos), sizeof(uint32_t));
+        for (uint32_t k = 0; k < numPos; k++) {
+            float timestamp;
+            glm::vec3 value;
+            in.read(reinterpret_cast<char*>(&timestamp), sizeof(float));
+            in.read(reinterpret_cast<char*>(&value), sizeof(glm::vec3));
+            positions.push_back({ value, timestamp }); // Note: struct is {vec3, float}
+        }
+
+        // Read Rotation Keys
+        uint32_t numRot;
+        in.read(reinterpret_cast<char*>(&numRot), sizeof(uint32_t));
+        for (uint32_t k = 0; k < numRot; k++) {
+            float timestamp;
+            glm::quat value;
+            in.read(reinterpret_cast<char*>(&timestamp), sizeof(float));
+            in.read(reinterpret_cast<char*>(&value), sizeof(glm::quat));
+            rotations.push_back({ value, timestamp }); // struct is {quat, float}
+        }
+
+        // Read Scale Keys
+        uint32_t numScl;
+        in.read(reinterpret_cast<char*>(&numScl), sizeof(uint32_t));
+        for (uint32_t k = 0; k < numScl; k++) {
+            float timestamp;
+            glm::vec3 value;
+            in.read(reinterpret_cast<char*>(&timestamp), sizeof(float));
+            in.read(reinterpret_cast<char*>(&value), sizeof(glm::vec3));
+            scales.push_back({ value, timestamp }); // struct is {vec3, float}
+        }
+
+        std::cout << "  Channel " << i << " (" << boneName << "): "
+            << numPos << " pos, " << numRot << " rot, " << numScl << " scale keys\n";
+
+        // **CRITICAL: Use the bone ID as index, not the channel index**
+        // Pass -1 as ID for now; the Animator will look up by name
+        animation->AddBone(Bone(boneName, -1, positions, rotations, scales));
+    }
+
+    // 4. Read Hierarchy
+    AssimpNodeData rootNode;
+    ReadSerializedNode(in, rootNode);
+    animation->SetRootNode(rootNode);
+
+    std::cout << "[AssetManager] Animation loaded successfully. Root node: " << rootNode.name << "\n";
+
+    return animation;
+}
+
 std::shared_ptr<MeshResource> AssetManager::GetSkeletalMesh(const std::string& path) {
     std::lock_guard<std::mutex> lock(assetMutex);
     if (meshCache.find(path) != meshCache.end()) return meshCache[path];
@@ -370,11 +508,110 @@ std::shared_ptr<SkeletalMeshData> AssetManager::LoadBinarySkeletalMesh(const std
     return result;
 }
 
+std::shared_ptr<AnimationGraphResource> AssetManager::GetAnimationGraph(const std::string& path)
+{
+    std::lock_guard<std::mutex> lock(assetMutex);
+
+    // 1. Check Cache
+    if (graphCache.find(path) != graphCache.end()) {
+        return graphCache[path];
+    }
+
+    // 2. Load from Disk
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        std::cerr << "[AssetManager] Failed to load Animation Graph: " << path << "\n";
+        return nullptr;
+    }
+
+    json j;
+    try {
+        file >> j;
+    }
+    catch (...) {
+        std::cerr << "[AssetManager] JSON Parsing Error in: " << path << "\n";
+        return nullptr;
+    }
+
+    auto newGraph = std::make_shared<AnimationGraphResource>();
+
+    // Basic Info
+    if (j.contains("entryNodeId")) newGraph->EntryNodeID = j["entryNodeId"];
+
+    // Parameters / Blackboard Defaults
+    if (j.contains("parameters")) {
+        if (j["parameters"].contains("floats")) {
+            for (auto& [key, val] : j["parameters"]["floats"].items())
+                newGraph->DefaultBlackboard[key] = AnimVar(val.get<float>());
+        }
+        if (j["parameters"].contains("bools")) {
+            for (auto& [key, val] : j["parameters"]["bools"].items())
+                newGraph->DefaultBlackboard[key] = AnimVar(val.get<bool>());
+        }
+    }
+
+    // Nodes
+    if (j.contains("nodes")) {
+        for (auto& jNode : j["nodes"]) {
+            GraphNode node;
+            node.ID = jNode["id"];
+            if (jNode.contains("name")) node.Name = jNode["name"];
+            else if (jNode.contains("animName")) node.Name = jNode["animName"];
+            if (jNode.contains("animPath")) node.AnimationPath = jNode["animPath"];
+            // We don't necessarily need EditorPosition for runtime, but can load it if needed
+            newGraph->Nodes.push_back(node);
+        }
+    }
+
+    // Transitions
+    if (j.contains("transitions")) {
+        for (auto& jTrans : j["transitions"]) {
+            GraphTransition trans;
+            trans.ID = jTrans["id"];
+            trans.FromNodeID = jTrans["from"];
+            trans.ToNodeID = jTrans["to"];
+            trans.ConditionParam = jTrans["condition"];
+            trans.Threshold = jTrans["threshold"];
+            trans.Operation = (ConditionOp)jTrans["op"];
+            newGraph->Transitions.push_back(trans);
+        }
+    }
+
+    // 3. Cache and Return
+    graphCache[path] = newGraph;
+    return newGraph;
+}
+
+std::shared_ptr<Animation> AssetManager::GetAnimation(const std::string& rawPath) {
+    std::string path = rawPath;
+    std::replace(path.begin(), path.end(), '\\', '/'); // Normalize
+
+    std::lock_guard<std::mutex> lock(assetMutex);
+
+    // 1. Check Cache
+    if (animationCache.find(path) != animationCache.end()) {
+        return animationCache[path];
+    }
+
+    // 2. Load from Disk
+    std::shared_ptr<Animation> anim = LoadBinaryAnimation(path);
+
+    if (anim) {
+        animationCache[path] = anim;
+    }
+    else {
+        std::cerr << "[AssetManager] Failed to load animation: " << path << "\n";
+    }
+
+    return anim;
+}
+
 // Utilities
 void AssetManager::addMaterial(int id, CompiledMaterial material) { materials[id] = material; }
 CompiledMaterial* AssetManager::GetMaterial(int id) { return materials.count(id) ? &materials[id] : nullptr; }
 void AssetManager::unloadTexture(const std::string& path) { std::lock_guard<std::mutex> l(assetMutex); textureCache.erase(path); }
 void AssetManager::unloadMesh(const std::string& path) { std::lock_guard<std::mutex> l(assetMutex); meshCache.erase(path); }
+
 std::vector<std::string> AssetManager::GetCachedPaths() {
     std::lock_guard<std::mutex> l(assetMutex);
     std::vector<std::string> p; for (auto& kv : meshCache) p.push_back(kv.first); return p;

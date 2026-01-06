@@ -33,6 +33,5 @@ private:
     std::vector<std::string> pathHistory;
 
     // Icons
-    std::map<FileType, std::shared_ptr<TextureResource>> icons;
     GLuint LoadTexture(const std::string& path);
 };

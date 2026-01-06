@@ -196,10 +196,6 @@
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="Public\AssetManager.h" />
     <ClInclude Include="Public\Commander.h" />
-    <ClInclude Include="Public\Engine\Animation\Animation.h" />
-    <ClInclude Include="Public\Engine\Animation\AnimHelpers.h" />
-    <ClInclude Include="Public\Engine\Animation\AssimpNodeData.h" />
-    <ClInclude Include="Public\Engine\Animation\Bone.h" />
     <ClInclude Include="Public\Engine\Components\BoxCollider.h" />
     <ClInclude Include="Public\Engine\Components\CapsuleCollider.h" />
     <ClInclude Include="Public\Engine\Components\HeightfieldCollider.h" />

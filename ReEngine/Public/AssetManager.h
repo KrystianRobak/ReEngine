@@ -19,7 +19,7 @@
 #include "TextureData.h"
 #include "MaterialSystem/Material.h"
 #include "AssetFileFormat.h" 
-
+#include "AnimGraph.h"
 
 class ENGINE_API AssetManager : public AssetManagerApi {
 public:
@@ -44,6 +44,9 @@ public:
 
     void unloadTexture(const std::string& path) override;
     void unloadMesh(const std::string& path) override;
+
+    std::shared_ptr<AnimationGraphResource> GetAnimationGraph(const std::string& path) override;
+    std::shared_ptr<Animation> GetAnimation(const std::string& path) override;
 
     std::vector<std::string> GetCachedPaths() override;
     std::vector<std::string> GetCachedTexturesPaths() override;
@@ -75,6 +78,11 @@ private:
 
     struct TextureLoadResult { int w, h, c; std::vector<unsigned char> pixels; };
     std::unique_ptr<TextureLoadResult> LoadBinaryTexture(const std::string& path);
+    std::shared_ptr<Animation> LoadBinaryAnimation(const std::string& path);
+
+    std::unordered_map<std::string, std::shared_ptr<AnimationGraphResource>> graphCache;
+
+    std::unordered_map<std::string, std::shared_ptr<Animation>> animationCache;
 
     // Helper
     template<typename T>

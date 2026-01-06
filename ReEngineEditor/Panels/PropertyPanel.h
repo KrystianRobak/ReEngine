@@ -2,6 +2,7 @@
 
 #include "UIComponent.h"
 
+
 class PropertyPanel : public UIComponent
 {
 public:
@@ -10,6 +11,8 @@ public:
     {
     }
 
+    void OnInit() override;
+
     void ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function);
 
     void Render() override;
@@ -17,4 +20,3 @@ public:
 
 private:
 };
-

@@ -11,6 +11,7 @@
 #include "Panels/SystemsManagerPanel.h"
 #include "SceneSettings.h"
 #include <Panels/MaterialGraphPanel.h>
+#include <AnimGraphEditor.h>
 
 EditorLayer::EditorLayer()
 {
@@ -34,6 +35,17 @@ void EditorLayer::OnInit()
 		std::string path = event.GetParam<std::string>("PATH");
 
 		MatherialGraph->LoadMaterial(path);
+
+        uiComponents.push_back(std::move(MatherialGraph));
+        });
+
+    EngineApi_->AddEventListener(Events::Editor::StateMachineGraph::OPEN_STATEMACHINE_FILE, [&](Event& event) {
+        std::unique_ptr MatherialGraph = std::make_unique<AnimGraphEditor>();
+        MatherialGraph->Init(EngineApi_, EngineApp_);
+
+        std::string path = event.GetParam<std::string>("PATH");
+
+        MatherialGraph->LoadGraph(path);
 
         uiComponents.push_back(std::move(MatherialGraph));
         });
