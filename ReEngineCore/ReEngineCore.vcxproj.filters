@@ -200,5 +200,20 @@
     <ClInclude Include="Animation\Bone.h">
       <Filter>Pliki nagłówkowe\Animation</Filter>
     </ClInclude>
+    <ClInclude Include="Interpolation.h">
+      <Filter>Pliki nagłówkowe\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshData.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="SkeletalMeshData.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticMeshData.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="vaoutils.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

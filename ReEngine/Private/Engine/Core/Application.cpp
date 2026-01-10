@@ -110,6 +110,10 @@ void Application::InitSystems()
 	auto systems = Reflection::Registry::Instance().GetAllSystems();
 
 	for (auto systemInfo : systems) {
+
+		if (std::strcmp(systemInfo->fullName, "RenderOpenGL") == 0)
+			continue;
+
 		System* runtimeSys = coordinator->GetSystem(systemInfo->fullName);
 		if (runtimeSys) {
 			systemGraph->AddSystem(runtimeSys);

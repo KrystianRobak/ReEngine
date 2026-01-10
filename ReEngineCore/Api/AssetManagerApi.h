@@ -23,7 +23,7 @@ struct MeshResource {
 
     // GPU Handles (One per submesh)
     std::vector<uint32_t> VAOs;
-    std::vector<uint32_t> VBOs;
+    std::vector<std::vector<uint32_t>> VBOs;
     std::vector<uint32_t> EBOs;
 
     // Skeletal specific
@@ -52,7 +52,7 @@ public:
     virtual std::shared_ptr<MeshResource> GetSkeletalMesh(const std::string& path) = 0;
 
     virtual std::shared_ptr<AnimationGraphResource> GetAnimationGraph(const std::string& path) = 0;
-    virtual std::shared_ptr<Animation> GetAnimation(const std::string& path) = 0;
+    virtual std::shared_ptr<Animation> GetAnimation(const std::string& path, SkeletalMeshData* skeletalData) = 0;
 
     // --- Texture API ---
     virtual std::shared_ptr<TextureResource> GetTexture(const std::string& path) = 0;

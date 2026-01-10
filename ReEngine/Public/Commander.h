@@ -43,15 +43,15 @@ public:
 	}
 	void IssueCommand(RenderCommand command);
 
-	std::vector<RenderCommand> ConsumeRenderCommands()
+	const std::vector<RenderCommand>& ConsumeRenderCommands()
 	{
 		// Swap so Write becomes Read
 		CommandQueueRead.swap(CommandQueueWrite);
 
-		// Clear the new Write queue (previously Read)
+		// Clear the new Write queue (previously Read) so it's ready for new commands
 		CommandQueueWrite->clear();
 
-		// Return the commands that were issued since last call
+		// Return a reference to the vector that lives inside this class (in ReEngine's Heap)
 		return *CommandQueueRead;
 	}
 };

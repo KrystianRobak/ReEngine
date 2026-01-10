@@ -6,7 +6,7 @@
 #include "StaticMeshData.h"
 #include "SkeletalMeshData.h"
 #include "AssetFileFormat.h"
-
+#include "Animation/Animation.h"
 // Forward declarations
 struct aiScene;
 struct aiMesh;
@@ -36,7 +36,7 @@ private:
     static std::shared_ptr<SkeletalMeshData> ImportSkeletalMeshAssimp(const std::string& path);
 
     // Helpers
-    static MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene);
+    static MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData* data);
     static void ProcessSkeletalMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData& outData);
     // --- UPDATED: Takes scene to extract RootNode ---
     static SerializedAnimation ProcessAnimation(const aiAnimation* anim, const aiScene* scene);

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <map>
 
+
 // Assimp
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -61,6 +62,48 @@ void ReadVector(std::ifstream& in, std::vector<T>& vec) {
     }
 }
 
+void WriteMeshData(std::ofstream& out, const MeshData& mesh) {
+    // 1. Scalar Data
+    out.write(reinterpret_cast<const char*>(&mesh.materialIndex), sizeof(int));
+    out.write(reinterpret_cast<const char*>(&mesh.aabbMin), sizeof(glm::vec3));
+    out.write(reinterpret_cast<const char*>(&mesh.aabbMax), sizeof(glm::vec3));
+
+    // 2. Vector Data
+    WriteVector(out, mesh.vertices);
+    WriteVector(out, mesh.Normals);
+    WriteVector(out, mesh.TexCoords);
+    WriteVector(out, mesh.Tangents);
+    WriteVector(out, mesh.Bitangents);
+
+    // 3. Animation Data (Write even if empty, WriteVector handles size=0 gracefully)
+    WriteVector(out, mesh.boneIDs);
+    WriteVector(out, mesh.weights);
+
+    // 4. Indices
+    WriteVector(out, mesh.indices);
+}
+
+void ReadMeshData(std::ifstream& in, MeshData& mesh) {
+    // 1. Scalar Data
+    in.read(reinterpret_cast<char*>(&mesh.materialIndex), sizeof(int));
+    in.read(reinterpret_cast<char*>(&mesh.aabbMin), sizeof(glm::vec3));
+    in.read(reinterpret_cast<char*>(&mesh.aabbMax), sizeof(glm::vec3));
+
+    // 2. Vector Data
+    ReadVector(in, mesh.vertices);
+    ReadVector(in, mesh.Normals);
+    ReadVector(in, mesh.TexCoords);
+    ReadVector(in, mesh.Tangents);
+    ReadVector(in, mesh.Bitangents);
+
+    // 3. Animation Data
+    ReadVector(in, mesh.boneIDs);
+    ReadVector(in, mesh.weights);
+
+    // 4. Indices
+    ReadVector(in, mesh.indices);
+}
+
 // --- MAIN IMPORT LOGIC ---
 
 std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std::string& sourcePath, const std::string& destDir) {
@@ -78,10 +121,16 @@ std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std:
             Assimp::Importer importer;
 
             importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+            importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 1.0f);
 
-            // Preserving hierarchy is often useful for skeletal meshes
             const aiScene* scene = importer.ReadFile(sourcePath,
-                aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_LimitBoneWeights);
+                aiProcess_Triangulate |
+                aiProcess_FlipUVs |
+                aiProcess_GenNormals |
+                aiProcess_LimitBoneWeights |
+                aiProcess_GlobalScale |
+                aiProcess_ValidateDataStructure |  // ADD THIS
+                aiProcess_PopulateArmatureData);    // ADD THIS
 
             if (!scene || !scene->mRootNode) {
                 std::cerr << "[Importer] Assimp Error: " << importer.GetErrorString() << std::endl;
@@ -170,44 +219,79 @@ std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std:
 
 // --- STATIC MESH IMPLEMENTATION ---
 
-MeshData AssetSerializer::ProcessMesh(aiMesh* mesh, const aiScene* scene) {
-    MeshData myMesh;
+MeshData AssetSerializer::ProcessMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData* data = nullptr) {
+    MeshData m;
 
     // 1. Vertices
-    for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        Vertex vertex;
+    for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+    {
+        glm::ivec4 boneIDs;
+        glm::vec4 weights;
 
-        // Position
-        vertex.Position = Vec3FromAssimp(mesh->mVertices[i]);
+        // Set default values
+        for (int i = 0; i < 4; i++)
+        {
+            boneIDs[i] = -1;
+            weights[i] = 0.0f;
+        }
 
-        // Normal
+        m.boneIDs.push_back(boneIDs);
+        m.weights.push_back(weights);
+
+        glm::vec3 vector;
+        // Set positions
+        vector.x = mesh->mVertices[i].x;
+        vector.y = mesh->mVertices[i].y;
+        vector.z = mesh->mVertices[i].z;
+        m.vertices.push_back(vector);
+
         if (mesh->HasNormals())
-            vertex.Normal = Vec3FromAssimp(mesh->mNormals[i]);
-        else
-            vertex.Normal = glm::vec3(0.0f);
-
-        // TexCoords
-        if (mesh->mTextureCoords[0]) {
-            vertex.TexCoords = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
-        }
-        else {
-            vertex.TexCoords = glm::vec2(0.0f);
+        {
+            // Set normals
+            vector.x = mesh->mNormals[i].x;
+            vector.y = mesh->mNormals[i].y;
+            vector.z = mesh->mNormals[i].z;
+            m.Normals.push_back(vector);
         }
 
-        // (Optional: Tangents/Bitangents if your Vertex struct has them)
-
-        myMesh.vertices.push_back(vertex);
+        if (mesh->mTextureCoords[0])
+        {
+            // Set texture coords
+            glm::vec2 vec;
+            vec.x = mesh->mTextureCoords[0][i].x;
+            vec.y = mesh->mTextureCoords[0][i].y;
+            m.TexCoords.push_back(vec);
+            if (mesh->HasTangentsAndBitangents()) {
+                // Set tangent
+                vector.x = mesh->mTangents[i].x;
+                vector.y = mesh->mTangents[i].y;
+                vector.z = mesh->mTangents[i].z;
+                m.Tangents.push_back(vector);
+                // Set bitangent
+                vector.x = mesh->mBitangents[i].x;
+                vector.y = mesh->mBitangents[i].y;
+                vector.z = mesh->mBitangents[i].z;
+                m.Bitangents.push_back(vector);
+            }
+        }
     }
-
-    // 2. Indices
-    for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+    // Set indices
+    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+    {
         aiFace face = mesh->mFaces[i];
-        for (unsigned int j = 0; j < face.mNumIndices; j++) {
-            myMesh.indices.push_back(face.mIndices[j]);
-        }
+        for (unsigned int j = 0; j < face.mNumIndices; j++)
+            m.indices.push_back(face.mIndices[j]);
     }
 
-    return myMesh;
+    extractBoneWeightForVertices(
+        reinterpret_cast<std::vector<glm::ivec4>&>(m.boneIDs),
+        reinterpret_cast<std::vector<glm::vec4>&>(m.weights),
+        mesh,
+        scene,
+        data // Not needed for static mesh
+	);
+
+    return m;
 }
 
 void AssetSerializer::ProcessSkeletalMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData& outData)
@@ -231,25 +315,58 @@ SerializedAnimation AssetSerializer::ProcessAnimation(const aiAnimation* anim, c
     outAnim.duration = (float)anim->mDuration;
     outAnim.ticksPerSecond = (anim->mTicksPerSecond != 0) ? (float)anim->mTicksPerSecond : 25.0f;
 
-    // 1. Process Channels (Existing code)
+    // 1. Channels
     for (unsigned int i = 0; i < anim->mNumChannels; i++) {
         aiNodeAnim* channel = anim->mChannels[i];
         SerializedBoneAnim boneAnim;
         boneAnim.name = channel->mNodeName.C_Str();
 
+        // Process Position Keys
         for (unsigned int k = 0; k < channel->mNumPositionKeys; k++) {
-            boneAnim.positions.push_back({ (float)channel->mPositionKeys[k].mTime, Vec3FromAssimp(channel->mPositionKeys[k].mValue) });
+            float time = (float)channel->mPositionKeys[k].mTime;
+            glm::vec3 val = Vec3FromAssimp(channel->mPositionKeys[k].mValue);
+            boneAnim.positions.push_back({ time, val });
         }
+
+        // Process Rotation Keys - THIS IS THE FIX
         for (unsigned int k = 0; k < channel->mNumRotationKeys; k++) {
-            boneAnim.rotations.push_back({ (float)channel->mRotationKeys[k].mTime, QuatFromAssimp(channel->mRotationKeys[k].mValue) });
+            const aiQuaternion& aiQuat = channel->mRotationKeys[k].mValue;
+            float time = (float)channel->mRotationKeys[k].mTime;
+
+            // Validate quaternion before using it
+            if (std::isfinite(aiQuat.w) && std::isfinite(aiQuat.x) &&
+                std::isfinite(aiQuat.y) && std::isfinite(aiQuat.z)) {
+
+                // Use the helper function for consistency
+                glm::quat rotation = QuatFromAssimp(aiQuat);
+
+                // Normalize to ensure it's a valid rotation
+                rotation = glm::normalize(rotation);
+
+                boneAnim.rotations.push_back({ time, rotation });
+            }
+            else {
+                std::cerr << "[Animation] Warning: Invalid quaternion in channel "
+                    << boneAnim.name << " at key " << k
+                    << " (w=" << aiQuat.w << ", x=" << aiQuat.x
+                    << ", y=" << aiQuat.y << ", z=" << aiQuat.z << ")\n";
+
+                // Use identity quaternion as fallback
+                boneAnim.rotations.push_back({ time, glm::quat(1.0f, 0.0f, 0.0f, 0.0f) });
+            }
         }
+
+        // Process Scale Keys
         for (unsigned int k = 0; k < channel->mNumScalingKeys; k++) {
-            boneAnim.scales.push_back({ (float)channel->mScalingKeys[k].mTime, Vec3FromAssimp(channel->mScalingKeys[k].mValue) });
+            float time = (float)channel->mScalingKeys[k].mTime;
+            glm::vec3 val = Vec3FromAssimp(channel->mScalingKeys[k].mValue);
+            boneAnim.scales.push_back({ time, val });
         }
+
         outAnim.channels.push_back(boneAnim);
     }
 
-    // 2. Process Hierarchy (NEW)
+    // 2. Hierarchy
     ConvertAssimpNode(scene->mRootNode, outAnim.rootNode);
 
     return outAnim;
@@ -276,8 +393,8 @@ std::shared_ptr<StaticMeshData> AssetSerializer::ImportStaticMeshAssimp(const st
 
         // Update AABB
         for (const auto& v : processedMesh.vertices) {
-            min = glm::min(min, v.Position);
-            max = glm::max(max, v.Position);
+            min = glm::min(min, v);
+            max = glm::max(max, v);
         }
 
         data->meshes.push_back(processedMesh);
@@ -293,20 +410,23 @@ bool AssetSerializer::SaveStaticMesh(const std::string& path, const StaticMeshDa
     std::ofstream out(path, std::ios::binary);
     if (!out.is_open()) return false;
 
+    // 1. Header
     AssetHeader header;
+    header.magic = ASSET_MAGIC; // Ensure ASSET_MAGIC is defined in your header
     header.type = AssetType::StaticMesh;
-    header.dataSize = 0; // Optional to calculate
+    header.version = 1;
     out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
+    // 2. Global AABB
     out.write(reinterpret_cast<const char*>(&data.aabbMin), sizeof(glm::vec3));
     out.write(reinterpret_cast<const char*>(&data.aabbMax), sizeof(glm::vec3));
 
+    // 3. Meshes
     uint32_t meshCount = static_cast<uint32_t>(data.meshes.size());
     out.write(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
 
     for (const auto& mesh : data.meshes) {
-        WriteVector(out, mesh.vertices);
-        WriteVector(out, mesh.indices);
+        WriteMeshData(out, mesh);
     }
 
     return true;
@@ -319,21 +439,25 @@ std::shared_ptr<StaticMeshData> AssetSerializer::LoadStaticMesh(const std::strin
     AssetHeader header;
     in.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
-    if (header.magic != ASSET_MAGIC || header.type != AssetType::StaticMesh) return nullptr;
+    if (header.magic != ASSET_MAGIC || header.type != AssetType::StaticMesh) {
+        std::cerr << "[Loader] Error: Invalid Static Mesh Header for " << path << std::endl;
+        return nullptr;
+    }
 
     auto result = std::make_shared<StaticMeshData>();
     result->path = path;
 
+    // 2. Global AABB
     in.read(reinterpret_cast<char*>(&result->aabbMin), sizeof(glm::vec3));
     in.read(reinterpret_cast<char*>(&result->aabbMax), sizeof(glm::vec3));
 
+    // 3. Meshes
     uint32_t meshCount = 0;
     in.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
 
     result->meshes.resize(meshCount);
     for (uint32_t i = 0; i < meshCount; ++i) {
-        ReadVector(in, result->meshes[i].vertices);
-        ReadVector(in, result->meshes[i].indices);
+        ReadMeshData(in, result->meshes[i]);
     }
 
     return result;
@@ -341,14 +465,28 @@ std::shared_ptr<StaticMeshData> AssetSerializer::LoadStaticMesh(const std::strin
 
 // --- SKELETAL MESH IMPLEMENTATION ---
 
+// Replace your ImportSkeletalMeshAssimp in AssetSerializer.cpp
+
 std::shared_ptr<SkeletalMeshData> AssetSerializer::ImportSkeletalMeshAssimp(const std::string& path) {
     Assimp::Importer importer;
-    // NOTE: Do not use OptimizeMeshes for Skeletal meshes immediately if it breaks bone logic, 
-    // but usually it's fine. LimitBoneWeights is crucial for Game Engines (usually max 4).
-    const aiScene* scene = importer.ReadFile(path,
-        aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_LimitBoneWeights);
 
-    if (!scene || !scene->mRootNode) return nullptr;
+    // ALL THE FBX FIXES:
+    importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+    importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
+        aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
+
+    const aiScene* scene = importer.ReadFile(path,
+        aiProcess_Triangulate |
+        aiProcess_FlipUVs |
+        aiProcess_GenNormals |
+        aiProcess_CalcTangentSpace |
+        aiProcess_LimitBoneWeights |
+        aiProcess_GlobalScale);  // Add this!
+
+    if (!scene || !scene->mRootNode) {
+        std::cerr << "[Importer] Failed to load: " << path << "\n";
+        return nullptr;
+    }
 
     auto data = std::make_shared<SkeletalMeshData>();
     data->path = path;
@@ -360,51 +498,13 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::ImportSkeletalMeshAssimp(cons
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
         aiMesh* aiMeshPtr = scene->mMeshes[i];
 
-        // 1. Process Geometry (Vertices/Indices) same as Static
-        MeshData meshData = ProcessMesh(aiMeshPtr, scene);
-
-        // Update AABB
+        // 1. Process Geometry
+        MeshData meshData = ProcessMesh(aiMeshPtr, scene, data.get());
         for (const auto& v : meshData.vertices) {
-            min = glm::min(min, v.Position);
-            max = glm::max(max, v.Position);
+            min = glm::min(min, v);
+            max = glm::max(max, v);
         }
-
         data->meshes.push_back(meshData);
-
-        // 2. Process Bones
-        std::vector<VertexBoneData> meshBoneData;
-        meshBoneData.resize(meshData.vertices.size()); // Resize to match vertex count
-
-        // Iterate over bones in this mesh
-        for (unsigned int boneIndex = 0; boneIndex < aiMeshPtr->mNumBones; ++boneIndex) {
-            aiBone* bone = aiMeshPtr->mBones[boneIndex];
-            std::string boneName = bone->mName.C_Str();
-            int boneID = -1;
-
-            // Check if bone already exists in our global map
-            if (data->boneInfoMap.find(boneName) == data->boneInfoMap.end()) {
-                BoneInfo newInfo;
-                newInfo.id = data->boneCount;
-                newInfo.offset = Mat4FromAssimp(bone->mOffsetMatrix);
-                data->boneInfoMap[boneName] = newInfo;
-                boneID = data->boneCount;
-                data->boneCount++;
-            }
-            else {
-                boneID = data->boneInfoMap[boneName].id;
-            }
-
-            // Assign weights to vertices
-            // weights look like: (vertexId, weightValue)
-            for (unsigned int w = 0; w < bone->mNumWeights; ++w) {
-                aiVertexWeight weight = bone->mWeights[w];
-                if (weight.mVertexId < meshBoneData.size()) {
-                    meshBoneData[weight.mVertexId].AddBoneData(boneID, weight.mWeight);
-                }
-            }
-        }
-
-        data->bonesPerMesh.push_back(meshBoneData);
     }
 
     data->aabbMin = min;
@@ -417,102 +517,119 @@ bool AssetSerializer::SaveSkeletalMesh(const std::string& path, const SkeletalMe
     std::ofstream out(path, std::ios::binary);
     if (!out.is_open()) return false;
 
+    // 1. Header
     AssetHeader header;
+    header.magic = ASSET_MAGIC;
     header.type = AssetType::SkeletalMesh;
-    header.dataSize = 0;
+    header.version = 1;
     out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
-    // AABB
+    // 2. Global AABB (Inherited from StaticMeshData)
     out.write(reinterpret_cast<const char*>(&data.aabbMin), sizeof(glm::vec3));
     out.write(reinterpret_cast<const char*>(&data.aabbMax), sizeof(glm::vec3));
 
-    // Meshes Count
+    // 3. Meshes (Inherited from StaticMeshData)
     uint32_t meshCount = static_cast<uint32_t>(data.meshes.size());
     out.write(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
 
-    for (size_t i = 0; i < meshCount; i++) {
-        // Write Geometry
-        WriteVector(out, data.meshes[i].vertices);
-        WriteVector(out, data.meshes[i].indices);
-
-        // Write Bone Data (Specific to Skeletal)
-        // Note: VertexBoneData is a POD struct, so WriteVector works safely
-        WriteVector(out, data.bonesPerMesh[i]);
+    for (const auto& mesh : data.meshes) {
+        WriteMeshData(out, mesh);
     }
 
-    // Write Bone Info Map
+    // 4. Bone Info Map (Vector of BoneProps)
     uint32_t boneCount = static_cast<uint32_t>(data.boneInfoMap.size());
     out.write(reinterpret_cast<char*>(&boneCount), sizeof(uint32_t));
 
-    for (const auto& [name, info] : data.boneInfoMap) {
-        uint32_t nameLen = static_cast<uint32_t>(name.size());
+    std::cout << "\n=== SAVING SKELETAL MESH ===\n";
+    std::cout << "Saving " << boneCount << " bones to: " << path << "\n";
+
+    for (const auto& bone : data.boneInfoMap) {
+        // A. Bone Name
+        uint32_t nameLen = static_cast<uint32_t>(bone.name.size());
         out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
-        out.write(name.c_str(), nameLen);
-        out.write(reinterpret_cast<const char*>(&info), sizeof(BoneInfo));
+        if (nameLen > 0) out.write(bone.name.c_str(), nameLen);
+
+        // B. Offset Matrix
+        out.write(reinterpret_cast<const char*>(&bone.offset), sizeof(glm::mat4));
     }
 
+    std::cout << "=== SAVE COMPLETE ===\n\n";
     return true;
 }
 
 std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
-    if (!in.is_open()) return nullptr;
+    if (!in.is_open()) {
+        std::cerr << "[Loader] Failed to open: " << path << "\n";
+        return nullptr;
+    }
 
+    // 1. Header
     AssetHeader header;
     in.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
-    if (header.magic != ASSET_MAGIC || header.type != AssetType::SkeletalMesh) return nullptr;
+    if (header.magic != ASSET_MAGIC || header.type != AssetType::SkeletalMesh) {
+        std::cerr << "[Loader] Invalid Skeletal Mesh Header for " << path << "\n";
+        return nullptr;
+    }
 
     auto result = std::make_shared<SkeletalMeshData>();
     result->path = path;
 
+    // 2. Global AABB
     in.read(reinterpret_cast<char*>(&result->aabbMin), sizeof(glm::vec3));
     in.read(reinterpret_cast<char*>(&result->aabbMax), sizeof(glm::vec3));
 
+    // 3. Meshes
     uint32_t meshCount = 0;
     in.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
 
     result->meshes.resize(meshCount);
-    result->bonesPerMesh.resize(meshCount);
-
     for (uint32_t i = 0; i < meshCount; ++i) {
-        ReadVector(in, result->meshes[i].vertices);
-        ReadVector(in, result->meshes[i].indices);
-        ReadVector(in, result->bonesPerMesh[i]);
+        ReadMeshData(in, result->meshes[i]);
     }
 
+    // 4. Bone Info
     uint32_t boneMapSize = 0;
     in.read(reinterpret_cast<char*>(&boneMapSize), sizeof(uint32_t));
 
+    std::cout << "\n=== LOADING SKELETAL MESH ===\n";
+    std::cout << "File: " << path << "\n";
+    std::cout << "Loading " << boneMapSize << " bones\n";
+
+    result->boneInfoMap.reserve(boneMapSize);
+
     for (uint32_t i = 0; i < boneMapSize; ++i) {
-        uint32_t nameLen;
+        BoneProps info;
+
+        // A. Bone Name
+        uint32_t nameLen = 0;
         in.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
+        if (nameLen > 0) {
+            info.name.resize(nameLen);
+            in.read(&info.name[0], nameLen);
+        }
 
-        std::string boneName;
-        boneName.resize(nameLen);
-        in.read(&boneName[0], nameLen);
+        // B. Offset Matrix
+        in.read(reinterpret_cast<char*>(&info.offset), sizeof(glm::mat4));
 
-        BoneInfo info;
-        in.read(reinterpret_cast<char*>(&info), sizeof(BoneInfo));
-
-        result->boneInfoMap[boneName] = info;
+        result->boneInfoMap.push_back(info);
     }
+
     result->boneCount = boneMapSize;
+    std::cout << "=== LOAD COMPLETE ===\n\n";
 
     return result;
 }
 
 // --- NEW HELPER: Recursive Node Write ---
 void WriteSerializedNode(std::ofstream& out, const SerializedNode& node) {
-    // Name
     uint32_t nameLen = (uint32_t)node.name.size();
     out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
     if (nameLen > 0) out.write(node.name.c_str(), nameLen);
 
-    // Transform
     out.write(reinterpret_cast<const char*>(&node.transformation), sizeof(glm::mat4));
 
-    // Children
     uint32_t childCount = (uint32_t)node.children.size();
     out.write(reinterpret_cast<const char*>(&childCount), sizeof(uint32_t));
 
@@ -520,65 +637,55 @@ void WriteSerializedNode(std::ofstream& out, const SerializedNode& node) {
         WriteSerializedNode(out, child);
     }
 }
+
 bool AssetSerializer::SaveAnimation(const std::string& path, const SerializedAnimation& data) {
     std::ofstream out(path, std::ios::binary);
     if (!out.is_open()) return false;
 
     AssetHeader header;
     header.magic = ASSET_MAGIC;
-    header.type = (AssetType)3; // Animation
-    header.version = 1;
+    header.type = AssetType::Animation;
     out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
-    // Metadata
     out.write(reinterpret_cast<const char*>(&data.duration), sizeof(float));
     out.write(reinterpret_cast<const char*>(&data.ticksPerSecond), sizeof(float));
 
-    // Animation Name
     uint32_t nameLen = (uint32_t)data.name.size();
     out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
     if (nameLen > 0) out.write(data.name.c_str(), nameLen);
 
-    // Channels
     uint32_t numChannels = (uint32_t)data.channels.size();
     out.write(reinterpret_cast<const char*>(&numChannels), sizeof(uint32_t));
 
     for (const auto& channel : data.channels) {
-        // Channel Name
         uint32_t bLen = (uint32_t)channel.name.size();
         out.write(reinterpret_cast<const char*>(&bLen), sizeof(uint32_t));
         if (bLen > 0) out.write(channel.name.c_str(), bLen);
 
-        // --- FIXED: Write Loop (Prevents Padding Corruption) ---
-
-        // 1. Positions
+        // Positions
         uint32_t nPos = (uint32_t)channel.positions.size();
         out.write(reinterpret_cast<const char*>(&nPos), sizeof(uint32_t));
-        for (const auto& val : channel.positions) {
-            out.write(reinterpret_cast<const char*>(&val.first), sizeof(float));      // Time
-            out.write(reinterpret_cast<const char*>(&val.second), sizeof(glm::vec3)); // Value
+        for (const auto& kv : channel.positions) {
+            out.write(reinterpret_cast<const char*>(&kv.first), sizeof(float));
+            out.write(reinterpret_cast<const char*>(&kv.second), sizeof(glm::vec3));
         }
-
-        // 2. Rotations
+        // Rotations
         uint32_t nRot = (uint32_t)channel.rotations.size();
         out.write(reinterpret_cast<const char*>(&nRot), sizeof(uint32_t));
-        for (const auto& val : channel.rotations) {
-            out.write(reinterpret_cast<const char*>(&val.first), sizeof(float));
-            out.write(reinterpret_cast<const char*>(&val.second), sizeof(glm::quat));
+        for (const auto& kv : channel.rotations) {
+            out.write(reinterpret_cast<const char*>(&kv.first), sizeof(float));
+            out.write(reinterpret_cast<const char*>(&kv.second), sizeof(glm::quat));
         }
-
-        // 3. Scales
+        // Scales
         uint32_t nScl = (uint32_t)channel.scales.size();
         out.write(reinterpret_cast<const char*>(&nScl), sizeof(uint32_t));
-        for (const auto& val : channel.scales) {
-            out.write(reinterpret_cast<const char*>(&val.first), sizeof(float));
-            out.write(reinterpret_cast<const char*>(&val.second), sizeof(glm::vec3));
+        for (const auto& kv : channel.scales) {
+            out.write(reinterpret_cast<const char*>(&kv.first), sizeof(float));
+            out.write(reinterpret_cast<const char*>(&kv.second), sizeof(glm::vec3));
         }
     }
 
-    // Hierarchy
     WriteSerializedNode(out, data.rootNode);
-
     return true;
 }
 

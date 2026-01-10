@@ -12,7 +12,7 @@
 #include <filesystem>
 #include <fstream>
 
-#include "ThreadPool.h" // Include your provided ThreadPool
+#include "ThreadPool.h" 
 #include "MeshData.h"
 #include "StaticMeshData.h"
 #include "SkeletalMeshData.h"
@@ -20,18 +20,20 @@
 #include "MaterialSystem/Material.h"
 #include "AssetFileFormat.h" 
 #include "AnimGraph.h"
+#include "vaoutils.h"
+
+// Forward declare
+class Animation;
+struct AssimpNodeData;
 
 class ENGINE_API AssetManager : public AssetManagerApi {
 public:
-    // Pass the global engine ThreadPool here
     AssetManager(ThreadPool* threadPool);
     ~AssetManager();
 
     // --- API Implementation ---
     void DispatchUploads() override;
 
-    // These now return a "Loading" resource immediately, 
-    // which populates itself later when the thread finishes.
     std::shared_ptr<MeshResource> GetMesh(const std::string& path) override;
     std::shared_ptr<MeshResource> GetSkeletalMesh(const std::string& path) override;
     std::shared_ptr<TextureResource> GetTexture(const std::string& path) override;
@@ -46,7 +48,7 @@ public:
     void unloadMesh(const std::string& path) override;
 
     std::shared_ptr<AnimationGraphResource> GetAnimationGraph(const std::string& path) override;
-    std::shared_ptr<Animation> GetAnimation(const std::string& path) override;
+    std::shared_ptr<Animation> GetAnimation(const std::string& path, SkeletalMeshData* skeletalData) override;
 
     std::vector<std::string> GetCachedPaths() override;
     std::vector<std::string> GetCachedTexturesPaths() override;
@@ -54,16 +56,17 @@ public:
     void shutdown();
 
 private:
-    ThreadPool* pool; // Reference to the engine's thread pool
+    ThreadPool* pool;
     std::mutex assetMutex;
     std::mutex uploadMutex;
 
-    // The Command Queue for the Render Thread
     std::queue<std::function<void()>> uploadQueue;
 
     std::unordered_map<std::string, std::shared_ptr<MeshResource>> meshCache;
     std::unordered_map<std::string, std::shared_ptr<TextureResource>> textureCache;
     std::unordered_map<int, CompiledMaterial> materials;
+    std::unordered_map<std::string, std::shared_ptr<AnimationGraphResource>> graphCache;
+    std::unordered_map<std::string, std::shared_ptr<Animation>> animationCache;
 
     std::atomic<int> lastMeshResourceId{ 0 };
     std::atomic<int> LastMaterialId{ 0 };
@@ -72,7 +75,7 @@ private:
     // --- Internal Helpers ---
     void EnqueueUpload(std::function<void()> func);
 
-    // --- INTERNAL LOADERS (No Assimp/STB, pure binary reading) ---
+    // --- INTERNAL BINARY LOADERS ---
     std::shared_ptr<StaticMeshData> LoadBinaryStaticMesh(const std::string& path);
     std::shared_ptr<SkeletalMeshData> LoadBinarySkeletalMesh(const std::string& path);
 
@@ -80,11 +83,7 @@ private:
     std::unique_ptr<TextureLoadResult> LoadBinaryTexture(const std::string& path);
     std::shared_ptr<Animation> LoadBinaryAnimation(const std::string& path);
 
-    std::unordered_map<std::string, std::shared_ptr<AnimationGraphResource>> graphCache;
-
-    std::unordered_map<std::string, std::shared_ptr<Animation>> animationCache;
-
-    // Helper
+    // --- TEMPLATE HELPERS ---
     template<typename T>
     void ReadVector(std::ifstream& in, std::vector<T>& vec) {
         uint32_t size = 0;
@@ -92,4 +91,10 @@ private:
         vec.resize(size);
         if (size > 0) in.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
     }
+
+    // Helper to read the specific MeshData structure (verts, normals, bones, etc.)
+    void ReadMeshData(std::ifstream& in, MeshData& mesh);
+
+    // Helper to read hierarchy
+    void ReadSerializedNode(std::ifstream& in, AssimpNodeData& node);
 };

@@ -12,7 +12,7 @@ struct Camera
 	REFVARIABLE()
 	Transform CameraTransform
 	{
-		glm::vec3(3.0f, 3.0f, 3.0f),
+		glm::vec3(150.0f, 150.0f, 150.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(1.0f, 1.0f, 1.0f)
 	};
@@ -53,7 +53,7 @@ namespace ReCamera
 
 	inline glm::mat4 GetProjectionMatrix(Camera& camera)
 	{
-		return glm::perspective(glm::radians(camera.fov), camera.aspectRatio, 0.1f, 100.f);
+		return glm::perspective(glm::radians(camera.fov), camera.aspectRatio, 0.1f, 1000.f);
 	}
 
 	inline glm::mat4 GetModelMatrix(const Transform& t)

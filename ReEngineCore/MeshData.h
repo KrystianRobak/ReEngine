@@ -5,19 +5,18 @@
 #include <vector>
 #include "TextureData.h"
 
-struct Vertex {
-    glm::vec3 Position;
-    glm::vec3 Normal;
-    glm::vec2 TexCoords;
-    glm::vec3 Tangent;
-    glm::vec3 Bitangent;
-};
-
 // Pure CPU Data Container
 struct MeshData {
     MeshData() = default;
 
-    std::vector<Vertex> vertices;
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> Normals;
+    std::vector<glm::vec2> TexCoords;
+    std::vector<glm::vec3> Tangents;
+    std::vector<glm::vec3> Bitangents;
+    std::vector<glm::ivec4> boneIDs;
+    std::vector<glm::vec4> weights;
+
     std::vector<uint32_t> indices;
 
     // AABB for this specific submesh (useful for precise culling)

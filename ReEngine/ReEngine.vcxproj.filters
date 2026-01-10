@@ -245,9 +245,6 @@
     <ClInclude Include="Public\Engine\Components\LightSource.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="Public\Engine\Components\MeshData.h">
-      <Filter>Source Files\Public\Engine\Components</Filter>
-    </ClInclude>
     <ClInclude Include="Public\Engine\Components\Player.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
@@ -255,9 +252,6 @@
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\RigidBody.h">
-      <Filter>Source Files\Public\Engine\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Components\StaticMeshData.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\Thrust.h">
@@ -334,9 +328,6 @@
     </ClInclude>
     <ClInclude Include="Public\EpochManager.h">
       <Filter>Source Files\Public</Filter>
-    </ClInclude>
-    <ClInclude Include="Public\Engine\Components\SkeletalMeshData.h">
-      <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\SkeletalMeshComponent.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
