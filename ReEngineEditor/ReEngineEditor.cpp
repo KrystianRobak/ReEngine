@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 
     Editor::IEngineEditorApi* engine = Application->GetCoordinatorEditor();
 
-    ProjectBuilder builder(argv[1], engine);
+    ProjectBuilder builder(argv[1], engine, Application);
 
     builder.ParseConfig();
 

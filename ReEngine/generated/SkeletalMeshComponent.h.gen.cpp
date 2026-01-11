@@ -41,6 +41,28 @@ struct SkeletalMeshComponent_AutoRegister {
             };
             SkeletalMeshComponent_Variables.push_back(std::move(rv));
         }
+         vType = Reflection::Registry::Instance().GetOrCreateType("float");
+        {
+            Reflection::ReflectedVariable rv = {
+                "AnimationSpeed", "public",
+                false,
+                offsetof(SkeletalMeshComponent, AnimationSpeed),
+                vType,
+                "1.0f"
+            };
+            SkeletalMeshComponent_Variables.push_back(std::move(rv));
+        }
+         vType = Reflection::Registry::Instance().GetOrCreateType("bool");
+        {
+            Reflection::ReflectedVariable rv = {
+                "IsLooping", "public",
+                false,
+                offsetof(SkeletalMeshComponent, IsLooping),
+                vType,
+                "true"
+            };
+            SkeletalMeshComponent_Variables.push_back(std::move(rv));
+        }
         ci.variables = SkeletalMeshComponent_Variables;
         Reflection::Registry::Instance().RegisterComponent(std::move(ci));
     }

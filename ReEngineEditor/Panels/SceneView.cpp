@@ -7,6 +7,8 @@
 #include "Transform.h"
 #include <SkeletalMeshComponent.h>
 #include <AssetFileFormat.h>
+#include "ReScene.h"
+#include "ReCamera.h"
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -24,8 +26,92 @@ void SceneView::resize(int32_t width, int32_t height)
     size.y = height;
 }
 
+void SceneView::PollInput(float currentDt)
+{
+    if(engineApp->GetState() != ApplicationState::Editor)
+		return;
+
+    IInputManager* inputManager = engineApp->GetInputManager();
+    if (!inputManager) return;
+
+    auto m_activeScene = engineAPI->GetCurrentScene();
+    Camera* camera = m_activeScene->GetDefaultCamera();
+    if (!camera) return;
+
+    // ---------------------------------------------------------
+    // 1. MOVEMENT (WASD)
+    // ---------------------------------------------------------
+    float dt = currentDt;
+    float velocity = 10.0f * dt;
+
+    // Calculate the Right Vector (Cross Product of Front and Up)
+    glm::vec3 cameraRight = glm::normalize(glm::cross(camera->cameraFront, camera->cameraUp));
+
+    if (inputManager->IsActionActive("Move Forward"))
+        camera->CameraTransform.position += camera->cameraFront * velocity;
+
+    if (inputManager->IsActionActive("Move Backward"))
+        camera->CameraTransform.position -= camera->cameraFront * velocity;
+
+    if (inputManager->IsActionActive("Move Right"))
+        camera->CameraTransform.position += cameraRight * velocity;
+
+    if (inputManager->IsActionActive("Move Left"))
+        camera->CameraTransform.position -= cameraRight * velocity;
+
+    // ---------------------------------------------------------
+    // 2. ROTATION (Mouse Look)
+    // ---------------------------------------------------------
+
+    // Use structured bindings to get x and y from the std::pair
+    auto [xpos, ypos] = inputManager->GetMousePosition();
+
+    if (inputManager->IsActionActive("Enable Look"))
+    {
+        // Calculate delta (offset) from the last known position
+        float xoffset = xpos - camera->lastX;
+        float yoffset = camera->lastY - ypos; // Reversed: y-ranges bottom to top
+
+        // Update last known position for the next frame
+        camera->lastX = xpos;
+        camera->lastY = ypos;
+
+        // Apply sensitivity
+        float sensitivity = 0.1f;
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
+
+        // Modify Yaw and Pitch
+        camera->yaw += xoffset;
+        camera->pitch += yoffset;
+
+        // Clamp Pitch (Prevent screen flipping)
+        if (camera->pitch > 89.0f)  camera->pitch = 89.0f;
+        if (camera->pitch < -89.0f) camera->pitch = -89.0f;
+
+        // Recalculate Front Vector
+        // 
+        glm::vec3 front;
+        front.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
+        front.y = sin(glm::radians(camera->pitch));
+        front.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
+
+        camera->cameraFront = glm::normalize(front);
+    }
+    else
+    {
+        // Keep updating lastX/lastY even when not rotating.
+        // This prevents the camera from "snapping" to an old position 
+        // the moment you press the "Enable Look" button.
+        camera->lastX = xpos;
+        camera->lastY = ypos;
+    }
+}
+
 void SceneView::Render()
 {
+	PollInput(0.016f); // Assuming ~60 FPS for now; ideally pass actual delta time
+
     ImGui::Begin("Scene");
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
@@ -33,31 +119,31 @@ void SceneView::Render()
 
     ImGui::Image(reinterpret_cast<void*>(viewport->GetTexture()), ImVec2{ size.x, size.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
-    // --- Drag and Drop Target: Capture path and trigger pop-up ---
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_STATIC_MESH")) {
-            if (payload->DataSize > 0) {
-                std::string nameWithPath(static_cast<const char*>(payload->Data));
-                std::vector<std::string> parts = splitString(nameWithPath, '|');
+    //// --- Drag and Drop Target: Capture path and trigger pop-up ---
+    //if (ImGui::BeginDragDropTarget()) {
+    //    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_STATIC_MESH")) {
+    //        if (payload->DataSize > 0) {
+    //            std::string nameWithPath(static_cast<const char*>(payload->Data));
+    //            std::vector<std::string> parts = splitString(nameWithPath, '|');
 
-                if (parts.size() == 2) {
-                    // 1. Store the data temporarily
-                    pendingImportName = parts[0];
-                    pendingImportPath = parts[1];
+    //            if (parts.size() == 2) {
+    //                // 1. Store the data temporarily
+    //                pendingImportName = parts[0];
+    //                pendingImportPath = parts[1];
 
-                    // 2. Set the flag to show the pop-up on the next frame
-                    showImportTypePopup = true;
-                }
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
+    //                // 2. Set the flag to show the pop-up on the next frame
+    //                showImportTypePopup = true;
+    //            }
+    //        }
+    //    }
+    //    ImGui::EndDragDropTarget();
+    //}
 
-    // --- Pop-up Logic ---
-    if (showImportTypePopup) {
-        ImGui::OpenPopup("Select Import Type");
-        // Keep the flag true until the user makes a choice
-    }
+    //// --- Pop-up Logic ---
+    //if (showImportTypePopup) {
+    //    ImGui::OpenPopup("Select Import Type");
+    //    // Keep the flag true until the user makes a choice
+    //}
 
     if (ImGui::BeginDragDropTarget()) {
 

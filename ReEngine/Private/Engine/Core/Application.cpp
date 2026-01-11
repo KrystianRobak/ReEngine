@@ -240,7 +240,7 @@ void Application::Render()
 
 	window->Init(1920, 1080, "Okno zycia", GetCoordinatorEditor(), this);
 	
-	Renderer_->InitApi(GetCoordinatorEditor() ,coordinator->GetAssetManager());
+	Renderer_->InitApi(GetCoordinatorEditor(), this ,coordinator->GetAssetManager());
 	Renderer_->InitRenderContext(window);
 
 	coordinator->SendEvent(Events::Engine::LayerManager::INITIALIZED);
@@ -343,13 +343,13 @@ void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
 	dt = std::chrono::duration<float>(frameEndTime - frameStartTime).count();
 
 	// Sleep to maintain target frame rate (if we are faster than target)
-	/*
+	
 	float sleepDuration = targetFrameDuration - dt;
 	if (sleepDuration > 0.0f)
 	{
 		std::this_thread::sleep_for(std::chrono::duration<float>(sleepDuration));
 	}
-	*/
+	
 
 	// New end time after sleep (accurate frame time)
 	auto finalFrameEndTime = std::chrono::steady_clock::now();

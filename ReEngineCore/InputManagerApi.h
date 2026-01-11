@@ -20,4 +20,7 @@ public:
     // 3. Polling: Check if an action is currently held down (good for movement)
     virtual bool IsActionActive(const std::string& actionName) = 0;
     virtual bool IsActionActive(ActionID actionId) = 0;
+
+
+    virtual std::pair<float, float> GetMousePosition() = 0;
 };

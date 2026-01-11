@@ -64,6 +64,11 @@ bool InputManager::IsActionActive(ActionID actionId)
     return false;
 }
 
+std::pair<float, float> InputManager::GetMousePosition()
+{
+    return { m_currMouseX, m_currMouseY };
+}
+
 void InputManager::Update(float dt)
 {
     // 1. SWAP BUFFERS (Critical Section)
@@ -87,6 +92,10 @@ void InputManager::Update(float dt)
         case InputEvent::Type::MouseButton:
             m_mouseStates[event.mouseBtn] = event.state;
             break;
+		case InputEvent::Type::MouseMove:
+            m_currMouseX = static_cast<float>(event.x);
+            m_currMouseY = static_cast<float>(event.y);
+			break;
         default: break;
         }
 

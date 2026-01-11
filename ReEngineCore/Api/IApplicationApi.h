@@ -40,7 +40,7 @@ public:
     virtual IViewport* CreateNewViewport(std::string name, int width, int height) = 0;
 
 	virtual ILayerManager* GetLayerManager() = 0;
-    virtual IInputManager* GetInputManager() = 0;
+    virtual IInputManager* GetInputManager() = 0; 
     virtual Editor::IEngineEditorApi* GetCoordinatorEditor() = 0;
     virtual void SetUpdateUI(FunctionDelegate function) = 0;
     virtual void SetPostUpdateUI(FunctionDelegate function) = 0;

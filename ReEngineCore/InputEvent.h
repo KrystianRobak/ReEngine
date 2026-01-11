@@ -15,10 +15,10 @@ struct InputEvent
         Scroll
     } type;
 
-    int key;               // GLFW key
-    MouseButton mouseBtn;  // Mouse buttons
+    int key;
+    MouseButton mouseBtn;
     KeyState state;
 
-    double x, y;           // Mouse pos or delta
+    double x, y;
     double scroll;
 };

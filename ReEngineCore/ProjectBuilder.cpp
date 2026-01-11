@@ -129,7 +129,7 @@ void ProjectBuilder::ParseConfig() {
         System* registeredSystem = engineAPI_->RegisterSystem(system);
         SystemsLoaded_.push_back(registeredSystem);
 
-        registeredSystem->InitApi(engineAPI_, engineAPI_->GetAssetManager());
+        registeredSystem->InitApi(engineAPI_,applicationAPI_ ,engineAPI_->GetAssetManager());
 
         // 3. Set Internal Name for Graph
         registeredSystem->SystemName = system->fullName;

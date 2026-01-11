@@ -6,6 +6,8 @@
 
 #include <filesystem>
 #include <string>
+#include "InputManagerApi.h"
+#include "ReScene.h"
 
 class SceneView : public UIComponent
 {
@@ -18,14 +20,28 @@ public:
     virtual void OnInit() override
     {
 		viewport = engineApp->CreateNewViewport("SceneViewport", 1920, 1080);
+		viewport->SetCamera(engineAPI->GetCurrentScene()->GetDefaultCamera()); 
 
 
         RotateIcon = GetTexture("icons/rotate.retex");
 		TranslateIcon = GetTexture("icons/translate.retex");
 		ScaleIcon = GetTexture("icson/scale.retex");
+
+        IInputManager* input = engineApp->GetInputManager();
+
+        // Movement Keys
+        input->BindKey("Move Forward", 87);
+        input->BindKey("Move Backward", 83);
+        input->BindKey("Move Left", 65);
+        input->BindKey("Move Right", 68);
+
+        // Enable looking around when Right Mouse Button is held
+        input->BindMouse("Enable Look", MouseButton::Right);
 	}
 
     void resize(int32_t width, int32_t height);
+
+    void PollInput(float currentDt);
 
     void Render() override;
 

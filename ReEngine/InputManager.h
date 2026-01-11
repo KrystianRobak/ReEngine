@@ -34,6 +34,8 @@ public:
     bool IsActionActive(const std::string& actionName) override;
     bool IsActionActive(ActionID actionId) override; // Faster version
 
+    std::pair<float, float> GetMousePosition();
+
     void Update(float dt);
 
 
@@ -59,5 +61,8 @@ private:
     std::unordered_map<ActionID, int> m_keyMap;
     std::unordered_map<ActionID, MouseButton> m_mouseMap;
     std::unordered_map<ActionID, std::vector<ActionBinding>> m_actionBindings;
+
+    float m_currMouseX = 0.0f;
+    float m_currMouseY = 0.0f;
 };
 

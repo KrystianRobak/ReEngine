@@ -13,10 +13,11 @@ namespace fs = std::filesystem;
 class CORE_API ProjectBuilder
 {
 public:
-	ProjectBuilder(std::string ProjectPath, Editor::IEngineEditorApi* engine)
+	ProjectBuilder(std::string ProjectPath, Editor::IEngineEditorApi* engine, IApplicationApi* applicationApi)
 	{
 		ProjectPath_ = ProjectPath;
 		engineAPI_ = engine;
+		applicationAPI_ = applicationApi;
 
 		if (checkAndRemovePrefix("--game-dll="))
 		{
@@ -63,6 +64,7 @@ public:
 	System* PhysicsSystem_;
 	std::vector<System*> SystemsLoaded_;
 	Editor::IEngineEditorApi* engineAPI_ = nullptr;
+	IApplicationApi* applicationAPI_ = nullptr;
 
 public:
 	ILayerManager* layerManager_ = nullptr;

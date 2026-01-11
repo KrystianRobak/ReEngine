@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Api/IApplicationApi.h"
 #include "Api/EngineApi/CoordinatorEditorApi.h"
 #include "Api/AssetManagerApi.h"
 
@@ -19,10 +20,11 @@ class Commander;
 class System
 {
 public:
-	virtual void InitApi(Editor::IEngineEditorApi* engine, std::shared_ptr<AssetManagerApi> AssetManger = nullptr)
+	virtual void InitApi(Editor::IEngineEditorApi* engine, IApplicationApi* application, std::shared_ptr<AssetManagerApi> AssetManger = nullptr)
 	{
 		engine_ = engine;
 		assetManager_ = AssetManger;
+		application_ = application;
 
 		OnInit();
 	};
@@ -55,6 +57,7 @@ public:
 protected:
 	std::set<Entity> mEntities;
 	Editor::IEngineEditorApi* engine_;
+	IApplicationApi* application_;
 	std::shared_ptr<Commander> commander_;
 	std::shared_ptr<AssetManagerApi> assetManager_;
 	ILayerManager* layerManager_ = nullptr;

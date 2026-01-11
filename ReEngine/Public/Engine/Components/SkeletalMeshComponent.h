@@ -25,7 +25,11 @@ struct SkeletalMeshComponent
     // --- Playback State ---
     std::string CurrentAnimationName;
     float CurrentTime = 0.0f;
+
+    REFVARIABLE()
     float AnimationSpeed = 1.0f;
+    
+    REFVARIABLE()
     bool IsLooping = true;
 
     // --- NEW: Blending State (Managed by Animator) ---
