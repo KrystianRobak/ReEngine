@@ -75,7 +75,7 @@ void FileBrowser::FindFiles(const std::string& folderPath) {
 
 void FileBrowser::RenderItem(const BrowserItem& item, float itemWidth, float itemSpacing, int itemsPerRow, int& itemsInRow) {
     
-    if (item.type < FileType::Folder || item.type > FileType::Animation)
+    if (item.type < FileType::Folder || item.type > FileType::Prefab)
     {
         return;
     }

@@ -106,6 +106,8 @@ void Application::InitSystems()
 	// Fetch Renderer (still need explicit handle for CreateViewport)
 	Renderer_ = reinterpret_cast<RenderSystem*>(coordinator->GetSystem("RenderOpenGL"));
 
+	PhysicsSystem_ = reinterpret_cast<System*>(coordinator->GetSystem("Physics3D"));
+
 	// 2. Populate Graph
 	auto systems = Reflection::Registry::Instance().GetAllSystems();
 
@@ -257,7 +259,7 @@ void Application::Render()
 
 	while (true)
 	{
-
+		mSyncBarrier->arrive_and_wait();
 		auto start = clock::now();
 
 		coordinator->GetAssetManager()->DispatchUploads();
@@ -280,7 +282,7 @@ void Application::Render()
 		
 		coordinator->GetEpochManager()->IncrementRenderEpoch();
 
-		mSyncBarrier->arrive_and_wait();
+
 	}
 		
 }
@@ -381,17 +383,51 @@ void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
 		{
 			LOGF_INFO("Sync: Switching to PLAY mode (Backing up scene...)");
 			coordinator->EnterPlayMode();
+
+			// ----------------------------------------------------------------------------------
+			// [FIXED] Camera Search Logic
+			// ----------------------------------------------------------------------------------
+			Camera* gameCamera = nullptr;
+
+			// DO NOT Use GetEntitiesAmount() here if you have sparse IDs (deleted entities).
+			// We iterate through MAX_ENTITIES to be safe, or your specific MaxAliveID if you track it.
+			for (Entity i = 0; i < MAX_ENTITIES; ++i)
+			{
+				// Only check alive entities
+				if (!coordinator->IsEntityAlive(i)) continue;
+
+				if (coordinator->HasComponent(i, "Camera")) {
+					gameCamera = (Camera*)coordinator->GetComponent(i, "Camera");
+					LOGF_INFO("Found Game Camera at Entity ID: %d", i);
+					break; // Found the first camera, stop.
+				}
+			}
+
+			// 2. Set the Game Camera as an OVERRIDE
+			if (gameCamera && coordinator->GetCurrentScene()) {
+				coordinator->GetCurrentScene()->SetOverrideCamera(gameCamera);
+			}
+			else {
+				LOGF_INFO("No Game Camera found in scene. Remaining in Editor View.");
+			}
+
+			coordinator->SendEvent(Events::Application::CAMERA_CHANGED);
 			m_AppState.store(ApplicationState::Play);
 		}
 		else if (current == ApplicationState::Play && pending == ApplicationState::Editor)
 		{
 			LOGF_INFO("Sync: Switching to EDITOR mode (Restoring scene...)");
+
+			if (coordinator->GetCurrentScene()) {
+				coordinator->GetCurrentScene()->SetOverrideCamera(nullptr);
+			}
+
+			coordinator->SendEvent(Events::Application::CAMERA_CHANGED);
 			coordinator->ExitPlayMode();
 			m_AppState.store(ApplicationState::Editor);
 		}
 		else
 		{
-			// Simple state change without scene logic (if any other states exist)
 			m_AppState.store(pending);
 		}
 	}

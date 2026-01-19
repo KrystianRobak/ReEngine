@@ -4,6 +4,7 @@
 #include "BoxCollider.h.gen.cpp"
 #include "CapsuleCollider.h.gen.cpp"
 #include "HeightfieldCollider.h.gen.cpp"
+#include "LightSource.h.gen.cpp"
 #include "MeshCollider.h.gen.cpp"
 #include "ReCamera.h.gen.cpp"
 #include "RigidBody.h.gen.cpp"

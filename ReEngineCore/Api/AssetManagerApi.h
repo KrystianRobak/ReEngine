@@ -60,6 +60,9 @@ public:
     // --- Material API ---
     virtual void addMaterial(int id, CompiledMaterial material) = 0;
     virtual CompiledMaterial* GetMaterial(int id) = 0;
+    virtual const std::unordered_map<int, CompiledMaterial>& GetMaterials() = 0;
+
+    virtual void LoadMaterial(int id, const std::string& path) = 0;
 
     // --- Utilities ---
     virtual int GetCurrentMaterialId() = 0;

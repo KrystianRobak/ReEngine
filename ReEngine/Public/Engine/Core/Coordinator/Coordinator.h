@@ -126,6 +126,11 @@ public:
 		mSceneManager->EntityDestroyed(entity);
 	}
 
+	bool IsEntityAlive(Entity entity) override
+	{
+		return mEntityManager->IsAlive(entity);
+	}
+
 	std::uint32_t GetEntitiesAmount() override
 	{
 		return mEntityManager->GetEntityCount();
@@ -274,11 +279,23 @@ public:
 
 	// --- Play Mode Logic ---
 
+	Entity InstantiatePrefab(const std::string& path)
+	{
+		return mSceneManager->InstantiatePrefab(path, mEntityManager, this);
+	}
+
+	bool SaveEntityAsPrefab(Entity entity, const std::string& path)
+	{
+		return mSceneManager->SaveAsPrefab(entity, path, mEntityManager, this);
+	}
+
 	void EnterPlayMode()
 	{
 		// 1. Save the current state to a temp file
 		std::cout << "[Coordinator] Entering Play Mode: Backing up scene..." << std::endl;
 		SaveScene(PlayModeBackupPath);
+
+
 	}
 
 	void ExitPlayMode()
@@ -328,7 +345,7 @@ public:
 
 	void OpenScene(const std::string& path) override
 	{
-		mSceneManager->LoadScene(path, mEntityManager, this);
+		mSceneManager->LoadScene(path, mEntityManager, this, true);
 
 
 		SetSelectedEntity(MAX_ENTITIES + 1);
@@ -346,5 +363,31 @@ public:
 
 	AnimationSequencer* GetScene() {
 		return &mReSequencer;
+	}
+
+	std::vector<Entity> GetEntitiesWith(const std::string& componentName)
+	{
+		std::vector<Entity> matchingEntities;
+
+		// 1. Get the ID for the requested component
+		// Note: Ensure componentName is valid/registered, or this might assert inside GetComponentType
+		ComponentType typeId = mComponentManager->GetComponentType(componentName);
+
+		// 2. Iterate through all potential entities
+		for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
+		{
+			// Check if entity is actually in use
+			if (mEntityManager->IsAlive(entity))
+			{
+				// 3. Check if the entity's signature has the specific bit set
+				Signature sig = mEntityManager->GetSignature(entity);
+				if (sig.test(typeId))
+				{
+					matchingEntities.push_back(entity);
+				}
+			}
+		}
+
+		return matchingEntities;
 	}
 };

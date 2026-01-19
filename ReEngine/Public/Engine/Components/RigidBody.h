@@ -13,6 +13,7 @@ struct RigidBody {
     REFVARIABLE() bool useGravity = true;
     REFVARIABLE() bool isStatic = false;     // True for floors/walls
     REFVARIABLE() glm::vec3 angularVelocity = glm::vec3(0.0f);
+    REFVARIABLE() bool lockAngular = false;
     float inverseMass;
     glm::mat3 inverseInertiaTensor;
 };

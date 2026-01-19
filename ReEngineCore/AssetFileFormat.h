@@ -15,7 +15,8 @@ enum class FileType {
     Texture,        // .retex
     Material,       // .material
     Scene,          // .scene (or .json)
-    Animation
+    Animation,
+    Prefab
 };
 
 static const std::map<std::string, FileType> ExtensionMap = {
@@ -29,7 +30,8 @@ static const std::map<std::string, FileType> ExtensionMap = {
     { ".scene",     FileType::Scene },        // Renamed .json to .scene for clarity?
     { ".json",      FileType::Scene },
     { ".reanim",    FileType::Animation },
-    { ".rsm",       FileType::Animation }
+    { ".rsm",       FileType::Animation },
+    { ".prefab",    FileType::Prefab }
 };
 
 inline static FileType GetFileType(const std::string& extension) {
@@ -48,6 +50,7 @@ inline static std::string GetDragPayloadType(FileType type) {
     case FileType::Scene:        return "ASSET_SCENE";
     case FileType::Code:         return "ASSET_CODE";
     case FileType::Animation:    return "ASSET_ANIMATION";
+    case FileType::Prefab:       return "ASSET_PREFAB";
     default:                     return "ASSET_UNKNOWN";
     }
 }

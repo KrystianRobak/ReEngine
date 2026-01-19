@@ -39,6 +39,8 @@ namespace Editor
 		virtual std::uint32_t GetSelectedEntity() = 0;
 
 		virtual Signature GetEntitySignature(Entity entity) = 0;
+		
+		virtual bool IsEntityAlive(Entity entity) = 0;
 
 		virtual void AddComponent(Entity entity, const std::string& fullName) = 0;
 
@@ -62,6 +64,10 @@ namespace Editor
 
 		virtual void SaveScene(const std::string& path) = 0;
 
+		virtual Entity InstantiatePrefab(const std::string& path) = 0;
+
+		virtual bool SaveEntityAsPrefab(Entity entity, const std::string& path) = 0;
+
 		virtual void* GetComponent(Entity entity, const std::string& typeName) = 0;
 		
 		virtual void* GetComponentForWrite(Entity entity, const std::string& typeName) = 0;
@@ -75,5 +81,7 @@ namespace Editor
 		virtual System* RegisterSystem(const Reflection::ClassInfo* classInfo) = 0;
 
 		virtual void SetSystemSignature(const std::string& typeName, Signature signature) = 0;
+
+		virtual std::vector<Entity> GetEntitiesWith(const std::string& componentName) = 0;
 	};
 }

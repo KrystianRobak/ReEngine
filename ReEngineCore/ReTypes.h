@@ -72,6 +72,7 @@ namespace Events::Application {
     constexpr inline EventType LIGHT_ENTITY_ADDED = "Events::Application::LIGHT_ENTITY_ADDED";
     constexpr inline EventType MENU_CHANGED = "Events::Application::MENU_CHANGED";
     constexpr inline EventType START_GAME = "Events::Application::START_GAME";
+    constexpr inline EventType CAMERA_CHANGED = "Events::Application::CAMERA_CHANGED";
 }
 
 namespace Events::Engine::SceneManager {

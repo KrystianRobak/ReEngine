@@ -11,9 +11,11 @@ public:
     {
     }
 
+    void RenderVariable(const char* varName, const char* typeName, void* varPtr);
+
     void OnInit() override;
 
-    void ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function);
+    void ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function, bool IsAdding);
 
     void Render() override;
 

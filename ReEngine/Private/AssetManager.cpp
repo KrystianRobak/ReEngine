@@ -11,6 +11,26 @@ AssetManager::AssetManager(ThreadPool* threadPool) : pool(threadPool) {}
 
 AssetManager::~AssetManager() { shutdown(); }
 
+void AssetManager::LoadMaterial(int id, const std::string& path) {
+    std::lock_guard<std::mutex> lock(assetMutex);
+
+    // Create a temp material helper to load the graph
+    Material tempMat;
+    if (tempMat.LoadFromFile(path)) {
+        // Compile it to generate shaders/uniforms
+        CompiledMaterial compiled = tempMat.Compile(this);
+        compiled.SetId(id);
+        compiled.path = path;
+
+        // Store it with the specific ID from the save file
+        materials[id] = compiled;
+
+        // Ensure our ID counter is higher than this so new materials don't clash
+        int currentMax = LastMaterialId.load();
+        if (id >= currentMax) LastMaterialId.store(id + 1);
+    }
+}
+
 void AssetManager::shutdown() {
     std::lock_guard<std::mutex> lock(assetMutex);
     meshCache.clear();

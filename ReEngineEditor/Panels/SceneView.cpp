@@ -9,6 +9,7 @@
 #include <AssetFileFormat.h>
 #include "ReScene.h"
 #include "ReCamera.h"
+#include "PhysicsWorld.h"
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -119,36 +120,65 @@ void SceneView::Render()
 
     ImGui::Image(reinterpret_cast<void*>(viewport->GetTexture()), ImVec2{ size.x, size.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
-    //// --- Drag and Drop Target: Capture path and trigger pop-up ---
-    //if (ImGui::BeginDragDropTarget()) {
-    //    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ASSET_STATIC_MESH")) {
-    //        if (payload->DataSize > 0) {
-    //            std::string nameWithPath(static_cast<const char*>(payload->Data));
-    //            std::vector<std::string> parts = splitString(nameWithPath, '|');
+    // ---------------------------------------------------------
+    // [Added] RAYCAST SELECTION LOGIC
+    // ---------------------------------------------------------
+    // Check if mouse is hovering THIS window and Left Click occurred
+    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    {
+        // 1. Get Mouse Coordinates relative to the Viewport Image
+        ImVec2 mousePos = ImGui::GetMousePos();
+        float localX = mousePos.x - ImGui::GetWindowPos().x;
+        float localY = mousePos.y - ImGui::GetWindowPos().y;
 
-    //            if (parts.size() == 2) {
-    //                // 1. Store the data temporarily
-    //                pendingImportName = parts[0];
-    //                pendingImportPath = parts[1];
+        // 2. Convert to Normalized Device Coordinates (NDC)
+        // ImGui (0,0) is Top-Left. OpenGL (0,0) is Center. Y grows Up in GL.
+        float ndcX = (2.0f * localX) / size.x - 1.0f;
+        float ndcY = 1.0f - (2.0f * localY) / size.y;
 
-    //                // 2. Set the flag to show the pop-up on the next frame
-    //                showImportTypePopup = true;
-    //            }
-    //        }
-    //    }
-    //    ImGui::EndDragDropTarget();
-    //}
+        // 3. Get Camera Matrices (Construct manually to ensure sync with render)
+        auto m_activeScene = engineAPI->GetCurrentScene();
+        Camera* camera = m_activeScene->GetDefaultCamera();
 
-    //// --- Pop-up Logic ---
-    //if (showImportTypePopup) {
-    //    ImGui::OpenPopup("Select Import Type");
-    //    // Keep the flag true until the user makes a choice
-    //}
+        if (camera)
+        {
+            glm::mat4 projection = glm::perspective(glm::radians(camera->fov), size.x / size.y, 0.1f, 1000.0f);
+            glm::mat4 view = glm::lookAt(camera->CameraTransform.position, camera->CameraTransform.position + camera->cameraFront, camera->cameraUp);
+
+            // 4. Calculate Ray in World Space
+            // Invert Projection to go from Clip Space -> Eye Space
+            glm::vec4 rayClip = glm::vec4(ndcX, ndcY, -1.0f, 1.0f);
+            glm::vec4 rayEye = glm::inverse(projection) * rayClip;
+            rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0, 0.0); // We want a direction, so W=0, Z points forward
+
+            // Invert View to go from Eye Space -> World Space
+            glm::vec3 rayWorld = glm::normalize(glm::vec3(glm::inverse(view) * rayEye));
+
+            // 5. Perform Raycast
+            // We cast Application* because IApplicationApi might not strictly expose GetPhysicsWorld yet
+            PhysicsWorld* physWorld = engineApp->GetPhysicsWorld();
+
+            if (physWorld)
+            {
+                RaycastHit hit;
+                // Cast from camera position, along calculated direction
+                if (physWorld->RaycastSingle(camera->CameraTransform.position, rayWorld, 1000.0f, hit))
+                {
+                    // Hit found! Select the entity.
+                    std::cout << "[Editor] Selected Entity ID: " << hit.entity << std::endl;
+                    engineAPI->SetSelectedEntity(hit.entity);
+                }
+                else
+                {
+                    // Clicked empty space? Deselect.
+                    engineAPI->SetSelectedEntity(MAX_ENTITIES + 1); // Or a specific deselect constant
+                }
+            }
+        }
+    }
 
     if (ImGui::BeginDragDropTarget()) {
 
-        // 1. Detect STATIC MESH Drop
-        // We use the helper from AssetFileFormat to get the correct string string "ASSET_STATIC_MESH"
         const std::string staticPayloadID = GetDragPayloadType(FileType::StaticMesh);
 
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(staticPayloadID.c_str())) {
@@ -176,8 +206,6 @@ void SceneView::Render()
             }
         }
 
-        // 2. Detect SKELETAL MESH Drop
-        // We use the helper to get "ASSET_SKELETAL_MESH"
         const std::string skeletalPayloadID = GetDragPayloadType(FileType::SkeletalMesh);
 
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(skeletalPayloadID.c_str())) {
@@ -201,6 +229,29 @@ void SceneView::Render()
 
                     engineAPI->AddComponent(entity, "BoxCollider");
                     engineAPI->AddComponent(entity, "RigidBody");
+                }
+            }
+        }
+
+        const std::string prefabPayloadID = GetDragPayloadType(FileType::Prefab);
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(prefabPayloadID.c_str())) {
+            if (payload->DataSize > 0) {
+                std::string nameWithPath(static_cast<const char*>(payload->Data));
+                std::vector<std::string> parts = splitString(nameWithPath, '|');
+
+                if (parts.size() == 2) {
+                    std::string path = parts[1];
+
+                    // Instantiate!
+                    Entity newEntity = engineAPI->InstantiatePrefab(path);
+
+                    // Optional: Move to mouse position if you implement Raycasting (see context)
+                    // For now, it spawns at the prefab's saved location.
+                    std::cout << "[Editor] Instantiated Prefab: " << path << " as Entity " << newEntity << std::endl;
+
+                    // Select the new entity
+                    engineAPI->SetSelectedEntity(newEntity);
                 }
             }
         }

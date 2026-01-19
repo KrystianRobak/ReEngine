@@ -108,6 +108,17 @@ struct RigidBody_AutoRegister {
             };
             RigidBody_Variables.push_back(std::move(rv));
         }
+         vType = Reflection::Registry::Instance().GetOrCreateType("bool");
+        {
+            Reflection::ReflectedVariable rv = {
+                "lockAngular", "public",
+                false,
+                offsetof(RigidBody, lockAngular),
+                vType,
+                "false"
+            };
+            RigidBody_Variables.push_back(std::move(rv));
+        }
          vType = Reflection::Registry::Instance().GetOrCreateType("float");
         {
             Reflection::ReflectedVariable rv = {

@@ -12,6 +12,8 @@
 #include "StaticMesh.h"
 #include "SkeletalMeshComponent.h"
 #include "StateMachine.h"
+#include <gtc/quaternion.hpp>
+#include <gtc/type_ptr.hpp>
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -24,6 +26,103 @@ inline std::vector<std::string> splitString(const std::string& str, char delimit
 
 }
 
+// Helper to safely edit Quaternions as Euler Angles (Degrees)
+static bool DrawQuatAsEuler(const char* label, glm::quat& q)
+{
+    glm::vec3 euler = glm::degrees(glm::eulerAngles(q));
+
+    // Check if the user changed the values
+    if (ImGui::DragFloat3(label, glm::value_ptr(euler), 0.1f))
+    {
+        // Convert back to quaternion
+        q = glm::quat(glm::radians(euler));
+        return true;
+    }
+    return false;
+}
+
+// Helper to find ClassInfo by string name (Naive implementation)
+// You might want to move this to your Reflection::Registry class
+const Reflection::ClassInfo* FindReflectedType(const char* typeName)
+{
+    auto allComponents = Reflection::Registry::Instance().GetAllComponents();
+    for (auto info : allComponents)
+    {
+        // Simple string match. In a real engine, use TypeIDs or HashMaps.
+        if (strcmp(info->name, typeName) == 0)
+            return info;
+    }
+    return nullptr;
+}
+
+void PropertyPanel::RenderVariable(const char* varName, const char* typeName, void* varPtr)
+{
+    ImGui::PushID(varPtr); // Ensure ImGui IDs are unique per variable memory address
+
+    // 1. --- Primitives ---
+    if (strcmp(typeName, "float") == 0) {
+        ImGui::DragFloat(varName, (float*)varPtr, 0.1f);
+    }
+    else if (strcmp(typeName, "int") == 0) {
+        ImGui::InputInt(varName, (int*)varPtr);
+    }
+    else if (strcmp(typeName, "bool") == 0) {
+        ImGui::Checkbox(varName, (bool*)varPtr);
+    }
+    // 2. --- Math Types ---
+    else if (strcmp(typeName, "glm::vec<3, float>") == 0 || strcmp(typeName, "glm::vec3") == 0) {
+        ImGui::DragFloat3(varName, (float*)varPtr, 0.1f);
+    }
+    else if (strcmp(typeName, "glm::vec<4, float>") == 0 || strcmp(typeName, "glm::vec4") == 0) {
+        ImGui::DragFloat4(varName, (float*)varPtr, 0.1f);
+    }
+    // Handle Rotation specifically (Quaternions are hard to edit raw)
+    else if (strcmp(typeName, "glm::qua<float>") == 0 || strcmp(typeName, "glm::quat") == 0) {
+        DrawQuatAsEuler(varName, *(glm::quat*)varPtr);
+    }
+    // 3. --- Strings / Assets ---
+    else if (strcmp(typeName, "std::string") == 0 || strcmp(typeName, "std::basic_string<char>") == 0) {
+        std::string* strPtr = (std::string*)varPtr;
+        static char buf[256];
+        strncpy_s(buf, strPtr->c_str(), 256);
+        if (ImGui::InputText(varName, buf, 256)) {
+            *strPtr = std::string(buf);
+        }
+        // Note: You can re-add your specific Asset Slot logic here if needed
+    }
+    // 4. --- RECURSIVE REFLECTION (The Fix) ---
+    else
+    {
+        // Check if this unknown type is actually another Reflected Component/Struct
+        const Reflection::ClassInfo* nestedType = FindReflectedType(typeName);
+
+        if (nestedType)
+        {
+            // Create a tree node for the nested struct (e.g., "CameraTransform")
+            if (ImGui::TreeNode(varName))
+            {
+                // Iterate through the nested struct's variables
+                for (const auto& childVar : nestedType->variables)
+                {
+                    // Calculate pointer to the nested member
+                    // Parent Pointer + Offset = Child Pointer
+                    void* childPtr = (char*)varPtr + childVar.offset;
+
+                    // RECURSE!
+                    RenderVariable(childVar.name, childVar.type->name, childPtr);
+                }
+                ImGui::TreePop();
+            }
+        }
+        else
+        {
+            ImGui::TextDisabled("%s (%s) - [Not Supported]", varName, typeName);
+        }
+    }
+
+    ImGui::PopID();
+}
+
 void RenderComponentsMenu(std::int32_t& entity, std::bitset<32>& signature) 
 {
 
@@ -34,7 +133,7 @@ void PropertyPanel::OnInit()
 
 }
 
-void PropertyPanel::ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function)
+void PropertyPanel::ForEachComponent(const char* header, std::vector<const Reflection::ClassInfo*> Components, std::function<void(Entity, const char*)> function, bool IsAdding)
 {
     if (ImGui::CollapsingHeader(header))
     {
@@ -42,9 +141,25 @@ void PropertyPanel::ForEachComponent(const char* header, std::vector<const Refle
         {
             Entity entity = engineAPI->GetSelectedEntity();
 
-            if (ImGui::Button(component->name))
+            if (IsAdding)
             {
-                function(entity, component->name);
+                if (!engineAPI->HasComponent(entity, component->name))
+                {
+                    if (ImGui::Button(component->name))
+                    {
+                        function(entity, component->name);
+                    }
+                }
+            }
+            else
+            {
+                if (engineAPI->HasComponent(entity, component->name))
+                {
+                    if (ImGui::Button(component->name))
+                    {
+                        function(entity, component->name);
+                    }
+                }
             }
             
         }
@@ -57,112 +172,57 @@ void PropertyPanel::Render()
 	ImGui::Begin("Properties");
 
     auto Components = Reflection::Registry::Instance().GetAllComponents();
+    Entity entity = engineAPI->GetSelectedEntity();
 
+    if (entity != 111)
+    {
     ForEachComponent("Add component", Components,
         [this](Entity entity, const char* name) {
             Signature signature = engineAPI->GetEntitySignature(entity);
-            if (!signature.test(engineAPI->GetComponentType(name)))
+            if (!engineAPI->HasComponent(entity, name))
             {
                 engineAPI->AddComponent(entity, name);
             }
-        });
+        }, true);
 
     ForEachComponent("Remove component", Components,
         [this](Entity entity, const char* name) {
             Signature signature = engineAPI->GetEntitySignature(entity);
-            if (signature.test(engineAPI->GetComponentType(name)))
+            if (engineAPI->HasComponent(entity, name))
             {
                 engineAPI->RemoveComponent(entity, name);
             }
-        });
+        }, false);
 
-    Entity entity = engineAPI->GetSelectedEntity();
-    if (entity != 111)
+   
+    
+    Signature signature = engineAPI->GetEntitySignature(entity);
+
+    for (auto componentInfo : Components)
     {
-        Signature signature = engineAPI->GetEntitySignature(entity);
+        // Skip checking nested structs at the top level, we only want actual Components
+        // (Assuming your ECS stores TypeIDs. If Transform is just a struct, GetComponentType might return 0 or fail,
+        // make sure only "Real" components pass this check).
+        if (signature.test(engineAPI->GetComponentType(componentInfo->name)))
+        {
+            if (ImGui::CollapsingHeader(componentInfo->name, ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                // Get Write Data (Assuming we want to edit)
+                void* data = engineAPI->GetComponentForWrite(entity, componentInfo->name);
 
-        for (auto componentInfo : Components) {
-            // Check if the current entity has this component.
-            if (signature.test(engineAPI->GetComponentType(componentInfo->name))) {
-                // If it does, render a collapsible header for it.
-                if (ImGui::CollapsingHeader(componentInfo->name)) {
-                    // Get the actual component data pointer.
-                    // 1. Get BOTH pointers
-                    void* readData = engineAPI->GetComponent(entity, componentInfo->name);
-                    void* writeData = engineAPI->GetComponentForWrite(entity, componentInfo->name);
+                if (data)
+                {
+                    for (auto& variable : componentInfo->variables)
+                    {
+                        void* varPtr = (char*)data + variable.offset;
 
-                    // Check if we actually have two different buffers (Double Buffering Active)
-                    bool isDoubleBuffered = (readData != writeData && writeData != nullptr);
-
-                    for (auto& variable : componentInfo->variables) {
-                        char* writeVarPtr = (char*)writeData + variable.offset;
-
-                        const char* typeName = variable.type->name;
-                        const char* varName = variable.name;
-
-                        bool valueChanged = false;
-
-                        // --- Render UI based on READ pointer ---
-                        // We use the Read pointer for the UI so the user sees the current frame's state
-                        if (strcmp(typeName, "float") == 0) {
-                            if (ImGui::DragFloat(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
-                        }
-                        else if (strcmp(typeName, "int") == 0) {
-                            if (ImGui::InputInt(varName, (int*)writeVarPtr)) valueChanged = true;
-                        }
-                        else if (strcmp(typeName, "bool") == 0) {
-                            if (ImGui::Checkbox(varName, (bool*)writeVarPtr)) valueChanged = true;
-                        }
-                        else if (strcmp(typeName, "glm::vec<3, float>") == 0 || strcmp(typeName, "glm::vec3") == 0) {
-                            if (ImGui::DragFloat3(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
-                        }
-                        else if (strcmp(typeName, "glm::vec<4, float>") == 0 || strcmp(typeName, "glm::vec4") == 0) {
-                            if (ImGui::DragFloat4(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
-                        }
-                        else if (strcmp(typeName, "glm::qua<float>") == 0) {
-                            if (ImGui::DragFloat4(varName, (float*)writeVarPtr, 0.1f)) valueChanged = true;
-                        }
-                        else if (strcmp(typeName, "std::string") == 0 || strcmp(typeName, "std::basic_string<char>") == 0) {
-                            std::string* strPtr = (std::string*)writeVarPtr;
-
-                            // 1. Static Mesh Asset
-                            if (strcmp(componentInfo->name, "StaticMesh") == 0 && strcmp(varName, "AssetPath") == 0) {
-                                if (DrawAssetSlot(varName, *strPtr, "ASSET_STATIC_MESH", FileType::StaticMesh)) {
-                                    // FORCE UPDATE: Clear the resource handle so the System re-fetches it next frame
-                                    ((StaticMesh*)writeData)->MeshResource = engineAPI->GetAssetManager()->GetMesh(*strPtr);
-                                    //engineAPI->MarkEntityDirty(entity, componentInfo->name);
-                                }
-                            }
-                            // 2. Skeletal Mesh Asset
-                            else if (strcmp(componentInfo->name, "SkeletalMeshComponent") == 0 && strcmp(varName, "AssetPath") == 0) {
-                                if (DrawAssetSlot(varName, *strPtr, "ASSET_SKELETAL_MESH", FileType::SkeletalMesh)) {
-                                    // FORCE UPDATE
-                                    ((SkeletalMeshComponent*)writeData)->MeshResource = engineAPI->GetAssetManager()->GetMesh(*strPtr);
-                                    //engineAPI->MarkEntityDirty(entity, componentInfo->name);
-                                }
-                            }
-                            // 3. Animation Graph (State Machine)
-                            else if (strcmp(componentInfo->name, "StateMachine") == 0 && strcmp(varName, "GraphAssetPath") == 0) {
-                                if (DrawAssetSlot(varName, *strPtr, "ASSET_ANIMATION", FileType::Animation)) {
-                                    // FORCE UPDATE
-                                    ((StateMachine*)writeData)->GraphResource = engineAPI->GetAssetManager()->GetAnimationGraph(*strPtr);
-                                    //engineAPI->MarkEntityDirty(entity, componentInfo->name);
-                                }
-                            }
-                            // 4. Fallback for generic strings
-                            else {
-                                static char buf[256];
-                                strncpy_s(buf, strPtr->c_str(), 256);
-                                if (ImGui::InputText(varName, buf, 256)) {
-                                    *strPtr = std::string(buf);
-                                }
-                            }
-                        }
+                        // Call the new recursive function
+                        RenderVariable(variable.name, variable.type->name, varPtr);
                     }
-
                 }
             }
         }
+    }
     }
 
 	ImGui::End();

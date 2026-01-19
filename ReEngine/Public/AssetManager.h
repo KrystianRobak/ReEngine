@@ -53,6 +53,9 @@ public:
     std::vector<std::string> GetCachedPaths() override;
     std::vector<std::string> GetCachedTexturesPaths() override;
 
+    const std::unordered_map<int, CompiledMaterial>& GetMaterials() override{ return materials; }
+    void LoadMaterial(int id, const std::string& path) override;
+
     void shutdown();
 
 private:

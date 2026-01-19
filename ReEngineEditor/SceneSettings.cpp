@@ -1,6 +1,6 @@
 #include "SceneSettings.h"
 
-#include "ReCamera.h"
+
 
 void SceneSettings::OnInit()
 {
@@ -13,7 +13,7 @@ void SceneSettings::Render()
 	auto scene = engineAPI->GetCurrentScene();
 	if (scene)
 	{
-		auto camera = scene->GetDefaultCamera();
+		camera = scene->GetActiveCamera();
 		if (camera)
 		{
 			if (ImGui::CollapsingHeader("Camera Settings"))

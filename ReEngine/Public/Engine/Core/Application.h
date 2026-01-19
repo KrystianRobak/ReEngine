@@ -21,6 +21,7 @@
 #include <barrier>
 #include "InputManager.h"
 #include <SystemGraph.h>
+#include <PhysicsWorld.h>
 
 
 class ENGINE_API Application : public IApplicationApi
@@ -64,6 +65,11 @@ public:
 	IInputManager* GetInputManager() override
 	{
 		return inputManager.get();
+	}
+
+	PhysicsWorld* GetPhysicsWorld()
+	{
+		return dynamic_cast<PhysicsWorld*>(PhysicsSystem_);
 	}
 
 	void SetPostUpdateUI(FunctionDelegate fun) override;
@@ -125,6 +131,7 @@ private:
 	std::shared_ptr<Coordinator> coordinator;
 	RenderSystem* Renderer_;
 	System* PhysicsSystem_;
+
 
 	std::unique_ptr<SystemGraph> systemGraph;
 

@@ -6,6 +6,7 @@ class IViewport;
 class UIComponent;
 class ILayerManager;
 class IInputManager;
+class PhysicsWorld;
 
 namespace Editor
 {
@@ -41,6 +42,7 @@ public:
 
 	virtual ILayerManager* GetLayerManager() = 0;
     virtual IInputManager* GetInputManager() = 0; 
+    virtual PhysicsWorld* GetPhysicsWorld() = 0;
     virtual Editor::IEngineEditorApi* GetCoordinatorEditor() = 0;
     virtual void SetUpdateUI(FunctionDelegate function) = 0;
     virtual void SetPostUpdateUI(FunctionDelegate function) = 0;

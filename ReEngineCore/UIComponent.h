@@ -44,6 +44,7 @@ public:
         icons[FileType::Material] = GetTexture("icons/material.retex");
         icons[FileType::Scene] = GetTexture("icons/scene.retex");
         icons[FileType::Animation] = GetTexture("icons/animation.retex");
+        icons[FileType::Prefab] = GetTexture("icons/file.retex");
 
 		OnInit();
 	}

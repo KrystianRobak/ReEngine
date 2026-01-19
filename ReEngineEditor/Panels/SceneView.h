@@ -20,7 +20,15 @@ public:
     virtual void OnInit() override
     {
 		viewport = engineApp->CreateNewViewport("SceneViewport", 1920, 1080);
+
+        engineAPI->AddEventListener(Events::Application::CAMERA_CHANGED, [this](Event& e)
+            {
+                this->viewport->SetCamera(engineAPI->GetCurrentScene()->GetActiveCamera());
+            });
+
 		viewport->SetCamera(engineAPI->GetCurrentScene()->GetDefaultCamera()); 
+
+
 
 
         RotateIcon = GetTexture("icons/rotate.retex");
