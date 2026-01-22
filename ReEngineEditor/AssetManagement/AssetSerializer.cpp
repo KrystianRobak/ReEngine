@@ -129,22 +129,20 @@ std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std:
                 aiProcess_GenNormals |
                 aiProcess_LimitBoneWeights |
                 aiProcess_GlobalScale |
-                aiProcess_ValidateDataStructure |  // ADD THIS
-                aiProcess_PopulateArmatureData);    // ADD THIS
+                aiProcess_ValidateDataStructure |
+                aiProcess_PopulateArmatureData);
 
             if (!scene || !scene->mRootNode) {
                 std::cerr << "[Importer] Assimp Error: " << importer.GetErrorString() << std::endl;
                 return { AssetType::Null, "" };
             }
 
-            // --- NEW: ANIMATION EXPORT SECTION ---
             if (scene->HasAnimations()) {
                 std::cout << "[Importer] Found " << scene->mNumAnimations << " animations." << std::endl;
 
                 for (unsigned int i = 0; i < scene->mNumAnimations; i++) {
                     aiAnimation* anim = scene->mAnimations[i];
 
-                    // Determine a filename for the animation
                     std::string animName = anim->mName.C_Str();
                     if (animName.empty()) animName = "Anim_" + std::to_string(i);
 
@@ -412,7 +410,7 @@ bool AssetSerializer::SaveStaticMesh(const std::string& path, const StaticMeshDa
 
     // 1. Header
     AssetHeader header;
-    header.magic = ASSET_MAGIC; // Ensure ASSET_MAGIC is defined in your header
+    header.magic = ASSET_MAGIC;
     header.type = AssetType::StaticMesh;
     header.version = 1;
     out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
@@ -463,14 +461,10 @@ std::shared_ptr<StaticMeshData> AssetSerializer::LoadStaticMesh(const std::strin
     return result;
 }
 
-// --- SKELETAL MESH IMPLEMENTATION ---
-
-// Replace your ImportSkeletalMeshAssimp in AssetSerializer.cpp
 
 std::shared_ptr<SkeletalMeshData> AssetSerializer::ImportSkeletalMeshAssimp(const std::string& path) {
     Assimp::Importer importer;
 
-    // ALL THE FBX FIXES:
     importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
     importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS,
         aiComponent_NORMALS | aiComponent_TANGENTS_AND_BITANGENTS);
@@ -481,7 +475,7 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::ImportSkeletalMeshAssimp(cons
         aiProcess_GenNormals |
         aiProcess_CalcTangentSpace |
         aiProcess_LimitBoneWeights |
-        aiProcess_GlobalScale);  // Add this!
+        aiProcess_GlobalScale);
 
     if (!scene || !scene->mRootNode) {
         std::cerr << "[Importer] Failed to load: " << path << "\n";
@@ -494,11 +488,10 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::ImportSkeletalMeshAssimp(cons
     glm::vec3 min(FLT_MAX);
     glm::vec3 max(-FLT_MAX);
 
-    // Process all meshes
+
     for (unsigned int i = 0; i < scene->mNumMeshes; i++) {
         aiMesh* aiMeshPtr = scene->mMeshes[i];
 
-        // 1. Process Geometry
         MeshData meshData = ProcessMesh(aiMeshPtr, scene, data.get());
         for (const auto& v : meshData.vertices) {
             min = glm::min(min, v);
@@ -517,18 +510,18 @@ bool AssetSerializer::SaveSkeletalMesh(const std::string& path, const SkeletalMe
     std::ofstream out(path, std::ios::binary);
     if (!out.is_open()) return false;
 
-    // 1. Header
+
     AssetHeader header;
     header.magic = ASSET_MAGIC;
     header.type = AssetType::SkeletalMesh;
     header.version = 1;
     out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
-    // 2. Global AABB (Inherited from StaticMeshData)
+
     out.write(reinterpret_cast<const char*>(&data.aabbMin), sizeof(glm::vec3));
     out.write(reinterpret_cast<const char*>(&data.aabbMax), sizeof(glm::vec3));
 
-    // 3. Meshes (Inherited from StaticMeshData)
+
     uint32_t meshCount = static_cast<uint32_t>(data.meshes.size());
     out.write(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
 
@@ -536,7 +529,7 @@ bool AssetSerializer::SaveSkeletalMesh(const std::string& path, const SkeletalMe
         WriteMeshData(out, mesh);
     }
 
-    // 4. Bone Info Map (Vector of BoneProps)
+
     uint32_t boneCount = static_cast<uint32_t>(data.boneInfoMap.size());
     out.write(reinterpret_cast<char*>(&boneCount), sizeof(uint32_t));
 
@@ -544,12 +537,11 @@ bool AssetSerializer::SaveSkeletalMesh(const std::string& path, const SkeletalMe
     std::cout << "Saving " << boneCount << " bones to: " << path << "\n";
 
     for (const auto& bone : data.boneInfoMap) {
-        // A. Bone Name
+
         uint32_t nameLen = static_cast<uint32_t>(bone.name.size());
         out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
         if (nameLen > 0) out.write(bone.name.c_str(), nameLen);
 
-        // B. Offset Matrix
         out.write(reinterpret_cast<const char*>(&bone.offset), sizeof(glm::mat4));
     }
 
@@ -564,7 +556,6 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
         return nullptr;
     }
 
-    // 1. Header
     AssetHeader header;
     in.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 
@@ -576,11 +567,10 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
     auto result = std::make_shared<SkeletalMeshData>();
     result->path = path;
 
-    // 2. Global AABB
     in.read(reinterpret_cast<char*>(&result->aabbMin), sizeof(glm::vec3));
     in.read(reinterpret_cast<char*>(&result->aabbMax), sizeof(glm::vec3));
 
-    // 3. Meshes
+
     uint32_t meshCount = 0;
     in.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
 
@@ -589,7 +579,6 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
         ReadMeshData(in, result->meshes[i]);
     }
 
-    // 4. Bone Info
     uint32_t boneMapSize = 0;
     in.read(reinterpret_cast<char*>(&boneMapSize), sizeof(uint32_t));
 
@@ -602,7 +591,6 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
     for (uint32_t i = 0; i < boneMapSize; ++i) {
         BoneProps info;
 
-        // A. Bone Name
         uint32_t nameLen = 0;
         in.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
         if (nameLen > 0) {
@@ -610,7 +598,6 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
             in.read(&info.name[0], nameLen);
         }
 
-        // B. Offset Matrix
         in.read(reinterpret_cast<char*>(&info.offset), sizeof(glm::mat4));
 
         result->boneInfoMap.push_back(info);
@@ -622,7 +609,6 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::LoadSkeletalMesh(const std::s
     return result;
 }
 
-// --- NEW HELPER: Recursive Node Write ---
 void WriteSerializedNode(std::ofstream& out, const SerializedNode& node) {
     uint32_t nameLen = (uint32_t)node.name.size();
     out.write(reinterpret_cast<const char*>(&nameLen), sizeof(uint32_t));
@@ -662,21 +648,18 @@ bool AssetSerializer::SaveAnimation(const std::string& path, const SerializedAni
         out.write(reinterpret_cast<const char*>(&bLen), sizeof(uint32_t));
         if (bLen > 0) out.write(channel.name.c_str(), bLen);
 
-        // Positions
         uint32_t nPos = (uint32_t)channel.positions.size();
         out.write(reinterpret_cast<const char*>(&nPos), sizeof(uint32_t));
         for (const auto& kv : channel.positions) {
             out.write(reinterpret_cast<const char*>(&kv.first), sizeof(float));
             out.write(reinterpret_cast<const char*>(&kv.second), sizeof(glm::vec3));
         }
-        // Rotations
         uint32_t nRot = (uint32_t)channel.rotations.size();
         out.write(reinterpret_cast<const char*>(&nRot), sizeof(uint32_t));
         for (const auto& kv : channel.rotations) {
             out.write(reinterpret_cast<const char*>(&kv.first), sizeof(float));
             out.write(reinterpret_cast<const char*>(&kv.second), sizeof(glm::quat));
         }
-        // Scales
         uint32_t nScl = (uint32_t)channel.scales.size();
         out.write(reinterpret_cast<const char*>(&nScl), sizeof(uint32_t));
         for (const auto& kv : channel.scales) {
@@ -689,11 +672,9 @@ bool AssetSerializer::SaveAnimation(const std::string& path, const SerializedAni
     return true;
 }
 
-// --- TEXTURE IMPLEMENTATION ---
 
 bool AssetSerializer::ImportTexture(const std::string& source, const std::string& dest) {
     int w, h, c;
-    // stbi_load allocates memory, we must free it
     unsigned char* data = stbi_load(source.c_str(), &w, &h, &c, 4); // Force 4 channels (RGBA)
     if (!data) {
         std::cerr << "Failed to load texture: " << source << std::endl;
@@ -706,13 +687,11 @@ bool AssetSerializer::ImportTexture(const std::string& source, const std::string
         return false;
     }
 
-    // 1. Asset Header
     AssetHeader header;
     header.magic = ASSET_MAGIC;
     header.version = ASSET_VERSION;
     header.type = AssetType::Texture;
 
-    // 2. Texture Header
     TextureHeader texHeader;
     texHeader.width = static_cast<uint32_t>(w);
     texHeader.height = static_cast<uint32_t>(h);
@@ -721,7 +700,6 @@ bool AssetSerializer::ImportTexture(const std::string& source, const std::string
 
     header.dataSize = sizeof(TextureHeader) + texHeader.dataSize;
 
-    // Write all
     out.write(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
     out.write(reinterpret_cast<char*>(&texHeader), sizeof(TextureHeader));
     out.write(reinterpret_cast<char*>(data), texHeader.dataSize);

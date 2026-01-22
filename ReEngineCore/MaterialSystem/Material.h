@@ -209,7 +209,8 @@ public:
             }
         }
 
-        // Minimal Shader Template (Vertex remains the same)
+        // --- UPDATED VERTEX SHADER (Matches GBuffer.vs logic) ---
+        // Includes BoneIDs (loc 5), Weights (loc 6), and Animation Logic
         result.VertexShaderCode = R"(
 #version 460 core
 layout (location = 0) in vec3 aPos;
@@ -217,27 +218,66 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
 layout (location = 3) in vec3 aTangent;
 layout (location = 4) in vec3 aBitangent;
-layout (location = 5) in mat4 aInstanceMatrix; // Changed from uniform to attribute
 
-out vec2 TexCoords;
+// Bone Data
+layout (location = 5) in ivec4 aBoneIDs;
+layout (location = 6) in vec4 aWeights;
+
+// Instance Matrix
+layout (location = 10) in mat4 aInstanceMatrix;
+
 out vec3 FragPos;
+out vec2 TexCoords;
 out vec3 Normal;
 out mat3 TBN;
 
 uniform mat4 view;
 uniform mat4 projection;
 
+const int MAX_BONES = 200;
+const int MAX_BONE_INFLUENCE = 4;
+uniform mat4 finalBones[MAX_BONES];
+uniform bool uIsAnimated;
+
 void main()
 {
-    // Use instance matrix
-    vec4 worldPos = aInstanceMatrix * vec4(aPos, 1.0);
+    mat4 totalModelMatrix;
+    if (uIsAnimated) 
+    {
+        mat4 BoneTransform = mat4(0.0);
+        float totalWeight = 0.0;
+
+        for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
+        {
+            int id = aBoneIDs[i];
+            float w = aWeights[i];
+
+            if (id < 0 || id >= MAX_BONES || w <= 0.0)
+                continue;
+            
+            BoneTransform += finalBones[id] * w;
+            totalWeight += w;
+        }
+
+        // Safety: If no valid weights, use identity to prevent mesh disappearing
+        if (totalWeight == 0.0f) BoneTransform = mat4(1.0f);
+        else BoneTransform = BoneTransform / totalWeight; // Normalize if needed
+
+        // Combine: Instance * Bone
+        totalModelMatrix = aInstanceMatrix * BoneTransform;
+    }
+    else
+    {
+        totalModelMatrix = aInstanceMatrix;
+    }
+
+    vec4 worldPos = totalModelMatrix * vec4(aPos, 1.0);
     FragPos = worldPos.xyz;
     TexCoords = aTexCoords;
     
-    // Normal Matrix from Instance Matrix
-    // Note: In production, calculating inverse() in shader is expensive. 
-    // Ideally, pass a NormalMatrix as another attribute, but this works for now.
-    mat3 normalMatrix = transpose(inverse(mat3(aInstanceMatrix)));
+    // Normal Matrix
+    // Note: In production, pass a NormalMatrix attribute to avoid inverse() here
+    mat3 normalMatrix = transpose(inverse(mat3(totalModelMatrix)));
     Normal = normalize(normalMatrix * aNormal);
     
     // Calculate TBN
@@ -249,8 +289,7 @@ void main()
         T = normalize(normalMatrix * aTangent);
         B = normalize(normalMatrix * aBitangent);
     } else {
-        // Fallback: create arbitrary tangent if missing
-        // (This prevents the matrix from being full of NaNs)
+        // Fallback tangent generation
         vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
         T = normalize(cross(up, N));
         B = cross(N, T);
@@ -262,8 +301,8 @@ void main()
 }
 )";
 
-        // --- 4. FRAGMENT SHADER TEMPLATE (DEFERRED) ---
-        // Matches InitGBuffer attachments
+        // --- FRAGMENT SHADER TEMPLATE ---
+        // Matches InitGBuffer attachments  and Node.h outputs
         result.FragmentShaderCode =
             "#version 460 core\n"
             "layout (location = 0) out vec4 gPosition;\n"   // RGB=Pos, A=Metallic
@@ -335,12 +374,11 @@ void main()
         name = j["name"];
         path = j["path"];
 
- 
+        // Clear existing data
         m_Nodes.clear();
         m_Links.clear();
         m_NextNodeID = 1;
         m_NextLinkID = 1;
-
 
         // --- Rebuild nodes ---
         for (const auto& nodeData : j["nodes"])
@@ -348,15 +386,33 @@ void main()
             std::string type = nodeData["type"];
             BaseNode* node = nullptr;
 
+            // Basic & Material Nodes
             if (type == "ConstantNode")
                 node = new ConstantNode(nodeData["id"]);
-            else if (type == "AddNode")
-                node = new AdderNode(nodeData["id"]);
-            else if (type == "TextureSampleNode") // ADDED
+            else if (type == "ConstantVec2Node")
+                node = new ConstantVec2Node(nodeData["id"]);
+            else if (type == "ConstantVec3Node")
+                node = new ConstantVec3Node(nodeData["id"]);
+            else if (type == "TextureSampleNode")
                 node = new TextureSampleNode(nodeData["id"]);
-            else if (type == "OutputNode") // ADDED
+            else if (type == "TextureCoordsNode")
+                node = new TextureCoordsNode(nodeData["id"]);
+            else if (type == "OutputNode")
                 node = new OutputNode(nodeData["id"]);
-            // Add other node types here
+
+            // Math Nodes
+            else if (type == "AddNode")
+                node = new AdderNode(nodeData["id"]); // Note: Checks 'AdderNode' struct in Node.h
+            else if (type == "MultiplyNode")
+                node = new MultiplyNode(nodeData["id"]);
+            else if (type == "DotNode")
+                node = new DotNode(nodeData["id"]);
+            else if (type == "LerpNode")
+                node = new LerpNode(nodeData["id"]);
+            else if (type == "CrossNode")
+                node = new CrossNode(nodeData["id"]);
+            else if (type == "NormalizeNode")
+                node = new NormalizeNode(nodeData["id"]);
 
             if (node)
             {

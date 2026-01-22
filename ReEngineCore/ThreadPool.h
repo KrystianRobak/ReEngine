@@ -32,7 +32,6 @@ public:
 		);
 		std::future<return_type> res = task->get_future();
 
-		// Wrap task to be void() compliant
 		std::function<void()> wrapper = [task]() { (*task)(); };
 
 		if (type == JobType::Background) {
@@ -52,7 +51,6 @@ private:
 	void pushToCompute(std::function<void()>& task);
 	void pushToIO(std::function<void()>& task);
 
-	// Two separate pools to prevent IO from starving Physics/ECS
 	std::vector<std::thread> computeThreads;
 	std::vector<std::thread> ioThreads;
 

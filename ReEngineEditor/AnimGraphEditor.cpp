@@ -16,7 +16,7 @@ AnimGraphEditor::~AnimGraphEditor() {
 void AnimGraphEditor::OnInit() {
     ImNodes::CreateContext();
     ImNodes::StyleColorsDark();
-    // Allow detaching links with Ctrl+Click
+
     ImNodes::GetIO().LinkDetachWithModifierClick.Modifier = &ImGui::GetIO().KeyCtrl;
 }
 
@@ -26,7 +26,7 @@ void AnimGraphEditor::SetContext(std::shared_ptr<AnimationGraphResource> graph) 
 
 void AnimGraphEditor::Render()
 {
-    // 1. Window Management
+
     if (!ImGui::Begin("Animation Graph Editor", &closed)) {
         ImGui::End();
         return;
@@ -40,7 +40,6 @@ void AnimGraphEditor::Render()
         return;
     }
 
-    // Menu Bar
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Save", "Ctrl+S")) { SaveGraph(); }
@@ -59,12 +58,9 @@ void AnimGraphEditor::Render()
         return;
     }
 
-    // =========================================================
-    // LEFT PANEL: Variables & Inspector
-    // =========================================================
+
     ImGui::BeginChild("LeftPanel", ImVec2(300, 0), true);
 
-    // --- SECTION A: Variables ---
     if (ImGui::CollapsingHeader("Blackboard / Variables", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Spacing();
@@ -81,7 +77,6 @@ void AnimGraphEditor::Render()
 
         ImGui::Separator();
 
-        // List Variables
         std::vector<std::string> varsToDelete;
         for (auto& [name, var] : currentGraph->DefaultBlackboard) {
             ImGui::PushID(name.c_str());
@@ -105,15 +100,13 @@ void AnimGraphEditor::Render()
 
     ImGui::Separator();
 
-    // --- SECTION B: Inspector ---
     if (ImGui::CollapsingHeader("Inspector", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Spacing();
 
-        // 1. NODE PROPERTIES
         if (selectedNodeID != -1)
         {
-            // Search for the node reference
+
             GraphNode* nodePtr = nullptr;
             for (auto& n : currentGraph->Nodes) {
                 if (n.ID == selectedNodeID) { nodePtr = &n; break; }
@@ -123,7 +116,6 @@ void AnimGraphEditor::Render()
             {
                 ImGui::TextDisabled("State Properties");
 
-                // Name Input
                 char buffer[128];
                 memset(buffer, 0, sizeof(buffer));
                 strncpy_s(buffer, nodePtr->Name.c_str(), sizeof(buffer) - 1);
@@ -135,8 +127,6 @@ void AnimGraphEditor::Render()
                 ImGui::Separator();
                 ImGui::Spacing();
 
-                // Animation Asset Slot (Drag & Drop enabled)
-                // Using the function from UIComponent
                 DrawAssetSlot("Animation", nodePtr->AnimationPath, "ASSET_ANIMATION", FileType::Animation);
 
                 ImGui::Spacing();
@@ -151,10 +141,8 @@ void AnimGraphEditor::Render()
                 }
             }
         }
-        // 2. LINK PROPERTIES
         else if (selectedLinkID != -1)
         {
-            // Search for link reference
             GraphTransition* linkPtr = nullptr;
             for (auto& l : currentGraph->Transitions) {
                 if (l.ID == selectedLinkID) { linkPtr = &l; break; }
@@ -165,7 +153,6 @@ void AnimGraphEditor::Render()
                 ImGui::TextDisabled("Transition Logic");
                 ImGui::Separator();
 
-                // Param Name
                 char buf[64];
                 memset(buf, 0, sizeof(buf));
                 strncpy_s(buf, linkPtr->ConditionParam.c_str(), sizeof(buf) - 1);
@@ -173,10 +160,8 @@ void AnimGraphEditor::Render()
                     linkPtr->ConditionParam = std::string(buf);
                 }
 
-                // Threshold
                 ImGui::DragFloat("Threshold", &linkPtr->Threshold, 0.1f);
 
-                // Operation
                 const char* items[] = { "GreaterThan (>)", "LessThan (<)", "Equals (=)", "NotEquals (!=)" };
                 int item_current = (int)linkPtr->Operation;
                 if (ImGui::Combo("Condition", &item_current, items, 4)) {
@@ -197,18 +182,15 @@ void AnimGraphEditor::Render()
         }
     }
 
-    ImGui::EndChild(); // End Left Panel
+    ImGui::EndChild();
 
     ImGui::SameLine();
 
-    // =========================================================
-    // RIGHT PANEL: Graph Editor
-    // =========================================================
     ImGui::BeginChild("GraphArea", ImVec2(0, 0), true);
 
     ImNodes::BeginNodeEditor();
 
-    // DRAW NODES
+
     for (auto& node : currentGraph->Nodes) {
         ImNodes::BeginNode(node.ID);
 
@@ -216,12 +198,10 @@ void AnimGraphEditor::Render()
         ImGui::Text("%s", node.Name.c_str());
         ImNodes::EndNodeTitleBar();
 
-        // Input Pin
         ImNodes::BeginInputAttribute(node.ID << 8 | 0);
         ImGui::Text("In");
         ImNodes::EndInputAttribute();
 
-        // Node Content (Visual Indicator)
         if (node.ID == currentGraph->EntryNodeID) {
             ImGui::TextColored(ImVec4(0, 1, 0, 1), "[ENTRY]");
         }
@@ -233,7 +213,6 @@ void AnimGraphEditor::Render()
             ImGui::TextDisabled("No Anim");
         }
 
-        // Output Pin
         ImNodes::BeginOutputAttribute(node.ID << 8 | 1);
         ImGui::Text("Out");
         ImNodes::EndOutputAttribute();
@@ -241,25 +220,23 @@ void AnimGraphEditor::Render()
         ImNodes::EndNode();
     }
 
-    // DRAW LINKS
     for (const auto& link : currentGraph->Transitions) {
         ImNodes::Link(link.ID, link.FromNodeID << 8 | 1, link.ToNodeID << 8 | 0);
     }
 
-    // 4. Context Menu
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
         ImGui::OpenPopup("NodeGraphContext");
     }
 
-    if (ImGui::BeginPopup("NodeGraphContext")) { // ID matches OpenPopup
+    if (ImGui::BeginPopup("NodeGraphContext")) {
         popupPos = ImGui::GetMousePosOnOpeningCurrentPopup();
 
         if (ImGui::MenuItem("Add State Node")) {
             GraphNode newNode;
             newNode.ID = ++currentGraph->NextNodeID;
             newNode.Name = "New State";
-            newNode.AnimationPath = ""; // Empty initially
+            newNode.AnimationPath = "";
             newNode.EditorPosition = popupPos;
 
 
@@ -272,11 +249,6 @@ void AnimGraphEditor::Render()
 
     ImNodes::EndNodeEditor();
 
-    // =========================================================
-    // INTERACTION HANDLING
-    // =========================================================
-
-    // 1. Link Creation
     int startAttr, endAttr;
     if (ImNodes::IsLinkCreated(&startAttr, &endAttr)) {
         int startNode = startAttr >> 8;
@@ -286,15 +258,13 @@ void AnimGraphEditor::Render()
         newTrans.ID = ++currentGraph->NextLinkID;
         newTrans.FromNodeID = startNode;
         newTrans.ToNodeID = endNode;
-        newTrans.ConditionParam = ""; // Default empty
+        newTrans.ConditionParam = ""; 
         newTrans.Operation = ConditionOp::Greater;
         newTrans.Threshold = 0.0f;
 
         currentGraph->Transitions.push_back(newTrans);
     }
 
-    // 2. Handle Selections (For Inspector)
-    // We check this every frame. If something is selected in ImNodes, we update our member vars.
     int numSelectedNodes = ImNodes::NumSelectedNodes();
     int numSelectedLinks = ImNodes::NumSelectedLinks();
 
@@ -304,8 +274,8 @@ void AnimGraphEditor::Render()
         selectedIDs.resize(numSelectedNodes);
         ImNodes::GetSelectedNodes(selectedIDs.data());
 
-        selectedNodeID = selectedIDs[0]; // Just take the first one
-        selectedLinkID = -1; // Deselect link
+        selectedNodeID = selectedIDs[0];
+        selectedLinkID = -1;
     }
     else if (numSelectedLinks > 0)
     {
@@ -314,31 +284,24 @@ void AnimGraphEditor::Render()
         ImNodes::GetSelectedLinks(selectedIDs.data());
 
         selectedLinkID = selectedIDs[0];
-        selectedNodeID = -1; // Deselect node
+        selectedNodeID = -1;
     }
     else
     {
-        // Optional: Clear selection if clicking on empty graph background
-        // ImNodes doesn't provide a direct "IsBackgroundClicked" but checking if 
-        // Window is hovered + MouseClicked + 0 selected items usually works.
         if (ImGui::IsMouseClicked(0) && ImNodes::IsEditorHovered())
         {
             selectedNodeID = -1;
             selectedLinkID = -1;
         }
     }
-
-    // 3. Deletion Logic
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
         ImGui::IsKeyPressed(ImGuiKey_Delete))
     {
         if (selectedNodeID != -1) {
-            // Remove Node
             auto& nodes = currentGraph->Nodes;
             nodes.erase(std::remove_if(nodes.begin(), nodes.end(),
                 [this](const GraphNode& n) { return n.ID == selectedNodeID; }), nodes.end());
 
-            // Remove associated links
             auto& links = currentGraph->Transitions;
             links.erase(std::remove_if(links.begin(), links.end(),
                 [this](const GraphTransition& t) { return t.FromNodeID == selectedNodeID || t.ToNodeID == selectedNodeID; }), links.end());
@@ -358,8 +321,8 @@ void AnimGraphEditor::Render()
 
     
 
-    ImGui::EndChild(); // End Graph Area
-    ImGui::End(); // End Window
+    ImGui::EndChild();
+    ImGui::End();
 }
 
 void AnimGraphEditor::LoadGraph(const std::string& path)
@@ -389,9 +352,9 @@ void AnimGraphEditor::LoadGraph(const std::string& path)
         GraphNode node;
         node.ID = jNode["id"];
 
-        // Load Name and Path
+
         if (jNode.contains("name")) node.Name = jNode["name"];
-        else if (jNode.contains("animName")) node.Name = jNode["animName"]; // Legacy support
+        else if (jNode.contains("animName")) node.Name = jNode["animName"];
 
         if (jNode.contains("animPath")) node.AnimationPath = jNode["animPath"];
 
@@ -428,14 +391,14 @@ void AnimGraphEditor::SaveGraph()
     json j;
     j["entryNodeId"] = currentGraph->EntryNodeID;
 
-    // Save Params
+
     j["parameters"] = { {"floats", json::object()}, {"bools", json::object()} };
     for (auto& [name, var] : currentGraph->DefaultBlackboard) {
         if (var.Type == AnimVarType::Float) j["parameters"]["floats"][name] = var.fVal;
         else j["parameters"]["bools"][name] = var.bVal;
     }
 
-    // Save Nodes
+
     j["nodes"] = json::array();
     for (auto& node : currentGraph->Nodes) {
         ImVec2 pos = ImNodes::GetNodeEditorSpacePos(node.ID);
@@ -448,7 +411,7 @@ void AnimGraphEditor::SaveGraph()
             });
     }
 
-    // Save Transitions
+
     j["transitions"] = json::array();
     for (auto& trans : currentGraph->Transitions) {
         j["transitions"].push_back({

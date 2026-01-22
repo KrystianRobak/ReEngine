@@ -25,11 +25,12 @@ class ENGINE_API Coordinator : public Editor::IEngineEditorApi
 private:
 	std::shared_ptr<ComponentManager> mComponentManager;
 	std::shared_ptr<EntityManager> mEntityManager;
-	std::unique_ptr<EventManager> mEventManager;
-	std::unique_ptr<SystemManager> mSystemManager;
+	std::shared_ptr<EventManager> mEventManager;
+	std::shared_ptr<SystemManager> mSystemManager;
 	std::shared_ptr<AssetManager> mAssetManager;
 	std::shared_ptr<SceneManager> mSceneManager;
 	std::shared_ptr<EpochManager> mEpochManager;
+
 
 	Camera MainCamera;
 
@@ -70,8 +71,8 @@ public:
 	{
 		mComponentManager = std::make_shared<ComponentManager>();
 		mEntityManager = std::make_shared<EntityManager>();
-		mEventManager = std::make_unique<EventManager>();
-		mSystemManager = std::make_unique<SystemManager>();
+		mEventManager = std::make_shared<EventManager>();
+		mSystemManager = std::make_shared<SystemManager>();
 		mAssetManager = std::make_shared<AssetManager>(pool);
 		mSceneManager = std::make_shared<SceneManager>();
 		mEpochManager = std::make_shared<EpochManager>();
@@ -369,17 +370,12 @@ public:
 	{
 		std::vector<Entity> matchingEntities;
 
-		// 1. Get the ID for the requested component
-		// Note: Ensure componentName is valid/registered, or this might assert inside GetComponentType
 		ComponentType typeId = mComponentManager->GetComponentType(componentName);
 
-		// 2. Iterate through all potential entities
 		for (Entity entity = 0; entity < MAX_ENTITIES; ++entity)
 		{
-			// Check if entity is actually in use
 			if (mEntityManager->IsAlive(entity))
 			{
-				// 3. Check if the entity's signature has the specific bit set
 				Signature sig = mEntityManager->GetSignature(entity);
 				if (sig.test(typeId))
 				{

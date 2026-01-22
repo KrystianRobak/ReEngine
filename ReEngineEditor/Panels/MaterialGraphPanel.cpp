@@ -320,7 +320,12 @@ void MaterialGraphPanel::Render()
 
     // Draw existing nodes
     for (auto& node : m_Nodes)
+    {
         node->DrawNode();
+
+        ImVec2 currentPos = ImNodes::GetNodeEditorSpacePos(node->id);
+        node->position = currentPos;
+    }
 
     // Draw links
     for (auto& link : m_Links)
@@ -465,14 +470,23 @@ bool MaterialGraphPanel::LoadMaterial(const std::string& filePath)
             return false;
         }
 
-        // Steal the nodes and links from the temporary 'mat' object.
-        // The temporary 'mat' object's destructor will run and clean up its now-empty vectors, 
-        // preventing double deletion and memory leak issues.
         m_Nodes.swap(mat.GetNodes());
         m_Links.swap(mat.GetLinks());
 
-        m_NextNodeID = m_Nodes.size() + 1;
-		m_NextLinkID = m_Links.size() + 1;
+        // [FIX] Initialize Next IDs based on loaded data
+        m_NextNodeID = 0;
+        m_NextLinkID = 0;
+        for (auto* n : m_Nodes) if (n->id >= m_NextNodeID) m_NextNodeID = n->id + 1;
+        for (auto& l : m_Links) if (l.id >= m_NextLinkID) m_NextLinkID = l.id + 1;
+
+
+        for (auto node : m_Nodes)
+        {
+            if (auto texnode = static_cast<TextureSampleNode*>(node))
+            {
+                texnode->Init(engineAPI->GetAssetManager().get());
+            }
+        }
 
 
         // Create the shared pointer from the loaded material object
@@ -499,6 +513,9 @@ bool MaterialGraphPanel::LoadMaterial(const std::string& filePath)
         m_Nodes.clear();
         m_Links.clear();
 
+        ImNodes::ClearNodeSelection();
+        ImNodes::ClearLinkSelection();
+
         // B. Load the new material
         Material newMat;
         if (!newMat.LoadFromFile(filePath))
@@ -510,6 +527,11 @@ bool MaterialGraphPanel::LoadMaterial(const std::string& filePath)
         // Steal the new nodes and links
         m_Nodes.swap(newMat.GetNodes());
         m_Links.swap(newMat.GetLinks());
+
+        m_NextNodeID = 0;
+        m_NextLinkID = 0;
+        for (auto* n : m_Nodes) if (n->id >= m_NextNodeID) m_NextNodeID = n->id + 1;
+        for (auto& l : m_Links) if (l.id >= m_NextLinkID) m_NextLinkID = l.id + 1;
 
         // Update the currently selected material shared pointer
         currentlySelectedMaterial = std::make_shared<Material>(newMat);

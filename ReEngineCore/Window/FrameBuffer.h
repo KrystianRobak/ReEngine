@@ -18,6 +18,8 @@ public:
 
     virtual uint32_t get_texture() = 0;
 
+    uint32_t GetFBO() const { return mFBO; }
+
 protected:
     uint32_t mFBO = 0;
     uint32_t mTexId = 0;

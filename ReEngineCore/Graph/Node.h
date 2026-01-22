@@ -105,6 +105,18 @@ struct BaseNode
 
     virtual std::string GenerateShaderCode(const std::vector<Link>& links, const std::vector<BaseNode*>& nodes) = 0;
 
+    void UpdatePinIds()
+    {
+        for (auto& pin : Inputpins) {
+            int localIndex = pin.id % 100; // Extract local offset (e.g. 1)
+            pin.id = this->id * 100 + localIndex; // Rebuild ID: 501
+        }
+        for (auto& pin : Outputpins) {
+            int localIndex = pin.id % 100; // Extract local offset (e.g. 2)
+            pin.id = this->id * 100 + localIndex; // Rebuild ID: 502
+        }
+    }
+
     // Final DrawNode wrapper
     void DrawNode()
     {
@@ -259,6 +271,7 @@ struct AdderNode : public BaseNode
     {
         id = data["id"];
         position = ImVec2(data["position"][0], data["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -313,6 +326,7 @@ struct ConstantNode : public BaseNode
         id = data["id"];
         position = ImVec2(data["position"][0], data["position"][1]);
         Outputpins[0].Set<float>(data["value"]);
+        UpdatePinIds();
     }
 };
 
@@ -540,6 +554,7 @@ struct TextureSampleNode : public BaseNode
         position = ImVec2(data["position"][0], data["position"][1]);
         texturePath = data.value("texturePath", "");
         textureLoaded = false;
+        UpdatePinIds();
     }
 };
 
@@ -629,6 +644,7 @@ struct OutputNode : public BaseNode
     {
         id = data["id"];
         position = ImVec2(data["position"][0], data["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -733,6 +749,7 @@ struct AddNode : public BaseNode
     {
         id = data["id"];
         position = ImVec2(data["position"][0], data["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -782,6 +799,7 @@ struct ConstantVec2Node : public BaseNode
         id = j["id"];
         position = ImVec2(j["position"][0], j["position"][1]);
         Outputpins[0].Set<glm::vec2>({ j["value"][0], j["value"][1] });
+        UpdatePinIds();
     }
 };
 
@@ -833,6 +851,7 @@ struct ConstantVec3Node : public BaseNode
         id = j["id"];
         position = ImVec2(j["position"][0], j["position"][1]);
         Outputpins[0].Set<glm::vec3>({ j["value"][0], j["value"][1], j["value"][2] });
+        UpdatePinIds();
     }
 };
 
@@ -909,6 +928,7 @@ struct MultiplyNode : public BaseNode
     {
         id = j["id"];
         position = ImVec2(j["position"][0], j["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -959,6 +979,7 @@ struct DotNode : public BaseNode
     {
         id = j["id"];
         position = ImVec2(j["position"][0], j["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -1045,6 +1066,7 @@ struct LerpNode : public BaseNode
     {
         id = j["id"];
         position = ImVec2(j["position"][0], j["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -1090,6 +1112,7 @@ struct CrossNode : public BaseNode
     {
         id = j["id"];
         position = ImVec2(j["position"][0], j["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -1131,6 +1154,7 @@ struct NormalizeNode : public BaseNode
     {
         id = j["id"];
         position = ImVec2(j["position"][0], j["position"][1]);
+        UpdatePinIds();
     }
 };
 
@@ -1254,5 +1278,6 @@ struct TextureCoordsNode : public BaseNode
             Tiling = { j["tiling"][0], j["tiling"][1] };
         if (j.contains("offset"))
             Offset = { j["offset"][0], j["offset"][1] };
+        UpdatePinIds();
     }
 };

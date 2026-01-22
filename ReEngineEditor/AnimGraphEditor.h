@@ -14,17 +14,16 @@ public:
 	void LoadGraph(const std::string& path);
     void SaveGraph();
 
-    // Call this to open a specific graph for editing
     void SetContext(std::shared_ptr<AnimationGraphResource> graph);
 
 private:
     std::shared_ptr<AnimationGraphResource> currentGraph;
     std::string currentFilePath;
-    // UI State
+
     bool showNodePopup = false;
     ImVec2 popupPos;
 
-    // Temporary Link State
+
     int selectedLinkID = -1;
     int selectedNodeID = -1;
 };

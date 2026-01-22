@@ -24,8 +24,6 @@ public:
 
     static bool SaveAnimation(const std::string& path, const SerializedAnimation& data);
 
-    // Main Entry point for dragging and dropping files
-    // Returns true if successfully cooked into a .remesh, .reskel, or .retex
     static std::pair<AssetType,std::string> ImportAndCookFile(const std::string& sourcePath, const std::string& destDir);
 
     static bool ImportTexture(const std::string& source, const std::string& dest);

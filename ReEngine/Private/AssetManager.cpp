@@ -12,23 +12,46 @@ AssetManager::AssetManager(ThreadPool* threadPool) : pool(threadPool) {}
 AssetManager::~AssetManager() { shutdown(); }
 
 void AssetManager::LoadMaterial(int id, const std::string& path) {
-    std::lock_guard<std::mutex> lock(assetMutex);
+    // -----------------------------------------------------------
+    // 1. CPU WORK: Disk I/O and String Processing
+    // -----------------------------------------------------------
+    // We do NOT lock 'assetMutex' yet. This prevents blocking the 
+    // rest of the engine while reading from the hard drive.
 
-    // Create a temp material helper to load the graph
     Material tempMat;
-    if (tempMat.LoadFromFile(path)) {
-        // Compile it to generate shaders/uniforms
-        CompiledMaterial compiled = tempMat.Compile(this);
-        compiled.SetId(id);
-        compiled.path = path;
-
-        // Store it with the specific ID from the save file
-        materials[id] = compiled;
-
-        // Ensure our ID counter is higher than this so new materials don't clash
-        int currentMax = LastMaterialId.load();
-        if (id >= currentMax) LastMaterialId.store(id + 1);
+    if (!tempMat.LoadFromFile(path)) {
+        std::cerr << "[AssetManager] Failed to load material file: " << path << "\n";
+        return;
     }
+
+    // 'Compile' here likely generates the GLSL source strings (CPU work).
+    // If Compile() internally calls other AssetManager functions (like GetTexture),
+    // those functions manage their own locks, so this is safe.
+    CompiledMaterial compiled = tempMat.Compile(this);
+    compiled.path = path;
+
+    // -----------------------------------------------------------
+    // 2. GPU WORK: Enqueue for the Render Thread
+    // -----------------------------------------------------------
+    // We move 'compiled' into the lambda so the data survives until execution.
+    // 'mutable' is required because we modify 'compiled' (BuildGLShader) inside the lambda.
+
+    this->EnqueueUpload([this, id, compiled = std::move(compiled)]() mutable {
+
+        // [Render Thread] This runs safely where the GL Context is active
+        compiled.BuildGLShader();
+        compiled.SetId(id);
+
+        // [Render Thread] Now we lock to safely insert into the map
+        {
+            std::lock_guard<std::mutex> lock(assetMutex);
+            materials[id] = compiled;
+
+            // Update internal ID counter
+            int currentMax = LastMaterialId.load();
+            if (id >= currentMax) LastMaterialId.store(id + 1);
+        }
+        });
 }
 
 void AssetManager::shutdown() {
