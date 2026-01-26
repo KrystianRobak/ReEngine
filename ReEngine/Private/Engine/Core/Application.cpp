@@ -4,6 +4,7 @@
 #include "ReTypes.h"
 #include "thread"
 #include "Engine/Systems/UI/UiSystem.h"
+#include "GameLayer.h"
 #include <iostream>
 #include "Logger.h"
 #include "StaticMesh.h"
@@ -346,11 +347,11 @@ void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
 
 	// Sleep to maintain target frame rate (if we are faster than target)
 	
-	float sleepDuration = targetFrameDuration - dt;
-	if (sleepDuration > 0.0f)
-	{
-		std::this_thread::sleep_for(std::chrono::duration<float>(sleepDuration));
-	}
+	//float sleepDuration = targetFrameDuration - dt;
+	//if (sleepDuration > 0.0f)
+	//{
+	//	std::this_thread::sleep_for(std::chrono::duration<float>(sleepDuration));
+	//}
 	
 
 	// New end time after sleep (accurate frame time)
@@ -413,6 +414,7 @@ void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
 
 			coordinator->SendEvent(Events::Application::CAMERA_CHANGED);
 			m_AppState.store(ApplicationState::Play);
+			GetLayerManager()->AddLayerThreadSafe<GameUILayer>();
 		}
 		else if (current == ApplicationState::Play && pending == ApplicationState::Editor)
 		{
@@ -425,6 +427,7 @@ void Application::SwapAllBuffersAndNotify() noexcept// <-- Removed noexcept here
 			coordinator->SendEvent(Events::Application::CAMERA_CHANGED);
 			coordinator->ExitPlayMode();
 			m_AppState.store(ApplicationState::Editor);
+			GetLayerManager()->RemoveLayer<GameUILayer>();
 		}
 		else
 		{

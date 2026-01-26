@@ -221,5 +221,8 @@
     <ClInclude Include="PhysicsQuerryStructs.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
+    <ClInclude Include="GameLayer.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

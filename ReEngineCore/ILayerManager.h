@@ -37,6 +37,19 @@ public:
     }
 
     template<typename LayerTemplate>
+    LayerTemplate* GetLayer()
+    {
+        std::lock_guard lock(Mutex_);
+        auto it = std::find_if(LayerStack_.begin(), LayerStack_.end(),
+            [](auto& layer) { return dynamic_cast<LayerTemplate*>(layer.get()) != nullptr; });
+
+        if (it != LayerStack_.end())
+            return static_cast<LayerTemplate*>(it->get());
+
+        return nullptr;
+    }
+
+    template<typename LayerTemplate>
         requires(std::is_base_of_v<ILayer, LayerTemplate>)
     void AddLayer()
     {

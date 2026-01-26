@@ -25,6 +25,9 @@
     <RootNamespace>ReEngine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
+  <PropertyGroup>
+    <EngineIncludePaths>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)ReEngine\Public;$(SolutionDir)ReEngineReflectionCore;$(SolutionDir)ReEngine\Public\Engine\Components;$(SolutionDir)ReEngine\Public\Engine\Systems\Physics;$(SolutionDir)ReEngineCore;$(ProjectDir)</EngineIncludePaths>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -113,7 +116,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_DLL_EXPORTS;ENGINE_DLL_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include;$(SolutionDir)ReEngine\Public;$(SolutionDir)ReEngineReflectionCore;$(SolutionDir)ReEngine\Public\Engine\Components;$(SolutionDir)ReEngine\Public\Engine\Systems\Physics;$(SolutionDir)ReEngineCore;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(EngineIncludePaths);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -123,7 +126,7 @@
       <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReflectionCore.lib;ReEngineCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(MyIncludes)"</Command>
+      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(EngineIncludePaths)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -146,7 +149,7 @@
       <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(MyIncludes)"</Command>
+      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(EngineIncludePaths)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup>
@@ -161,10 +164,10 @@
     <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ApplicationAPI.cpp" />
-    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Private\AssetManager.cpp" />
     <ClCompile Include="Private\Commander.cpp" />
     <ClCompile Include="Private\EpochManager.cpp" />
+    <ClCompile Include="Private\InputManager.cpp" />
     <ClCompile Include="Private\SceneManager.cpp" />
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp" />
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
@@ -193,7 +196,6 @@
     <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
     <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
     <ClInclude Include="ApplicationAPI.h" />
-    <ClInclude Include="InputManager.h" />
     <ClInclude Include="Public\AssetManager.h" />
     <ClInclude Include="Public\Commander.h" />
     <ClInclude Include="Public\Engine\Components\BoxCollider.h" />
@@ -204,6 +206,7 @@
     <ClInclude Include="Public\Engine\Components\StateMachine.h" />
     <ClInclude Include="Public\Engine\Components\StaticMesh.h" />
     <ClInclude Include="Public\EpochManager.h" />
+    <ClInclude Include="Public\InputManager.h" />
     <ClInclude Include="Public\ReEngineExport.h" />
     <ClInclude Include="Public\RenderCommand.h" />
     <ClInclude Include="Public\SceneManager.h" />

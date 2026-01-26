@@ -15,13 +15,26 @@ struct BoxCollider {
     BoxCollider() { aabb = std::make_shared<AABB>(); }
 
     void FitToMesh(const glm::vec3& min, const glm::vec3& max) {
-        if (!aabb)
-        {
+        if (!aabb) {
             aabb = std::make_shared<AABB>();
         }
-        size = max - min;
-        offset = (min + max) * 0.5f;
+
+        glm::vec3 newSize = max - min;
+
+        // SAFEGUARD: If mesh bounds are invalid/zero, default to 1x1x1 unit box
+        // allowing you to see the object and debug it rather than it vanishing.
+        if (glm::length(newSize) < 0.001f) {
+            std::cout << "[Warning] FitToMesh received invalid bounds. Defaulting to 1.0." << std::endl;
+            newSize = glm::vec3(1.0f);
+            offset = glm::vec3(0.0f);
+        }
+        else {
+            offset = (min + max) * 0.5f;
+        }
+
+        size = newSize;
         HasFittedToMesh = true;
+
         // Set Local AABB centered at 0, sized to match mesh
         aabb->SetLocalBounds(size * -0.5f, size * 0.5f);
     }

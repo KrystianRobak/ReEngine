@@ -164,6 +164,7 @@
     <ClInclude Include="Api\ThreadPoolApi.h" />
     <ClInclude Include="AssetFileFormat.h" />
     <ClInclude Include="Event.h" />
+    <ClInclude Include="GameLayer.h" />
     <ClInclude Include="Graph\Node.h" />
     <ClInclude Include="BaseApi.h" />
     <ClInclude Include="CoreExport.h" />

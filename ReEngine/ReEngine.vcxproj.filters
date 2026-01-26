@@ -195,8 +195,8 @@
     <ClCompile Include="Private\EpochManager.cpp">
       <Filter>Source Files\Private</Filter>
     </ClCompile>
-    <ClCompile Include="InputManager.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Private\InputManager.cpp">
+      <Filter>Source Files\Private</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -338,9 +338,6 @@
     <ClInclude Include="Public\Engine\Components\HeightfieldCollider.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
-    <ClInclude Include="InputManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Public\Engine\Components\CapsuleCollider.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
     </ClInclude>
@@ -352,6 +349,9 @@
     </ClInclude>
     <ClInclude Include="Public\Engine\Components\StateMachine.h">
       <Filter>Source Files\Public\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Public\InputManager.h">
+      <Filter>Source Files\Public</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

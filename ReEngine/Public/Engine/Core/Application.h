@@ -23,7 +23,6 @@
 #include <SystemGraph.h>
 #include <PhysicsWorld.h>
 
-
 class ENGINE_API Application : public IApplicationApi
 {
 public:

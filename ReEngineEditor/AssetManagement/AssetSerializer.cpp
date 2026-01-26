@@ -220,6 +220,9 @@ std::pair<AssetType, std::string>  AssetSerializer::ImportAndCookFile(const std:
 MeshData AssetSerializer::ProcessMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData* data = nullptr) {
     MeshData m;
 
+    glm::vec3 minBounds(std::numeric_limits<float>::max());
+    glm::vec3 maxBounds(std::numeric_limits<float>::lowest());
+
     // 1. Vertices
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
@@ -242,6 +245,9 @@ MeshData AssetSerializer::ProcessMesh(aiMesh* mesh, const aiScene* scene, Skelet
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
         m.vertices.push_back(vector);
+
+        minBounds = glm::min(minBounds, vector);
+        maxBounds = glm::max(maxBounds, vector);
 
         if (mesh->HasNormals())
         {
@@ -273,6 +279,16 @@ MeshData AssetSerializer::ProcessMesh(aiMesh* mesh, const aiScene* scene, Skelet
             }
         }
     }
+
+    if (m.vertices.empty()) {
+        m.aabbMin = glm::vec3(0.0f);
+        m.aabbMax = glm::vec3(0.0f);
+    }
+    else {
+        m.aabbMin = minBounds;
+        m.aabbMax = maxBounds;
+    }
+
     // Set indices
     for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
