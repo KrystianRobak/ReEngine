@@ -26,7 +26,7 @@
 class ENGINE_API Application : public IApplicationApi
 {
 public:
-	Application()
+	Application() : window(nullptr)
 	{
 	}
 
@@ -44,7 +44,6 @@ public:
 	void Render() override;
 	void PhysicsTick();
 
-	// --- State Implementation ---
 	void SetState(ApplicationState newState) override
 	{
 		m_PendingState.store(newState);
@@ -54,7 +53,6 @@ public:
 	{
 		return m_AppState;
 	}
-	// ---------------------------
 
 	ILayerManager* GetLayerManager() override
 	{
@@ -97,13 +95,23 @@ public:
 	{
 		return running;
 	}
+
+	void RequestRecompile() override;
+	void RestartAfterRecompile() override;
+	bool IsRecompiling() const { return isRecompiling.load(); }
+
 private:
+	void StopAllThreads();
+	void CleanupSystems();
+	void ExecuteRecompile();
+	void CoordinationLoop() override;
+
 	void SwapAllBuffersAndNotify() noexcept;
 
 private:
 	struct BarrierCompletion
 	{
-		Application* self; // WskaŸnik 'this'
+		Application* self;
 
 		void operator()() noexcept {
 			self->SwapAllBuffersAndNotify();
@@ -112,12 +120,18 @@ private:
 
 	float dt = 0.0f;
 	std::atomic<bool> running{ true };
+	std::atomic<bool> isRecompiling{ false };
+	std::atomic<bool> recompileRequested{ false };
+	std::atomic<bool> coordinationThreadRunning{ true };
 
-	// Actual current state
+	std::mutex reloadMutex;
+	std::condition_variable reloadCV;
+	std::condition_variable safeToReloadCV;
+	bool readyForReload = false;
+
 	std::atomic<ApplicationState> m_AppState{ ApplicationState::Editor };
-
-	// Desired state (checked during sync)
 	std::atomic<ApplicationState> m_PendingState{ ApplicationState::Editor };
+	ApplicationState m_StateBeforeRecompile{ ApplicationState::Editor };
 
 	std::mutex initMutex;
 	std::condition_variable initCondition;
@@ -125,35 +139,25 @@ private:
 
 	std::unique_ptr<std::thread> GameThread;
 	std::unique_ptr<std::thread> RenderThread;
-	std::unique_ptr<std::thread> PhysicsThread;
+	std::unique_ptr<std::thread> CoordinationThread;
 
 	std::shared_ptr<Coordinator> coordinator;
 	RenderSystem* Renderer_;
 	System* PhysicsSystem_;
 
-
 	std::unique_ptr<SystemGraph> systemGraph;
-
 	std::unique_ptr<InputManager> inputManager;
-
 	IWindow* window;
-
 	Commander Commander_;
-
 	ThreadPool threadPool;
 
 	FunctionDelegate OnUpdateUI;
 	FunctionDelegate OnPostUpdateUI;
 	FunctionDelegate OnPreUpdateUI;
-
 	FunctionDelegate CreateUiPanels;
 
 	std::unique_ptr<std::barrier<BarrierCompletion>> mSyncBarrier;
-
-
 	const int mSyncThreadCount = 2;
-
-
 	bool HasRenderUpdateThreadFinished = false;
 
 	const float targetFrameDuration = 1.0f / 60.0f;
@@ -161,4 +165,3 @@ private:
 	int frameCount = 0;
 	std::chrono::steady_clock::time_point frameStartTime;
 };
-

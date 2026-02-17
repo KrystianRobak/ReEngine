@@ -12,7 +12,7 @@ struct SkeletalMeshComponent_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "SkeletalMeshComponent";
         ci.fullName = "SkeletalMeshComponent";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(SkeletalMeshComponent);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

@@ -12,7 +12,7 @@ struct CapsuleCollider_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "CapsuleCollider";
         ci.fullName = "CapsuleCollider";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(CapsuleCollider);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

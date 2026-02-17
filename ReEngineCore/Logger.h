@@ -1,61 +1,58 @@
 #pragma once
-
 #include <iostream>
 #include <iomanip>
 #include <cstdarg>
 #include <cstdio>
+#include <string_view>
+
+enum class LogLevel { Info, Warn, Error, RegisterPass };
 
 // ANSI colors
-#define COLOR_RESET   "\033[0m"
-#define COLOR_INFO    "\033[32m"  // green
-#define COLOR_WARN    "\033[33m"  // yellow
-#define COLOR_ERROR   "\033[31m"  // red
-#define COLOR_REGISTER_PASS "\033[32m"  // green
-
-// Fixed widths
-constexpr int LEVEL_WIDTH = 8;
-constexpr int MSG_WIDTH = 80;
-constexpr int FILE_WIDTH = 25;   // now aligns based on just filename
+#define COLOR_RESET     "\033[0m"
+#define COLOR_INFO      "\033[32m"
+#define COLOR_WARN      "\033[33m"
+#define COLOR_ERROR     "\033[31m"
+#define COLOR_PASS      "\033[36m"
 
 inline const char* basename(const char* path) {
     const char* file = path;
     for (const char* p = path; *p; p++) {
-        if (*p == '\\' || *p == '/')
-            file = p + 1;
+        if (*p == '\\' || *p == '/') file = p + 1;
     }
     return file;
 }
 
-inline void log_printf(const char* level, const char* color, const char* file, int line, const char* fmt, ...) {
+inline void log_printf(LogLevel level, const char* file, int line, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
-    char buffer[256];
+    char buffer[512];
     vsnprintf(buffer, sizeof(buffer), fmt, args);
-
     va_end(args);
 
-    if (level == "ERROR") {
-        // For errors, print to stderr
-        std::cerr
-            << "[" << color << std::left << std::setw(LEVEL_WIDTH) << level << COLOR_RESET << "] "
-            << std::left << std::setw(MSG_WIDTH) << buffer << " | "
-            << " FILE: " << std::left << std::setw(FILE_WIDTH) << basename(file) << " | "
-            << " LINE: " << line
-            << std::endl;
-        return;
-	}
-    else
-    {
-        std::cout
-            << "[" << color << std::left << std::setw(LEVEL_WIDTH) << level << COLOR_RESET << "] "
-            << std::left << std::setw(MSG_WIDTH) << buffer << std::endl;
+    const char* levelStr = "INFO";
+    const char* color = COLOR_INFO;
+
+    switch (level) {
+    case LogLevel::Warn:         levelStr = "WARN";       color = COLOR_WARN; break;
+    case LogLevel::Error:        levelStr = "ERROR";      color = COLOR_ERROR; break;
+    case LogLevel::RegisterPass: levelStr = "REGISTERED"; color = COLOR_PASS; break;
     }
-    
+
+    std::ostream& out = (level == LogLevel::Error) ? std::cerr : std::cout;
+
+    out << "[" << color << std::left << std::setw(10) << levelStr << COLOR_RESET << "] "
+        << std::left << std::setw(60) << buffer;
+
+    if (level == LogLevel::Error || level == LogLevel::Warn) {
+        out << " | " << COLOR_WARN << basename(file) << ":" << line << COLOR_RESET;
+    }
+
+    out << std::endl;
 }
 
-// Macros
-#define LOGF_INFO(fmt, ...)  log_printf("INFO",  COLOR_INFO,  __FILE__, __LINE__, fmt, ##__VA_ARGS__);
-#define LOGF_WARN(fmt, ...)  log_printf("WARN",  COLOR_WARN,  __FILE__, __LINE__, fmt, ##__VA_ARGS__);
-#define LOGF_ERROR(fmt, ...) log_printf("ERROR", COLOR_ERROR, __FILE__, __LINE__, fmt, ##__VA_ARGS__);
-#define LOGF_REGISTER_PASS(fmt, ...) log_printf("REGISTERED", COLOR_REGISTER_PASS, __FILE__, __LINE__, fmt, ##__VA_ARGS__);
+
+#define LOGF_INFO(fmt, ...)          log_printf(LogLevel::Info,         __FILE__, __LINE__, fmt, ##__VA_ARGS__);
+#define LOGF_WARN(fmt, ...)          log_printf(LogLevel::Warn,         __FILE__, __LINE__, fmt, ##__VA_ARGS__);
+#define LOGF_ERROR(fmt, ...)         log_printf(LogLevel::Error,        __FILE__, __LINE__, fmt, ##__VA_ARGS__);
+#define LOGF_REGISTER_PASS(fmt, ...) log_printf(LogLevel::RegisterPass, __FILE__, __LINE__, fmt, ##__VA_ARGS__);

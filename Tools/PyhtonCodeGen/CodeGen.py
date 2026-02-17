@@ -5,6 +5,8 @@ from pathlib import Path
 from collections import defaultdict
 import clang.cindex
 
+dllName = ""
+
 # Configure libclang path if necessary
 clang.cindex.Config.set_library_file(r"C:\LLVM\bin\libclang.dll")
 
@@ -66,9 +68,10 @@ def base_offset_expr(derived: str, base: str) -> str:
 
 
 class ReflectionGenerator:
-    def __init__(self):
+    def __init__(self, module_name: str):
         self.classes = []
         self.processed_files = []
+        self.module_name = module_name
 
     # ---------- Parsing ----------
     def parse(self, filepath: str, clang_parse_args=None):
@@ -315,7 +318,7 @@ class ReflectionGenerator:
         f.write(f"        Reflection::ClassInfo ci;\n")
         f.write(f'        ci.name = "{class_name}";\n')
         f.write(f'        ci.fullName = "{cls["full_name"]}";\n')
-        f.write(f'        ci.module = "/Script/GeneratedModule";\n')
+        f.write(f'        ci.module = "{self.module_name}";\n')
         f.write(f"        ci.size = sizeof({class_name});\n")
 
         if cls["is_struct"]:
@@ -476,7 +479,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scan-dir", required=True)
     parser.add_argument("--out-dir", required=True)
-
+    parser.add_argument("--name", required=True, help="The module name to use in reflection (e.g. /Script/Game)")
     parser.add_argument("--ms-includes", default="",
                         help="Semicolon-delimited string of include paths from MSBuild.")
 
@@ -512,7 +515,7 @@ def main():
     for arg in clang_parse_args:
         print(f"  {arg}")
 
-    gen = ReflectionGenerator()
+    gen = ReflectionGenerator(module_name=args.name)
     header_files = list(scan_dir.rglob("*.h")) + list(scan_dir.rglob("*.hpp"))
     for file_path in header_files:
         if args.verbose:

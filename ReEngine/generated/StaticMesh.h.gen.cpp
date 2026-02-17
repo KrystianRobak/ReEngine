@@ -12,7 +12,7 @@ struct StaticMesh_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "StaticMesh";
         ci.fullName = "StaticMesh";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(StaticMesh);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

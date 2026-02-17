@@ -15,4 +15,6 @@ struct StaticMeshData {
     // AABB for the entire model (used for Frustum Culling)
     glm::vec3 aabbMin{ 0.0f };
     glm::vec3 aabbMax{ 0.0f };
+
+    std::vector<uint8_t> physicsData;
 };

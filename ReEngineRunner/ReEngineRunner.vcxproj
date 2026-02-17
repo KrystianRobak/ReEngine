@@ -19,23 +19,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>17.0</VCProjectVersion>
+    <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{6dc82d64-4255-4d27-8ede-0f8246d153cd}</ProjectGuid>
-    <RootNamespace>ReEngineEditor</RootNamespace>
+    <ProjectGuid>{84948111-9efa-4512-bdfa-c1793b762a6f}</ProjectGuid>
+    <RootNamespace>ReEngineRunner</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -74,16 +74,13 @@
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)bin-int\$(Configuration)\$(ProjectName)</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)bin-int\$(Configuration)\</IntDir>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -98,11 +95,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -119,8 +115,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;$(SolutionDir)\Libs\Lib\physx;$(SolutionDir)\Libs\Lib\ReEngine;$(SolutionDir)bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReEngine.lib;ReflectionCore.lib;ReEngineCore.lib;$(CoreLibraryDependencies);PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\glew;$(SolutionDir)\Libs\Lib\physx;$(SolutionDir)\Libs\Lib\ReEngine;$(SolutionDir)bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;ReEngine.lib;ReflectionCore.lib;ReEngineCore.lib;$(CoreLibraryDependencies);PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,82 +127,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\ragberr\Desktop\Inżynierka\ReEngine\Libs\Include;%(AdditionalIncludeDirectories);E:\Inżynierka\ReEngine\ReEngineReflectionCore;E:\Inżynierka\ReEngine\ReEngineReflectionCore</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\ragberr\Desktop\Inżynierka\ReEngine\Libs\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Libs\Include\imgui\imgui.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\ImGuizmo.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\imgui_demo.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="..\Libs\Include\imgui\imnodes.cpp" />
-    <ClCompile Include="AnimGraphEditor.cpp" />
-    <ClCompile Include="ApplicationWrapper.cpp" />
-    <ClCompile Include="AssetManagement\AssetSerializer.cpp" />
-    <ClCompile Include="CoordinatorWrapper.cpp" />
-    <ClCompile Include="Editor.cpp" />
-    <ClCompile Include="EditorLayer.cpp" />
-    <ClCompile Include="GamePackager.cpp" />
-    <ClCompile Include="GuizmoLayer.cpp" />
-    <ClCompile Include="GuizmoPanel.cpp" />
-    <ClCompile Include="Panels\AddingPanel.cpp" />
-    <ClCompile Include="Panels\AnimationPanel.cpp" />
-    <ClCompile Include="Panels\ControlPanel.cpp" />
-    <ClCompile Include="Panels\FileBrowser.cpp" />
-    <ClCompile Include="Panels\ItemsSelectionPanel.cpp" />
-    <ClCompile Include="Panels\KeyframeEditorPanel.cpp" />
-    <ClCompile Include="Panels\MaterialGraphPanel.cpp" />
-    <ClCompile Include="Panels\PropertyPanel.cpp" />
-    <ClCompile Include="Panels\SceneView.cpp" />
-    <ClCompile Include="Panels\SystemsManagerPanel.cpp" />
-    <ClCompile Include="ReEngineEditor.cpp" />
-    <ClCompile Include="SceneSettings.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imgui.h" />
-    <ClInclude Include="..\Libs\Include\imgui\ImGuizmo.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_glfw.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3_loader.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imgui_internal.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imnodes.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imnodes_internal.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imstb_rectpack.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
-    <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
-    <ClInclude Include="..\Libs\Include\stb\stb_image.h" />
-    <ClInclude Include="AnimGraphEditor.h" />
-    <ClInclude Include="ApplicationWrapper.h" />
-    <ClInclude Include="AssetManagement\AssetSerializer.h" />
-    <ClInclude Include="CoordinatorWrapper.h" />
-    <ClInclude Include="Editor.h" />
-    <ClInclude Include="EditorLayer.h" />
-    <ClInclude Include="GamePackager.h" />
-    <ClInclude Include="GuizmoLayer.h" />
-    <ClInclude Include="GuizmoPanel.h" />
-    <ClInclude Include="Panels\AddingPanel.h" />
-    <ClInclude Include="Panels\AnimationPanel.h" />
-    <ClInclude Include="Panels\ControlPanel.h" />
-    <ClInclude Include="Panels\FileBrowser.h" />
-    <ClInclude Include="Panels\ItemsSelectionPanel.h" />
-    <ClInclude Include="Panels\KeyframeEditorPanel.h" />
-    <ClInclude Include="Panels\MaterialGraphPanel.h" />
-    <ClInclude Include="Panels\PropertyPanel.h" />
-    <ClInclude Include="Panels\SceneView.h" />
-    <ClInclude Include="Panels\SystemsManagerPanel.h" />
-    <ClInclude Include="SceneSettings.h" />
+    <ClCompile Include="ReEngineRunner.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

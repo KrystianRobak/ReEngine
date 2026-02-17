@@ -29,10 +29,73 @@ void Reflection::Registry::RegisterVariableInstance(const std::string& className
     }
 }
 
-void Registry::RegisterClass(ClassInfo&& info) {
+void Reflection::Registry::UnregisterModule(const std::string& moduleName) {
+    auto cleanup = [&](std::unordered_map<std::string, ClassInfo>& container) {
+        for (auto it = container.begin(); it != container.end(); ) {
+            if (it->second.module == moduleName) {
+                LOGF_INFO("[ReflectionCore] Unregistered %s from %s", it->second.name, moduleName.c_str());
+                it = container.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+        };
+
+    cleanup(classes_);
+    cleanup(components_);
+    cleanup(systems_);
+}
+
+void Reflection::Registry::ClearAll() {
+    ClearSystems();
+    ClearComponents();
+    ClearClasses();
+    types_.clear();
+    LOGF_INFO("[ReflectionCore] Registry completely cleared.");
+}
+
+void Reflection::Registry::ClearAllExcept(const std::string& moduleToKeep) {
+    auto cleanup = [&](std::unordered_map<std::string, ClassInfo>& container) {
+        for (auto it = container.begin(); it != container.end(); ) {
+            if (it->second.module != moduleToKeep) {
+                LOGF_INFO("[ReflectionCore] Clearing %s (Module: %s)", it->second.name, it->second.module);
+                it = container.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+        };
+
+    cleanup(classes_);
+    cleanup(components_);
+    cleanup(systems_);
+
+    LOGF_INFO("[ReflectionCore] Registry cleared (kept module: %s).", moduleToKeep.c_str());
+}
+
+void Reflection::Registry::ClearSystems() {
+    size_t count = systems_.size();
+    systems_.clear();
+    LOGF_INFO("[ReflectionCore] Cleared %zu Systems.", count);
+}
+
+void Reflection::Registry::ClearComponents() {
+    size_t count = components_.size();
+    components_.clear();
+    LOGF_INFO("[ReflectionCore] Cleared %zu Components.", count);
+}
+
+void Reflection::Registry::ClearClasses() {
+    size_t count = classes_.size();
+    classes_.clear();
+    LOGF_INFO("[ReflectionCore] Cleared %zu Classes.", count);
+}
+
+void Reflection::Registry::RegisterClass(ClassInfo&& info) {
     std::string key = sizeof(info.module) > 0 ? (std::string(info.module) + "." + info.name) : info.name;
     classes_.emplace(key, std::move(info));
-    // Also store by plain name if name not present to simplify lookups in small projects.
     auto& entry = classes_.find(key)->second;
     if (classes_.find(entry.name) == classes_.end()) {
         classes_.emplace(entry.name, entry);
@@ -40,10 +103,9 @@ void Registry::RegisterClass(ClassInfo&& info) {
     LOGF_INFO("[ReflectionCore] Registered Class %s", entry.name)
 }
 
-void Registry::RegisterComponent(ClassInfo&& info) {
+void Reflection::Registry::RegisterComponent(ClassInfo&& info) {
     std::string key = sizeof(info.module) > 0 ? (std::string(info.module) + "." + info.name) : info.name;
     components_.emplace(key, std::move(info));
-    // Also store by plain name if not present to simplify lookups
     auto& entry = components_.find(key)->second;
     if (components_.find(entry.name) == components_.end()) {
         components_.emplace(entry.name, entry);
@@ -51,10 +113,9 @@ void Registry::RegisterComponent(ClassInfo&& info) {
     LOGF_INFO("[ReflectionCore] Registered Component %s", entry.name)
 }
 
-void Registry::RegisterSystem(ClassInfo&& info) {
+void Reflection::Registry::RegisterSystem(ClassInfo&& info) {
     std::string key = sizeof(info.module) > 0 ? (std::string(info.module) + "." + info.name) : info.name;
     systems_.emplace(key, std::move(info));
-    // Also store by plain name if not present to simplify lookups
     auto& entry = systems_.find(key)->second;
     if (systems_.find(entry.name) == systems_.end()) {
         systems_.emplace(entry.name, entry);
@@ -62,17 +123,16 @@ void Registry::RegisterSystem(ClassInfo&& info) {
     LOGF_INFO("[ReflectionCore] Registered System %s", entry.name)
 }
 
-const ClassInfo* Registry::FindClass(const std::string& fullName) const {
+const ClassInfo* Reflection::Registry::FindClass(const std::string& fullName) const {
     auto it = classes_.find(fullName);
     if (it != classes_.end()) return &it->second;
     return nullptr;
 }
 
-std::vector<const ClassInfo*> Registry::GetAllClasses() const {
+std::vector<const ClassInfo*> Reflection::Registry::GetAllClasses() const {
     std::vector<const ClassInfo*> out;
     out.reserve(classes_.size());
     for (auto& p : classes_) {
-        // store only entries that include module (to avoid duplicates)
         if (p.first.find('.') != std::string::npos) out.push_back(&p.second);
     }
     return out;
@@ -90,7 +150,6 @@ std::vector<const ClassInfo*> Reflection::Registry::GetAllComponents() const
     std::vector<const ClassInfo*> out;
     out.reserve(components_.size());
     for (auto& p : components_) {
-        // store only entries that include module (to avoid duplicates)
         if (p.first.find('.') != std::string::npos) out.push_back(&p.second);
     }
     return out;
@@ -108,16 +167,12 @@ std::vector<const ClassInfo*> Reflection::Registry::GetAllSystems() const
     std::vector<const ClassInfo*> out;
     out.reserve(systems_.size());
     for (auto& p : systems_) {
-        // store only entries that include module (to avoid duplicates)
         if (p.first.find('.') != std::string::npos) out.push_back(&p.second);
     }
     return out;
 }
 
 void Registry::SetHook(const char* className, const char* functionName, FunctionPtr hook) {
-    // Default behavior: try to find a runtime exported hook setter. Otherwise, do nothing.
-    // Generated code in modules typically implement Reflection::SetHook or C export to connect hooks.
-    // For convenience attempt C-export as fallback.
     Reflection_SetHook(className, functionName, hook);
 }
 
@@ -142,7 +197,6 @@ const TypeInfo* Reflection::Registry::GetOrCreateType(const char* name, std::siz
     return &iter->second;
 }
 
-// C exports simply forward to the C++ registry. Generated code can call this easily.
 extern "C" {
 
     REFLECT_API void Reflection_RegisterClass(const Reflection::ClassInfo* info) {
@@ -158,9 +212,8 @@ extern "C" {
     }
 
     REFLECT_API void Reflection_SetHook(const char* className, const char* functionName, Reflection::FunctionPtr hook) {
-        // No-op default: modules usually provide their own SetHook impl (linked into the module)
         (void)className; (void)functionName; (void)hook;
     }
 
-} // extern "C"
+}
 

@@ -83,6 +83,46 @@ public:
 		return this->mComponentManager;
 	}  
 
+	void PrepareForReload() override
+	{
+		LOGF_INFO("[Coordinator] Preparing for hot-reload...");
+
+		LOGF_INFO("[Coordinator] Backing up scene for reload...");
+
+		LOGF_INFO("[Coordinator] Clearing managers...");
+		ClearForReload();
+
+		LOGF_INFO("[Coordinator] Ready for DLL reload.");
+	}
+
+	void RestoreAfterReload() override
+	{
+		LOGF_INFO("[Coordinator] Restoring after hot-reload...");
+	}
+
+	void ClearForReload() override
+	{
+		LOGF_INFO("[Coordinator] Clearing scene...");
+		ClearScene();
+
+		LOGF_INFO("[Coordinator] Unregistering GameModule systems...");
+		auto systems = Reflection::Registry::Instance().GetAllSystems();
+		for (auto& sys : systems) {
+			if (std::string(sys->module) == "GameModule") {
+				mSystemManager->UnregisterSystem(sys->fullName);
+			}
+		}
+
+		LOGF_INFO("[Coordinator] Unregistering GameModule components...");
+		auto components = Reflection::Registry::Instance().GetAllComponents();
+		for (auto& comp : components) {
+			if (std::string(comp->module) == "GameModule") {
+				mComponentManager->UnregisterComponent(comp->fullName);
+			}
+		}
+
+		LOGF_INFO("[Coordinator] GameModule cleanup complete. Core systems preserved.");
+	}
 
 	Entity CreateEntity() override
 	{
@@ -158,7 +198,6 @@ public:
 	}
 
 
-	// Component methods
 	void RegisterComponent(const Reflection::ClassInfo* classInfo, bool IsDoubleBuffered = false) override
 	{
 		mComponentManager->RegisterComponent(classInfo, IsDoubleBuffered);
@@ -211,7 +250,6 @@ public:
 		mComponentManager->SwapComponentBuffers(fullName);
 	}
 
-	// Returns a raw pointer, which the caller must cast
 	void* GetComponent(Entity entity, const std::string& typeName) override
 	{
 		return mComponentManager->GetComponent(entity, typeName);
@@ -237,30 +275,23 @@ public:
 		return mComponentManager->GetComponentReadBuffer(typeName);
 	}
 
-
-	// System methods
 	System* RegisterSystem(const Reflection::ClassInfo* classInfo) override
 	{
-		// Directly forwards the reflection data to the SystemManager.
 		return mSystemManager->RegisterSystem(classInfo);
 	}
 
 
 	System* GetSystem(const std::string& typeName) override
 	{
-		// Asks the SystemManager for a system by its string name.
 		return mSystemManager->GetSystem(typeName);
 	}
 
 
 	void SetSystemSignature(const std::string& typeName, Signature signature) override
 	{
-		// Tells the SystemManager to set the signature for the named system.
 		mSystemManager->SetSignature(typeName, signature);
 	}
 
-
-	// Event methods
 	void AddEventListener(EventType eventType, std::function<void(Event&)> const& listener) override
 	{
 		mEventManager->AddListener(eventType, listener);
@@ -276,9 +307,6 @@ public:
 		mEventManager->SendEvent(eventType);
 	}
 
-	//SceneManager
-
-	// --- Play Mode Logic ---
 
 	Entity InstantiatePrefab(const std::string& path)
 	{
@@ -292,7 +320,6 @@ public:
 
 	void EnterPlayMode()
 	{
-		// 1. Save the current state to a temp file
 		std::cout << "[Coordinator] Entering Play Mode: Backing up scene..." << std::endl;
 		SaveScene(PlayModeBackupPath);
 
@@ -302,10 +329,9 @@ public:
 	void ExitPlayMode()
 	{
 		std::cout << "[Coordinator] Exiting Play Mode: Restoring scene..." << std::endl;
-		// 1. Clear the simulation state (destroy all entities)
+
 		ClearScene();
 
-		// 2. Load the original state
 		if (std::filesystem::exists(PlayModeBackupPath))
 		{
 			OpenScene(PlayModeBackupPath);
@@ -318,24 +344,19 @@ public:
 
 	void ClearScene()
 	{
-		// Iterate 0 to MAX_ENTITIES safely
+
 		for (Entity i = 0; i < MAX_ENTITIES; ++i)
 		{
-			// Safely check if entity is valid before destroying
+
 			if (mEntityManager->IsAlive(i))
 			{
 				DestroyEntity(i);
 			}
 		}
-		// Flush any pending removals immediately
 		ProcessPendingEntityDeletions();
 
-		// 2. HARD RESET the EntityManager.
-		// This resets the ID counter to 0 and clears the internal queue
-		// so the next created entity is guaranteed to be 0 (or the first available).
 		mEntityManager->Reset();
 
-		// Reset selection
 		SetSelectedEntity(MAX_ENTITIES + 1);
 	}
 

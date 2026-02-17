@@ -10,9 +10,9 @@ void AABB::setupStaticBuffers() {
     if (buffersInitialized) return;
 
     std::vector<unsigned int> indices = {
-        0, 1, 1, 3, 3, 2, 2, 0, // Bottom
-        4, 5, 5, 7, 7, 6, 6, 4, // Top
-        0, 4, 1, 5, 2, 6, 3, 7  // Sides
+        0, 1, 1, 3, 3, 2, 2, 0,
+        4, 5, 5, 7, 7, 6, 6, 4,
+        0, 4, 1, 5, 2, 6, 3, 7
     };
 
     glGenVertexArrays(1, &staticVAO);
@@ -38,7 +38,6 @@ void AABB::draw(Shader* shader) const {
     if (!buffersInitialized) const_cast<AABB*>(this)->setupStaticBuffers();
     if (!shader) return;
 
-    // Upload current local corners for this specific shape
     std::vector<glm::vec3> corners = GetEightCornersLocal();
     glBindVertexArray(staticVAO);
     glBindBuffer(GL_ARRAY_BUFFER, staticVBO);

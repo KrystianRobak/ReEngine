@@ -4,9 +4,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <variant> // or use a union struct if C++17 isn't available
+#include <variant>
 
-// --- 1. Blackboard Variable Types ---
 enum class AnimVarType { Bool, Float, Int, Trigger };
 
 struct AnimVar {
@@ -23,15 +22,13 @@ struct AnimVar {
     AnimVar(int v) : Type(AnimVarType::Int), iVal(v) {}
 };
 
-
-// --- Graph Structures ---
 enum class ConditionOp { Greater, Less, Equal, NotEqual };
 
 struct GraphTransition {
     int ID;
     int FromNodeID;
     int ToNodeID;
-    std::string ConditionParam; // e.g., "Speed"
+    std::string ConditionParam;
     ConditionOp Operation;
     float Threshold;
 };
@@ -39,9 +36,9 @@ struct GraphTransition {
 struct GraphNode {
     int ID;
 
-    std::string Name = "New State"; // The display name (e.g., "Idle")
-    std::string AnimationPath;      // The actual asset path
-    ImVec2 EditorPosition;     // For ImNodes
+    std::string Name = "New State";
+    std::string AnimationPath;
+    ImVec2 EditorPosition;
     bool IsLooping = true;
     std::vector<GraphTransition> Transitions;
 };
@@ -53,7 +50,6 @@ struct AnimationGraphResource {
 
     std::unordered_map<std::string, AnimVar> DefaultBlackboard;
 
-    // Editor State helpers
     int NextNodeID = 0;
     int NextLinkID = 0;
 };

@@ -126,7 +126,7 @@
       <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReflectionCore.lib;ReEngineCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(EngineIncludePaths)"</Command>
+      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --name "$(ProjectName)" --ms-includes "$(EngineIncludePaths)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,7 +149,7 @@
       <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(EngineIncludePaths)"</Command>
+      <Command>$(SolutionDir)Tools\PyhtonCodeGen\.venv\Scripts\python.exe $(SolutionDir)Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --name "$(ProjectName)" --ms-includes "$(EngineIncludePaths)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup>
@@ -181,9 +181,6 @@
     <ClCompile Include="Private\Engine\Core\Coordinator\EventManager.cpp" />
     <ClCompile Include="Private\Engine\Core\Coordinator\SystemManager.cpp" />
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp" />
-    <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp" />
-    <ClCompile Include="Script.cpp" />
-    <ClCompile Include="ScriptRegistry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />

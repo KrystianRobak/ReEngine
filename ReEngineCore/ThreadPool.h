@@ -13,8 +13,8 @@
 #include <atomic>
 
 enum class JobType {
-	General,    // Standard logic
-	Background  // Asset loading, File I/O (Lower priority, separate threads)
+	General,
+	Background
 };
 
 class CORE_API ThreadPool {

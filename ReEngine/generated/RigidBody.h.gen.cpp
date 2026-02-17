@@ -12,7 +12,7 @@ struct RigidBody_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "RigidBody";
         ci.fullName = "RigidBody";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(RigidBody);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

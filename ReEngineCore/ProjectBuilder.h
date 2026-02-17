@@ -7,6 +7,7 @@
 #include "System/System.h"
 #include "Logger.h"
 #include "json/json.hpp"
+#include <ModuleLoader.h>
 
 namespace fs = std::filesystem;
 
@@ -23,7 +24,7 @@ public:
 		{
 			LOGF_INFO("Successfully loaded project path")
 		}
-		else 
+		else
 		{
 			LOGF_ERROR("Failed during loading project path")
 		}
@@ -36,26 +37,31 @@ public:
 
 	void InjectLayerManager()
 	{
-		for(auto& System : SystemsLoaded_)
+		for (auto& System : SystemsLoaded_)
 		{
 			System->InjectLayerManager(layerManager_);
 		}
 	}
 
-	void ParseConfig();
+	void ParseConfig(bool isPackaged = false);
 
 	System* LoadModule(const char* ModuleName);
 
 	void LoadTextures(nlohmann::json& config, fs::path projectPath);
 
+	void CleanupGameModule();
+
+	void ReloadModules();
+	void UnloadAllModules();
+
+	std::string CreateShadowCopy(const std::string& originalPath);
+
 	bool checkAndRemovePrefix(const std::string& prefix) {
-		// 1. Check if ProjectPath_ begins with the prefix
 		if (ProjectPath_.rfind(prefix, 0) == 0) {
-			// 2. If it matches, erase the prefix from the beginning
 			ProjectPath_.erase(0, prefix.length());
-			return true; // Return true as a match was found and removed
+			return true;
 		}
-		return false; // Return false, no match found
+		return false;
 	}
 
 	std::string ProjectPath_;
@@ -65,14 +71,9 @@ public:
 	std::vector<System*> SystemsLoaded_;
 	Editor::IEngineEditorApi* engineAPI_ = nullptr;
 	IApplicationApi* applicationAPI_ = nullptr;
+	ModuleLoader ModuleLoader_;
+	std::string CurrentTempDLLPath_;
 
 public:
 	ILayerManager* layerManager_ = nullptr;
 };
-
-
-
-//extern "C"
-//{
-//	CORE_API ProjectBuilder* CreateProjectBuilder();
-//}

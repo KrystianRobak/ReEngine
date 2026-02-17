@@ -33,10 +33,12 @@ public:
     virtual void StartGameThreads() = 0;
 	virtual void StartEditorThreads() = 0;
 
-    // --- State Management ---
     virtual void SetState(ApplicationState state) = 0;
     virtual ApplicationState GetState() = 0;
-    // ------------------------
+    
+    virtual void RestartAfterRecompile() = 0;
+    virtual void RequestRecompile() = 0;
+    virtual void CoordinationLoop() = 0;
 
     virtual IViewport* CreateNewViewport(std::string name, int width, int height) = 0;
 

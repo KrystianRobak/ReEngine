@@ -12,7 +12,7 @@ struct BoxCollider_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "BoxCollider";
         ci.fullName = "BoxCollider";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(BoxCollider);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

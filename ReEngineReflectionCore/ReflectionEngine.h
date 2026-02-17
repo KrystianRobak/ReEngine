@@ -12,6 +12,7 @@
 #define REFLECT_API __declspec(dllimport)
 #endif
 
+
 template <typename Derived, typename Base>
 static std::size_t __rg_BaseOffset() {
     return reinterpret_cast<std::size_t>(static_cast<Base*>(reinterpret_cast<Derived*>(1))) - 1;
@@ -36,7 +37,7 @@ namespace Reflection {
     };
 
     struct TypeInfo {
-        const char* name;         // Short name
+        const char* name;
         std::size_t size = 0;
         TypeCategory category = TypeCategory::Unknown;
         bool isClass = false;
@@ -58,7 +59,7 @@ namespace Reflection {
         const TypeInfo* returnType;
         std::vector<const TypeInfo*> paramTypes;
 
-        FunctionPtr invoke; // wrapper that calls into the real method (or hook)
+        FunctionPtr invoke;
     };
 
     struct ReflectedVariable {
@@ -73,17 +74,17 @@ namespace Reflection {
 
     struct BaseClassInfo {
         const ClassInfo* baseType;
-        std::size_t offset; // offset from derived to base
+        std::size_t offset;
     };
 
     struct ClassInfo : public TypeInfo {
-        const char* fullName;     // Fully qualified name (namespace/module/class)
+        const char* fullName;
         const char* module;
 
         std::function<void* (void)> construct;
         std::function<void(void*)> destruct;
 
-        std::vector<BaseClassInfo> bases;      // Multiple inheritance support
+        std::vector<BaseClassInfo> bases;
         std::vector<ReflectedFunction> functions;
         std::vector<ReflectedVariable> variables;
 
@@ -98,25 +99,28 @@ namespace Reflection {
 
         void RegisterVariableInstance(const std::string& className, const std::string& variableName, void* instance);
 
-        // Register a class produced by generated code.
+        void UnregisterModule(const std::string& moduleName);
+
+        void ClearAll();
+        void ClearAllExcept(const std::string& moduleToKeep);
+
+        void ClearSystems();
+        void ClearComponents();
+        void ClearClasses();
+
         void RegisterClass(ClassInfo&& info);
         void RegisterComponent(ClassInfo&& info);
         void RegisterSystem(ClassInfo&& info);
 
-        // Query
-        const ClassInfo* FindClass(const std::string& fullName) const; // expects Module.Name or just Name
+        const ClassInfo* FindClass(const std::string& fullName) const;
         std::vector<const ClassInfo*> GetAllClasses() const;
 
-        // Query
-        const ClassInfo* FindComponent(const std::string& fullName) const; // expects Module.Name or just Name
+        const ClassInfo* FindComponent(const std::string& fullName) const;
         std::vector<const ClassInfo*> GetAllComponents() const;
 
-        // Query
-        const ClassInfo* FindSystem(const std::string& fullName) const; // expects Module.Name or just Name
+        const ClassInfo* FindSystem(const std::string& fullName) const; 
         std::vector<const ClassInfo*> GetAllSystems() const;
 
-        // Hook setter helper (generated code may export an implementation per-class
-        // but we expose a convenience function centralised here too)
         void SetHook(const char* className, const char* functionName, FunctionPtr hook);
          const TypeInfo* GetOrCreateType(const char* name,
                                     std::size_t size = 0,
@@ -127,17 +131,16 @@ namespace Reflection {
                                     bool isPointer = false,
                                     bool isReference = false);
     private:
-        std::unordered_map<std::string, ClassInfo> classes_; // keyed by Module.Name and by Name (if unique)
+        std::unordered_map<std::string, ClassInfo> classes_;
         std::unordered_map<std::string, ClassInfo> components_;
         std::unordered_map<std::string, ClassInfo> systems_;
 
         std::unordered_map<std::string, TypeInfo> types_;
     };
 
-    // C-style exports that generated files can call if they can't link C++ symbols
     extern "C" {
         REFLECT_API void Reflection_RegisterClass(const ClassInfo* info);
         REFLECT_API void Reflection_SetHook(const char* className, const char* functionName, FunctionPtr hook);
     }
 
-} // namespace Reflection
+}

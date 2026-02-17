@@ -12,7 +12,7 @@ struct Sprite_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "Sprite";
         ci.fullName = "Sprite";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(Sprite);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

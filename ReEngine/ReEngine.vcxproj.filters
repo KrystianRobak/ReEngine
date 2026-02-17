@@ -31,9 +31,6 @@
     <Filter Include="Source Files\Public\Engine\Core\Coordinator">
       <UniqueIdentifier>{1119a317-da76-4cf8-889e-77d0fc4ebeb1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Public\Engine\Components\Collision">
-      <UniqueIdentifier>{9a8570b7-c3a2-4b88-948d-aca1a4e12c96}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Private\Engine">
       <UniqueIdentifier>{8f453e17-ece0-4e3b-a975-93f6c2e521e7}</UniqueIdentifier>
     </Filter>
@@ -43,29 +40,11 @@
     <Filter Include="Source Files\Private\Engine\Components">
       <UniqueIdentifier>{65b171c9-89ca-4a3a-8ce7-34c17e99f764}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Private\Engine\Systems">
-      <UniqueIdentifier>{2719f685-5afa-4723-bc88-81729ce253d8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Private\Engine\Core\Coordinator">
       <UniqueIdentifier>{ca58c219-687c-41c3-b21d-66b4a4e23b57}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Private\Engine\Components\Collision">
       <UniqueIdentifier>{683f290f-0d77-49f6-b665-2e9ce20998f4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Private\Engine\Systems\Animation">
-      <UniqueIdentifier>{40e457f8-1a73-415f-b533-de68406eb914}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Private\Engine\Systems\Input">
-      <UniqueIdentifier>{3e9795cd-258e-4cd0-ad18-3977bd1cecae}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Private\Engine\Systems\UI">
-      <UniqueIdentifier>{7da6eacf-7a57-4cd7-9b0d-b58de591bf20}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Private\Engine\Systems\Physics">
-      <UniqueIdentifier>{3d745f14-f9ff-4ee3-b116-b31bc8b3e41e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Private\Engine\Systems\Behaviour">
-      <UniqueIdentifier>{04139374-e252-4ae3-bfdc-efd149edf047}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Private\Engine\Commands">
       <UniqueIdentifier>{6ae259c2-f048-4218-b43f-10add9acac14}</UniqueIdentifier>
@@ -115,6 +94,9 @@
     <Filter Include="Source Files\Private\Engine\Input">
       <UniqueIdentifier>{4dd4662f-2419-4c09-a72b-6d632430942e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Public\Engine\Components\Collision">
+      <UniqueIdentifier>{9a8570b7-c3a2-4b88-948d-aca1a4e12c96}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Private\Engine\Core\WindowManager.cpp">
@@ -144,17 +126,8 @@
     <ClCompile Include="Private\Engine\Components\Collision\AABB.cpp">
       <Filter>Source Files\Private\Engine\Components\Collision</Filter>
     </ClCompile>
-    <ClCompile Include="Private\Engine\Systems\Animation\AnimationSequence.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Animation</Filter>
-    </ClCompile>
     <ClCompile Include="Private\Engine\Components\BehaviourScript.cpp">
       <Filter>Source Files\Private\Engine\Components</Filter>
-    </ClCompile>
-    <ClCompile Include="Script.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Behaviour</Filter>
-    </ClCompile>
-    <ClCompile Include="ScriptRegistry.cpp">
-      <Filter>Source Files\Private\Engine\Systems\Behaviour</Filter>
     </ClCompile>
     <ClCompile Include="ApplicationAPI.cpp">
       <Filter>Source Files</Filter>

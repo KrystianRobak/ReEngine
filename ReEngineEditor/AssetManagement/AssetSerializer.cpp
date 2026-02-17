@@ -19,6 +19,15 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
+#include <PxPhysicsAPI.h>
+
+// !!! CRITICAL FIX: Explicitly include the Cooking header !!!
+#include <cooking/PxCooking.h>
+#include <foundation/PxFoundation.h>
+
+
+using namespace physx;
+
 namespace fs = std::filesystem;
 
 // --- HELPERS ---
@@ -60,6 +69,85 @@ void ReadVector(std::ifstream& in, std::vector<T>& vec) {
     if (size > 0) {
         in.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
     }
+}
+
+static bool CookPhysicsMesh(const std::vector<MeshData>& meshes, std::vector<uint8_t>& outData) {
+    // 1. Spróbuj pobraæ istniej¹c¹ instancjê Foundation (Singleton)
+    // FIX: U¿ywamy '&', poniewa¿ PxGetFoundation zwraca referencjê, a my chcemy wskaŸnik.
+    physx::PxFoundation* foundation = &PxGetFoundation();
+    bool createdLocalFoundation = false;
+
+    // 2. Jeœli foundation nie istnieje (np. funkcja zwróci³a b³êdny adres lub rzuci³a wyj¹tek - choæ w PhysX zazwyczaj zwraca referencjê),
+    // to w narzêdziach typu Importer mo¿e jeszcze nie istnieæ. Jednak b³¹d "Foundation object exists already" sugeruje, ¿e ona TAM JEST.
+    // Dlatego ten blok 'if' uruchomi siê tylko, jeœli faktycznie jej nie ma.
+    if (!foundation) {
+        static physx::PxDefaultAllocator allocator;
+        static physx::PxDefaultErrorCallback errorCallback;
+        foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator, errorCallback);
+        createdLocalFoundation = true;
+    }
+
+    if (!foundation) {
+        std::cerr << "PxCreateFoundation failed! (Could not find or create Foundation)" << std::endl;
+        return false;
+    }
+
+    // 3. Konfiguracja parametrów
+    physx::PxTolerancesScale scale;
+    physx::PxCookingParams params(scale);
+
+    // Ustawienie flagi preprocessingu (Weld Vertices)
+    params.meshPreprocessParams |= physx::PxMeshPreprocessingFlag::eWELD_VERTICES;
+
+    // 4. Sp³aszczanie geometrii (Flatten Geometry)
+    std::vector<physx::PxVec3> verts;
+    std::vector<physx::PxU32> indices;
+
+    for (const auto& mesh : meshes) {
+        uint32_t offset = (uint32_t)verts.size();
+        for (const auto& v : mesh.vertices) {
+            verts.push_back(physx::PxVec3(v.x, v.y, v.z));
+        }
+        for (uint32_t i : mesh.indices) {
+            indices.push_back(i + offset);
+        }
+    }
+
+    if (verts.empty()) {
+        if (createdLocalFoundation) foundation->release();
+        return false;
+    }
+
+    // 5. Opis siatki (Mesh Descriptor)
+    physx::PxTriangleMeshDesc meshDesc;
+    meshDesc.points.count = (physx::PxU32)verts.size();
+    meshDesc.points.stride = sizeof(physx::PxVec3);
+    meshDesc.points.data = verts.data();
+
+    meshDesc.triangles.count = (physx::PxU32)indices.size() / 3;
+    meshDesc.triangles.stride = 3 * sizeof(physx::PxU32);
+    meshDesc.triangles.data = indices.data();
+
+    // 6. Gotowanie (Cooking)
+    physx::PxDefaultMemoryOutputStream writeBuffer;
+    physx::PxTriangleMeshCookingResult::Enum result;
+
+    bool status = PxCookTriangleMesh(params, meshDesc, writeBuffer, &result);
+
+    if (status) {
+        outData.resize(writeBuffer.getSize());
+        memcpy(outData.data(), writeBuffer.getData(), writeBuffer.getSize());
+    }
+    else {
+        std::cerr << "PhysX Cooking Failed. Error Code: " << result << std::endl;
+    }
+
+    // 7. Sprz¹tanie TYLKO jeœli sami stworzyliœmy Foundation
+    if (createdLocalFoundation) {
+        foundation->release();
+    }
+
+    return status;
 }
 
 void WriteMeshData(std::ofstream& out, const MeshData& mesh) {
@@ -417,6 +505,16 @@ std::shared_ptr<StaticMeshData> AssetSerializer::ImportStaticMeshAssimp(const st
     data->aabbMin = min;
     data->aabbMax = max;
 
+    std::cout << "[Serializer] Cooking Physics collision..." << std::endl;
+    if (CookPhysicsMesh(data->meshes, data->physicsData)) {
+        std::cout << "[Serializer] Cooked " << data->physicsData.size() << " bytes." << std::endl;
+    }
+    else {
+        std::cerr << "[Serializer] Failed to cook physics mesh." << std::endl;
+    }
+
+    return data;
+
     return data;
 }
 
@@ -441,6 +539,12 @@ bool AssetSerializer::SaveStaticMesh(const std::string& path, const StaticMeshDa
 
     for (const auto& mesh : data.meshes) {
         WriteMeshData(out, mesh);
+    }
+
+    uint32_t physSize = (uint32_t)data.physicsData.size();
+    out.write(reinterpret_cast<const char*>(&physSize), sizeof(uint32_t));
+    if (physSize > 0) {
+        out.write(reinterpret_cast<const char*>(data.physicsData.data()), physSize);
     }
 
     return true;

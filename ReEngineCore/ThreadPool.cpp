@@ -7,11 +7,9 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::Init(size_t threads)
 {
     unsigned int cores = std::thread::hardware_concurrency();
-    // Reserve 1 core for Main Thread, 1-2 for IO, rest for Compute
     unsigned int ioCount = 4;
     unsigned int computeCount = (cores > 5) ? cores - 5 : 1;
 
-    // --- Create Compute Workers ---
     for (unsigned int i = 0; i < computeCount; ++i) {
         computeThreads.emplace_back([this] {
             while (true) {
@@ -28,7 +26,6 @@ void ThreadPool::Init(size_t threads)
             });
     }
 
-    // --- Create IO Workers ---
     for (unsigned int i = 0; i < ioCount; ++i) {
         ioThreads.emplace_back([this] {
             while (true) {
@@ -63,7 +60,6 @@ void ThreadPool::Dispatch(uint32_t elementCount, uint32_t batchSize, std::functi
 {
     if (elementCount == 0 || batchSize == 0) return;
 
-    // Calculate how many chunks/jobs we need
     uint32_t jobCount = (elementCount + batchSize - 1) / batchSize;
     std::atomic<uint32_t> jobsRemaining = jobCount;
     std::promise<void> donePromise;
@@ -73,19 +69,15 @@ void ThreadPool::Dispatch(uint32_t elementCount, uint32_t batchSize, std::functi
         uint32_t start = i * batchSize;
         uint32_t end = std::min(start + batchSize, elementCount);
 
-        // Submit to COMPUTE queue
         submit(JobType::General, [start, end, &job, &jobsRemaining, &donePromise]() {
-            job(start, end); // Execute the actual ECS logic
+            job(start, end);
 
-            // Decrement atomic counter
             if (jobsRemaining.fetch_sub(1) == 1) {
-                donePromise.set_value(); // Unblock the main thread
+                donePromise.set_value();
             }
             });
     }
 
-    // Wait for all chunks to finish
-    // NOTE: In a real engine, the main thread should help execute jobs here instead of sleeping!
     doneFuture.wait();
 }
 

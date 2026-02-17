@@ -11,11 +11,12 @@
 #include <unordered_set>
 #include "TextureData.h"
 #include "Api/AssetManagerApi.h"
+#include <memory> //
 
 class CompiledMaterial
 {
 public:
-	CompiledMaterial() = default;
+    CompiledMaterial() = default;
 
     int id = 0;
     std::string name;
@@ -23,19 +24,18 @@ public:
 
     std::string VertexShaderCode;
     std::string FragmentShaderCode;
-    
-    Shader* GLShader = nullptr;
-    
+
+    // [FIX]: Use shared_ptr to prevent dangling pointers/leaks when Map resizes or Materials are copied
+    std::shared_ptr<Shader> GLShader = nullptr;
+
     void SetId(int NewId) {
-		id = NewId;
+        id = NewId;
     }
 
     void BuildGLShader()
     {
-        if (GLShader)
-            delete GLShader;
-
-        GLShader = new Shader(VertexShaderCode.c_str(), FragmentShaderCode.c_str(), true);
+        // shared_ptr handles deletion automatically
+        GLShader = std::make_shared<Shader>(VertexShaderCode.c_str(), FragmentShaderCode.c_str(), true);
     }
 
     std::unordered_map<std::string, TextureResource*> textures;
@@ -49,7 +49,7 @@ public:
     CompiledMaterial(std::string name, std::string path)
     {
         this->name = name;
-		this->path = path;
+        this->path = path;
     };
 
     void SetParameter(const std::string& name, const glm::vec4& value)
@@ -62,9 +62,6 @@ public:
         auto it = m_Parameters.find(name);
         return (it != m_Parameters.end()) ? it->second : glm::vec4(0.0f);
     }
-
-private:
-
 };
 
 class Material
@@ -73,7 +70,6 @@ public:
     Material(const std::string& name = "NewMaterial")
         : name(name)
     {
-        id = s_GlobalMaterialID++;
     }
 
     ~Material() = default;
@@ -95,7 +91,6 @@ public:
 
     void RemoveNode(int nodeId)
     {
-        // Find and delete the node before removing the pointer from the vector
         auto it = std::remove_if(m_Nodes.begin(), m_Nodes.end(),
             [nodeId](BaseNode* n) {
                 return (n->id == nodeId);
@@ -106,8 +101,6 @@ public:
     void SetNodes(const std::vector<BaseNode*>& nodes)
     {
         m_Nodes = nodes;
-
-        // Recalculate next ID after setting the nodes
         m_NextNodeID = 1;
         for (auto node : m_Nodes)
             m_NextNodeID = std::max(m_NextNodeID, node->id + 1);
@@ -116,7 +109,6 @@ public:
     void SetLinks(const std::vector<Link>& links)
     {
         m_Links = links;
-        // Recalculate next ID after setting the links
         m_NextLinkID = 1;
         for (const auto& link : m_Links)
             m_NextLinkID = std::max(m_NextLinkID, link.id + 1);
@@ -124,7 +116,6 @@ public:
 
     void Evaluate()
     {
-        // In a real graph system, you’d topologically sort nodes here.
         for (auto& node : m_Nodes)
             node->Evaluate(m_Links, m_Nodes);
     }
@@ -150,8 +141,6 @@ public:
             {
                 if (visited.count(n)) return;
                 visited.insert(n);
-
-                // find outgoing links
                 for (auto& out : n->Outputpins)
                 {
                     for (auto& link : m_Links)
@@ -166,22 +155,18 @@ public:
                 sorted.push_back(n);
             };
 
-        for (auto* n : m_Nodes)
-            dfs(n);
-
+        for (auto* n : m_Nodes) dfs(n);
         std::reverse(sorted.begin(), sorted.end());
-
         return sorted;
     }
 
     CompiledMaterial Compile(AssetManagerApi* assetManager)
     {
         CompiledMaterial result(name, path);
-
         Evaluate();
-
+        result.id = s_GlobalMaterialID++;
+        id = result.id;
         std::string shaderBody;
-
         auto orderedNodes = TopologicalSort();
 
         for (auto* node : orderedNodes)
@@ -189,28 +174,18 @@ public:
 
         for (auto* node : m_Nodes)
         {
-            // Check if this node is a TextureSampleNode
             if (auto* texNode = dynamic_cast<TextureSampleNode*>(node))
             {
                 if (texNode->texturePath.empty()) continue;
-
-                // Ask AssetManager for the GPU resource
                 auto texRes = assetManager->GetTexture(texNode->texturePath);
-
                 if (texRes)
                 {
-                    // MUST match the name generated in TextureSampleNode::GenerateShaderCode
-                    // logic: Outputpins[0].label + "_Tex"
                     std::string samplerName = texNode->Outputpins[0].label + "_Tex";
-
-                    // Store it in the compiled material
                     result.SetTexture(samplerName, texRes.get());
                 }
             }
         }
 
-        // --- UPDATED VERTEX SHADER (Matches GBuffer.vs logic) ---
-        // Includes BoneIDs (loc 5), Weights (loc 6), and Animation Logic
         result.VertexShaderCode = R"(
 #version 460 core
 layout (location = 0) in vec3 aPos;
@@ -218,12 +193,8 @@ layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
 layout (location = 3) in vec3 aTangent;
 layout (location = 4) in vec3 aBitangent;
-
-// Bone Data
 layout (location = 5) in ivec4 aBoneIDs;
 layout (location = 6) in vec4 aWeights;
-
-// Instance Matrix
 layout (location = 10) in mat4 aInstanceMatrix;
 
 out vec3 FragPos;
@@ -233,7 +204,6 @@ out mat3 TBN;
 
 uniform mat4 view;
 uniform mat4 projection;
-
 const int MAX_BONES = 200;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBones[MAX_BONES];
@@ -246,24 +216,16 @@ void main()
     {
         mat4 BoneTransform = mat4(0.0);
         float totalWeight = 0.0;
-
         for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
         {
             int id = aBoneIDs[i];
             float w = aWeights[i];
-
-            if (id < 0 || id >= MAX_BONES || w <= 0.0)
-                continue;
-            
+            if (id < 0 || id >= MAX_BONES || w <= 0.0) continue;
             BoneTransform += finalBones[id] * w;
             totalWeight += w;
         }
-
-        // Safety: If no valid weights, use identity to prevent mesh disappearing
         if (totalWeight == 0.0f) BoneTransform = mat4(1.0f);
-        else BoneTransform = BoneTransform / totalWeight; // Normalize if needed
-
-        // Combine: Instance * Bone
+        else BoneTransform = BoneTransform / totalWeight;
         totalModelMatrix = aInstanceMatrix * BoneTransform;
     }
     else
@@ -274,40 +236,29 @@ void main()
     vec4 worldPos = totalModelMatrix * vec4(aPos, 1.0);
     FragPos = worldPos.xyz;
     TexCoords = aTexCoords;
-    
-    // Normal Matrix
-    // Note: In production, pass a NormalMatrix attribute to avoid inverse() here
     mat3 normalMatrix = transpose(inverse(mat3(totalModelMatrix)));
     Normal = normalize(normalMatrix * aNormal);
     
-    // Calculate TBN
     vec3 T = vec3(0.0);
     vec3 B = vec3(0.0);
     vec3 N = normalize(normalMatrix * aNormal);
-
     if (length(aTangent) > 0.001) {
         T = normalize(normalMatrix * aTangent);
         B = normalize(normalMatrix * aBitangent);
     } else {
-        // Fallback tangent generation
         vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
         T = normalize(cross(up, N));
         B = cross(N, T);
     }
-    
     TBN = mat3(T, B, N);
-    
     gl_Position = projection * view * worldPos;
 }
 )";
-
-        // --- FRAGMENT SHADER TEMPLATE ---
-        // Matches InitGBuffer attachments  and Node.h outputs
         result.FragmentShaderCode =
             "#version 460 core\n"
-            "layout (location = 0) out vec4 gPosition;\n"   // RGB=Pos, A=Metallic
-            "layout (location = 1) out vec4 gNormal;\n"     // RGB=Normal, A=Unused
-            "layout (location = 2) out vec4 gAlbedoSpec;\n" // RGB=Albedo, A=Roughness
+            "layout (location = 0) out vec4 gPosition;\n"
+            "layout (location = 1) out vec4 gNormal;\n"
+            "layout (location = 2) out vec4 gAlbedoSpec;\n"
             "\n"
             "in vec2 TexCoords;\n"
             "in vec3 FragPos; \n"
@@ -327,7 +278,6 @@ void main()
     std::string GenerateUniforms()
     {
         std::string result;
-
         for (auto node : m_Nodes)
         {
             for (auto& pin : node->Inputpins)
@@ -350,12 +300,7 @@ void main()
         j["id"] = id;
         j["name"] = name;
         j["path"] = path;
-
-        // Serialize nodes
-        for (auto* node : m_Nodes)
-            j["nodes"].push_back(node->Serialize());
-
-        // Serialize links
+        for (auto* node : m_Nodes) j["nodes"].push_back(node->Serialize());
         for (const auto& link : m_Links)
         {
             j["links"].push_back({
@@ -364,55 +309,41 @@ void main()
                 {"end", link.end_pin_id}
                 });
         }
-
         return j;
     }
 
     void Deserialize(const json& j)
     {
         id = j["id"];
+
+        if (id >= s_GlobalMaterialID) {
+            s_GlobalMaterialID = id + 1;
+        }
+
         name = j["name"];
         path = j["path"];
 
-        // Clear existing data
         m_Nodes.clear();
         m_Links.clear();
         m_NextNodeID = 1;
         m_NextLinkID = 1;
 
-        // --- Rebuild nodes ---
         for (const auto& nodeData : j["nodes"])
         {
             std::string type = nodeData["type"];
             BaseNode* node = nullptr;
-
-            // Basic & Material Nodes
-            if (type == "ConstantNode")
-                node = new ConstantNode(nodeData["id"]);
-            else if (type == "ConstantVec2Node")
-                node = new ConstantVec2Node(nodeData["id"]);
-            else if (type == "ConstantVec3Node")
-                node = new ConstantVec3Node(nodeData["id"]);
-            else if (type == "TextureSampleNode")
-                node = new TextureSampleNode(nodeData["id"]);
-            else if (type == "TextureCoordsNode")
-                node = new TextureCoordsNode(nodeData["id"]);
-            else if (type == "OutputNode")
-                node = new OutputNode(nodeData["id"]);
-
-            // Math Nodes
-            else if (type == "AddNode")
-                node = new AdderNode(nodeData["id"]); // Note: Checks 'AdderNode' struct in Node.h
-            else if (type == "MultiplyNode")
-                node = new MultiplyNode(nodeData["id"]);
-            else if (type == "DotNode")
-                node = new DotNode(nodeData["id"]);
-            else if (type == "LerpNode")
-                node = new LerpNode(nodeData["id"]);
-            else if (type == "CrossNode")
-                node = new CrossNode(nodeData["id"]);
-            else if (type == "NormalizeNode")
-                node = new NormalizeNode(nodeData["id"]);
+            if (type == "ConstantNode") node = new ConstantNode(nodeData["id"]);
+            else if (type == "ConstantVec2Node") node = new ConstantVec2Node(nodeData["id"]);
+            else if (type == "ConstantVec3Node") node = new ConstantVec3Node(nodeData["id"]);
+            else if (type == "TextureSampleNode") node = new TextureSampleNode(nodeData["id"]);
+            else if (type == "TextureCoordsNode") node = new TextureCoordsNode(nodeData["id"]);
+            else if (type == "OutputNode") node = new OutputNode(nodeData["id"]);
+            else if (type == "AddNode") node = new AdderNode(nodeData["id"]);
+            else if (type == "MultiplyNode") node = new MultiplyNode(nodeData["id"]);
+            else if (type == "DotNode") node = new DotNode(nodeData["id"]);
+            else if (type == "LerpNode") node = new LerpNode(nodeData["id"]);
+            else if (type == "CrossNode") node = new CrossNode(nodeData["id"]);
+            else if (type == "NormalizeNode") node = new NormalizeNode(nodeData["id"]);
 
             if (node)
             {
@@ -422,14 +353,9 @@ void main()
             }
         }
 
-        // --- Rebuild links ---
         for (const auto& linkData : j["links"])
         {
-            Link newLink = {
-                linkData["id"],
-                linkData["start"],
-                linkData["end"]
-            };
+            Link newLink = { linkData["id"], linkData["start"], linkData["end"] };
             m_Links.push_back(newLink);
             m_NextLinkID = std::max(m_NextLinkID, newLink.id + 1);
         }
@@ -437,10 +363,8 @@ void main()
 
     bool SaveToFile(const std::string& filepath)
     {
-        // Capture latest positions before saving
         for (auto* node : m_Nodes)
-            ImNodes::SetNodeEditorSpacePos(node->id, node->position); // Use the current position
-
+            ImNodes::SetNodeEditorSpacePos(node->id, node->position);
         json j = Serialize();
         std::ofstream file(filepath);
         if (!file.is_open()) return false;
@@ -448,10 +372,9 @@ void main()
         return true;
     }
 
-
     bool LoadFromFile(const std::string& filepath)
     {
-        path = filepath; // Set the path before deserializing
+        path = filepath;
         std::ifstream file(filepath);
         if (!file.is_open()) return false;
         json j;
@@ -466,28 +389,23 @@ void main()
         }
     }
 
-
-    // --- Getters ---
-    // The const version returns a const reference, but we need to return a non-const 
-    // reference to allow the MaterialGraphPanel to 'swap' the contents out safely in LoadMaterial.
     std::vector<BaseNode*>& GetNodes() { return m_Nodes; }
     const std::vector<BaseNode*>& GetNodes() const { return m_Nodes; }
-
     std::vector<Link>& GetLinks() { return m_Links; }
     const std::vector<Link>& GetLinks() const { return m_Links; }
-
     const std::string& GetFilePath() const { return path; }
+
+    static void SetNextID(int nextId) {
+        if (nextId > s_GlobalMaterialID) s_GlobalMaterialID = nextId;
+    }
 
 private:
     int id;
     std::string name;
     std::string path;
-
-    std::vector<BaseNode*> m_Nodes; // Owned memory: raw pointers are deleted in dtor/SetNodes
+    std::vector<BaseNode*> m_Nodes;
     std::vector<Link> m_Links;
     int m_NextNodeID = 1;
     int m_NextLinkID = 1;
-
     static inline int s_GlobalMaterialID = 1;
 };
-

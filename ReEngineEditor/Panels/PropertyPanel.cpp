@@ -14,6 +14,7 @@
 #include "StateMachine.h"
 #include <gtc/quaternion.hpp>
 #include <gtc/type_ptr.hpp>
+#include <MeshCollider.h>
 
 inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
     std::vector<std::string> tokens;
@@ -176,14 +177,51 @@ void PropertyPanel::Render()
 
     if (entity != 111)
     {
-    ForEachComponent("Add component", Components,
-        [this](Entity entity, const char* name) {
-            Signature signature = engineAPI->GetEntitySignature(entity);
-            if (!engineAPI->HasComponent(entity, name))
-            {
-                engineAPI->AddComponent(entity, name);
-            }
-        }, true);
+        ForEachComponent("Add component", Components,
+            [this](Entity entity, const char* name) {
+                Signature signature = engineAPI->GetEntitySignature(entity);
+                if (!engineAPI->HasComponent(entity, name))
+                {
+                    engineAPI->AddComponent(entity, name);
+
+                    // --- NEW LOGIC START: Auto-Link MeshCollider and StaticMesh ---
+                    std::string compName = name;
+
+                    // Case 1: We just added a MeshCollider. Check if there is a StaticMesh to grab data from.
+                    if (compName == "MeshCollider")
+                    {
+                        if (engineAPI->HasComponent(entity, "StaticMesh"))
+                        {
+                            auto* meshCol = (MeshCollider*)engineAPI->GetComponentForWrite(entity, "MeshCollider");
+                            auto* staticMesh = (StaticMesh*)engineAPI->GetComponent(entity, "StaticMesh");
+
+                            if (meshCol && staticMesh && staticMesh->MeshResource && staticMesh->MeshResource->cpuMesh)
+                            {
+                                meshCol->meshData = staticMesh->MeshResource->cpuMesh;
+                                std::cout << "[Editor] Auto-linked StaticMesh to new MeshCollider.\n";
+                            }
+                        }
+                    }
+                    // Case 2: We just added a StaticMesh. Check if there is a MeshCollider waiting for data.
+                    else if (compName == "StaticMesh")
+                    {
+                        if (engineAPI->HasComponent(entity, "MeshCollider"))
+                        {
+                            auto* meshCol = (MeshCollider*)engineAPI->GetComponentForWrite(entity, "MeshCollider");
+                            auto* staticMesh = (StaticMesh*)engineAPI->GetComponent(entity, "StaticMesh");
+
+                            // Note: A new StaticMesh usually has no Resource yet (AssetPath is empty), 
+                            // so this might be null, but we check anyway.
+                            if (meshCol && staticMesh && staticMesh->MeshResource && staticMesh->MeshResource->cpuMesh)
+                            {
+                                meshCol->meshData = staticMesh->MeshResource->cpuMesh;
+                                std::cout << "[Editor] Auto-linked new StaticMesh to MeshCollider.\n";
+                            }
+                        }
+                    }
+                    // --- NEW LOGIC END ---
+                }
+            }, true);
 
     ForEachComponent("Remove component", Components,
         [this](Entity entity, const char* name) {

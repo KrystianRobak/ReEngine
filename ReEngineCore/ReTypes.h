@@ -5,10 +5,9 @@
 #include <functional>
 #include <string_view>
 
-// ECS
+
 using Entity = std::uint32_t;
 
-// Sta³e systemowe (C++17+)
 inline constexpr Entity APPLICATION = static_cast<Entity>(-1);
 inline constexpr Entity GUI = static_cast<Entity>(-2);
 inline constexpr Entity WINDOW = static_cast<Entity>(-3);
@@ -35,7 +34,6 @@ enum MenuType
 	AnimationMenu
 };
 
-// Events
 using EventType = std::string_view;
 using ParamId = std::string_view;
 
@@ -73,6 +71,7 @@ namespace Events::Application {
     constexpr inline EventType MENU_CHANGED = "Events::Application::MENU_CHANGED";
     constexpr inline EventType START_GAME = "Events::Application::START_GAME";
     constexpr inline EventType CAMERA_CHANGED = "Events::Application::CAMERA_CHANGED";
+    constexpr inline EventType RECOMPILE_READY = "Events::Application::RECOMPILE_READY";
 }
 
 namespace Events::Engine::SceneManager {
@@ -107,7 +106,6 @@ namespace Events::Editor::StateMachineGraph {
 }
 
 namespace Events::Editor::FileBrowser {
-    // Used to highlight/jump to a specific file in the browser
     constexpr inline EventType LOCATE_FILE = "Events::Editor::FileBrowser::LOCATE_FILE";
 }
 

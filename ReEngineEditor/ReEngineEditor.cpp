@@ -20,12 +20,34 @@
 
 using FuncPtr = void* (*)();
 
+
+void SetupHotReloadSystem(IApplicationApi* app, ProjectBuilder& builder, Editor::IEngineEditorApi* engine)
+{
+    engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED,
+        [app, &builder](Event& e) {
+            ILayerManager* layerManager = app->GetLayerManager();
+
+            builder.SetLayerManager(layerManager);
+            builder.InjectLayerManager();
+
+            layerManager->AddLayerThreadSafe<EditorLayer>();
+            layerManager->AddLayerThreadSafe<GuizmoLayer>();
+        });
+
+    engine->AddEventListener(Events::Application::RECOMPILE_READY,
+        [app, &builder](Event& e) {
+            LOGF_INFO("[HotReload] Received RECOMPILE_READY event");
+
+            builder.ReloadModules();
+
+            app->RestartAfterRecompile();
+
+            LOGF_INFO("[HotReload] Hot-reload complete!");
+        });
+}
+
 int main(int argc, char** argv)
 {
-    //std::cout << argv[1] << std::endl;
-
-    
-
 
 	LOGF_INFO("Loading Engine.dll");
     HMODULE engineDLL = LoadLibraryA("ReEngine.dll");
@@ -55,23 +77,15 @@ int main(int argc, char** argv)
 
 	Application->InitSystems();
 
-    engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED, [Application, &builder](Event& e) {
-        ILayerManager* layerManager = Application->GetLayerManager();
-
-		builder.SetLayerManager(layerManager);
-		builder.InjectLayerManager();
-
-        layerManager->AddLayerThreadSafe<EditorLayer>();
-		layerManager->AddLayerThreadSafe<GuizmoLayer>();
-        });
+    SetupHotReloadSystem(Application, builder, engine);
 
 	Application->StartGameThreads();
 
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     while (Application->IsRunning())
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        Application->CoordinationLoop();
     }
 
     delete Application;

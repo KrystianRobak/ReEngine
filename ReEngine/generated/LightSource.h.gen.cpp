@@ -12,7 +12,7 @@ struct LightSource_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "LightSource";
         ci.fullName = "LightSource";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(LightSource);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

@@ -24,9 +24,9 @@ static glm::mat4 aiMatrix4x4ToGlm(const aiMatrix4x4* from)
 static void extractBoneWeightForVertices(std::vector<glm::ivec4>& boneIDs_all, std::vector<glm::vec4>& weights_all, aiMesh* mesh, const aiScene* scene, SkeletalMeshData* skeletalMesh)
 {
 	if (!skeletalMesh) return;
-	// Set the max bones to 100
+
 	unsigned int numBones = mesh->mNumBones > 100 ? 100 : mesh->mNumBones;
-	// For each bone
+
 	for (unsigned int boneIndex = 0; boneIndex < numBones; ++boneIndex)
 	{
 		int boneID = -1;
@@ -46,18 +46,15 @@ static void extractBoneWeightForVertices(std::vector<glm::ivec4>& boneIDs_all, s
 		}
 		assert(boneID != -1);
 
-		// Get all vertex weights for current bone
 		aiVertexWeight* weights = mesh->mBones[boneIndex]->mWeights;
 		unsigned int numWeights = mesh->mBones[boneIndex]->mNumWeights;
 
-		// For each weight at vertex x for current bone
 		for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
 		{
 			unsigned int vertexId = weights[weightIndex].mVertexId;
 			float weight = weights[weightIndex].mWeight;
 			assert(vertexId <= boneIDs_all.size());
 
-			// Update four most influential bones
 			for (int i = 0; i < 4; ++i)
 			{
 				if (boneIDs_all[vertexId][i] < 0)
@@ -85,9 +82,13 @@ public:
 			return;
 		aiAnimation* animation = scene->mAnimations[0];
 		duration = (float)animation->mDuration;
-		tps = (float)animation->mTicksPerSecond;
+		if (scene->mAnimations[0]->mTicksPerSecond != 0.0) {
+			tps = (float)scene->mAnimations[0]->mTicksPerSecond;
+		}
+		else {
+			tps = 25.0f; 
+		}
 		generateBoneTree(&rootNode, scene->mRootNode);
-		// Reset all root transformations
 		rootNode.transformation = glm::mat4(1.0f);
 	}
 
@@ -117,16 +118,13 @@ public:
 	{
 		if (!skeletalMesh) return;
 
-		// 1. Get a reference to the Mesh's master bone list
 		auto& meshBoneInfo = skeletalMesh->boneInfoMap;
 
-		// 2. Iterate over all bones driven by this animation
 		for (auto& animBone : bones)
 		{
 			std::string boneName = animBone.getBoneName();
 			int boneId = -1;
 
-			// A. Try to find this bone in the existing Mesh list
 			for (unsigned int i = 0; i < meshBoneInfo.size(); i++) {
 				if (meshBoneInfo[i].name == boneName) {
 					boneId = i;
@@ -134,32 +132,22 @@ public:
 				}
 			}
 
-			// B. If the Mesh doesn't know this bone (it's an intermediate/structural node),
-			//    we must add it to the Mesh now so the hierarchy remains unbroken.
 			if (boneId == -1) {
 				BoneProps newProp;
 				newProp.name = boneName;
 
-				// Intermediate bones usually don't affect the skin (no weights),
-				// so we set their offset matrix to Identity.
 				newProp.offset = glm::mat4(1.0f);
 
 				meshBoneInfo.push_back(newProp);
 
-				// The new ID is the index we just added
 				boneId = (int)meshBoneInfo.size() - 1;
 
-				// Update the mesh's bone count if you use it for loop limits
 				skeletalMesh->boneCount++;
 			}
 
-			// C. CRITICAL: Tell the Animation Bone what its real ID is
 			animBone.SetID(boneId);
 		}
 
-		// 3. [FIX] Copy the updated list back to the Animation's local storage
-		// This ensures getBoneProps() returns the correct full list, including
-		// the new intermediate bones we just added.
 		this->boneProps = meshBoneInfo;
 	}
 

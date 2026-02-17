@@ -83,5 +83,9 @@ namespace Editor
 		virtual void SetSystemSignature(const std::string& typeName, Signature signature) = 0;
 
 		virtual std::vector<Entity> GetEntitiesWith(const std::string& componentName) = 0;
+
+		virtual void PrepareForReload() = 0;
+		virtual void RestoreAfterReload() = 0;
+		virtual void ClearForReload() = 0;
 	};
 }

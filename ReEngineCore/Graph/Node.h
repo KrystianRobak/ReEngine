@@ -353,18 +353,19 @@ struct TextureSampleNode : public BaseNode
         titleColor = ImVec4(0.16f, 0.45f, 0.85f, 1.0f);
 
         // Input pin for UVs
-        Inputpins.push_back({ id * 100 + 1, "UVs", ImNodesPinShape_Circle, Pin::Input});
+        Inputpins.push_back({ id * 100 + 1, "UVs", ImNodesPinShape_Circle, Pin::Input });
 
-        // --- CHANGE HERE: Unique label for the main vec4 output ---
+        // Main Output
         std::string outputLabel = "Tex_S" + std::to_string(id);
         Outputpins.push_back({ id * 100 + 2, outputLabel, ImNodesPinShape_Circle, Pin::Output }); // RGB (the vec4)
 
-        // --- The channel pins use a standard name because they'll reference the main output ---
-        // The GLSL generation will be smart enough to use the main unique var.
-        Outputpins.push_back({ id * 100 + 3, "R",   ImNodesPinShape_Circle, Pin::Output });
-        Outputpins.push_back({ id * 100 + 4, "G",   ImNodesPinShape_Circle, Pin::Output });
-        Outputpins.push_back({ id * 100 + 5, "B",   ImNodesPinShape_Circle, Pin::Output });
-        Outputpins.push_back({ id * 100 + 6, "A",   ImNodesPinShape_Circle, Pin::Output });
+        // --- FIX START --- 
+        // Use unique names for channels so they don't collide in GLSL
+        Outputpins.push_back({ id * 100 + 3, outputLabel + "_R",    ImNodesPinShape_Circle, Pin::Output });
+        Outputpins.push_back({ id * 100 + 4, outputLabel + "_G",    ImNodesPinShape_Circle, Pin::Output });
+        Outputpins.push_back({ id * 100 + 5, outputLabel + "_B",    ImNodesPinShape_Circle, Pin::Output });
+        Outputpins.push_back({ id * 100 + 6, outputLabel + "_A",    ImNodesPinShape_Circle, Pin::Output });
+        // --- FIX END ---
 
         // Set initial outputs
         Outputpins[0].Set<glm::vec4>(colorValue);
@@ -567,16 +568,15 @@ struct OutputNode : public BaseNode
         color = ImVec4(0.8f, 0.3f, 0.2f, 1.0f);
         titleColor = ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
 
-        // Default pins / PBR Material Model
-        Inputpins.push_back({ id * 100 + 0, "WorldPosition", ImNodesPinShape_Circle, Pin::Input});
-        Inputpins.push_back({ id * 100 + 1, "BaseColor", ImNodesPinShape_Circle, Pin::Input});
-        Inputpins.push_back({ id * 100 + 2, "Emissive",  ImNodesPinShape_Circle, Pin::Input});
-        Inputpins.push_back({ id * 100 + 3, "Opacity",   ImNodesPinShape_Circle, Pin::Input});
-        Inputpins.push_back({ id * 100 + 4, "Metallic",  ImNodesPinShape_Circle, Pin::Input});
-        Inputpins.push_back({ id * 100 + 5, "Roughness", ImNodesPinShape_Circle, Pin::Input});
-        Inputpins.push_back({ id * 100 + 6, "Normal",    ImNodesPinShape_Circle, Pin::Input});
-
-        // No outputs because this is THE end output node
+        // Inputs: 
+        // 0:Pos, 1:Color, 2:Emissive, 3:Opacity, 4:Metallic, 5:Roughness, 6:Normal
+        Inputpins.push_back({ id * 100 + 0, "WorldPosition", ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 1, "BaseColor", ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 2, "Emissive",  ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 3, "Opacity",   ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 4, "Metallic",  ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 5, "Roughness", ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 6, "Normal",    ImNodesPinShape_Circle, Pin::Input });
     }
 
     void DrawNodeContents() override
@@ -589,17 +589,35 @@ struct OutputNode : public BaseNode
         // Output node does no math — just forwards into shader
     }
 
+    // Helper to safely cast variables based on connection types
+    std::string ResolveInput(int pinIndex, const std::vector<Link>& links, const std::vector<BaseNode*>& nodes, const std::string& targetType)
+    {
+        std::string varName = GetConnectedVariableName(Inputpins[pinIndex], links, nodes);
+        Pin* connectedPin = FindLinkedPin(Inputpins[pinIndex].id, links, (std::vector<BaseNode*>&)nodes);
+
+        if (connectedPin)
+        {
+            // Case 1: Target is FLOAT, but Input is COLOR (Vec4) -> Use Red Channel
+            if (targetType == "float" && connectedPin->data_type == Pin::Color) {
+                return varName + ".r";
+            }
+            // Case 2: Target is VEC3, but Input is COLOR (Vec4) -> Use RGB
+            if (targetType == "vec3" && connectedPin->data_type == Pin::Color) {
+                return varName + ".rgb";
+            }
+        }
+        return varName;
+    }
+
     std::string GenerateShaderCode(const std::vector<Link>& links,
         const std::vector<BaseNode*>& nodes) override
     {
-        // 1. Fetch variable names from connected inputs
-            // Default values are handled by GetConnectedVariableName if not connected
-        auto baseColor = GetConnectedVariableName(Inputpins[1], links, nodes);
-        // Emissive (Input 2) is currently ignored in standard GBuffer unless you have an Emissive Buffer
-        auto opacity = GetConnectedVariableName(Inputpins[3], links, nodes);
-        auto metallic = GetConnectedVariableName(Inputpins[4], links, nodes);
-        auto roughness = GetConnectedVariableName(Inputpins[5], links, nodes);
-        auto normalIn = GetConnectedVariableName(Inputpins[6], links, nodes);
+        // 1. Fetch variable names with Auto-Swizzling
+        std::string baseColor = ResolveInput(1, links, nodes, "vec3");
+        std::string opacity = ResolveInput(3, links, nodes, "float");
+        std::string metallic = ResolveInput(4, links, nodes, "float");
+        std::string roughness = ResolveInput(5, links, nodes, "float");
+        std::string normalIn = ResolveInput(6, links, nodes, "vec3");
 
         std::string code;
 
@@ -608,13 +626,10 @@ struct OutputNode : public BaseNode
         code += "    gPosition.a = " + metallic + ";\n";
 
         // --- ATTACHMENT 1: Normal ---
-        // Check if Normal input is connected or default (0,0,1)
-        // We assume the graph provides a Tangent Space normal (e.g. from a texture)
-
-        code += "    vec3 mapNormal = " + normalIn + ";\n";
+        // Wrap in vec3() constructor to be safe against float inputs
+        code += "    vec3 mapNormal = vec3(" + normalIn + ");\n";
 
         // Safety: If mapNormal is essentially zero/default, fall back to geometry normal
-        // (A blue normal map is 0,0,1)
         code += "    if (length(mapNormal) < 0.1) mapNormal = vec3(0.0, 0.0, 1.0);\n";
 
         // Convert from [0,1] texture range to [-1,1] vector range
@@ -622,10 +637,10 @@ struct OutputNode : public BaseNode
 
         // Apply TBN matrix to transform Tangent Space -> World Space
         code += "    gNormal.rgb = normalize(TBN * mapNormal);\n";
-        code += "    gNormal.a = 1.0;\n"; // Reserved (AO or other flags)
+        code += "    gNormal.a = 1.0;\n";
 
         // --- ATTACHMENT 2: Albedo + Roughness ---
-        code += "    gAlbedoSpec.rgb = " + baseColor + ".rgb;\n";
+        code += "    gAlbedoSpec.rgb = vec3(" + baseColor + ");\n";
         code += "    gAlbedoSpec.a = " + roughness + ";\n";
 
         return code;
@@ -1184,9 +1199,8 @@ struct TextureCoordsNode : public BaseNode
         Outputpins.push_back({ id * 100 + 1, outLabel, ImNodesPinShape_Circle, Pin::Output, Pin::Vec2 });
 
         // Output pins for individual components
-        Outputpins.push_back({ id * 100 + 2, "U", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
-        Outputpins.push_back({ id * 100 + 3, "V", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
-
+        Outputpins.push_back({ id * 100 + 2, outLabel + "_U", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+        Outputpins.push_back({ id * 100 + 3, outLabel + "_V", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
         // Default evaluation result (initial value for preview)
         Outputpins[0].Set<glm::vec2>(glm::vec2(0.0f, 0.0f));
         Outputpins[1].Set<float>(0.0f);

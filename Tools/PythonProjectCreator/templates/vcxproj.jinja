@@ -97,7 +97,7 @@
       </AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>{{ engine_source_path }}\Tools\PyhtonCodeGen\.venv\Scripts\python.exe {{ engine_source_path }}\Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --ms-includes "$(MyIncludes)"</Command>
+      <Command>{{ engine_source_path }}\Tools\PyhtonCodeGen\.venv\Scripts\python.exe {{ engine_source_path }}\Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --name "GameModule" --ms-includes "$(MyIncludes)"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
 

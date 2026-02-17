@@ -1,4 +1,7 @@
 #include "ControlPanel.h"
+#include "GamePackager.h"
+#include <windows.h>
+#include <shobjidl.h>
 
 inline const char* GetMenuType(const MenuType menu) {
     switch (menu)
@@ -28,10 +31,6 @@ void ControlPanel::Render()
             GetMenuType(MenuType::AnimationMenu)
         };
 
-        /*if (ImGui::Combo("Select Menu", &type, items, 2))
-        {
-
-        }*/
         if (ImGui::ImageButton("##playButton", (isPlaying ? (void*)(intptr_t)startIcon->id : (void*)(intptr_t)pauseIcon->id), ImVec2(20, 20)))
         {
             isPlaying = !isPlaying;
@@ -44,6 +43,7 @@ void ControlPanel::Render()
                 engineApp->SetState(ApplicationState::Play);
             }
         }
+
 			
         ImGui::SameLine();
 
@@ -51,6 +51,55 @@ void ControlPanel::Render()
         {
 			engineAPI->SaveScene("Assets/Scenes/AutoSaveScene.json");
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Hot Reload DLL")) {
+            engineApp->RequestRecompile();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Package Game")) {
+            std::string path = OpenFolderDialog();
+            if (!path.empty()) {
+                GamePackager::PackageGame("MyAwesomeGame_Build", path);
+            }
+        }
         ImGui::EndGroup();
     ImGui::End();
+}
+
+void ControlPanel::OnPackageGameClicked()
+{
+}
+
+std::string ControlPanel::OpenFolderDialog() {
+    std::string folderPath = "";
+    IFileOpenDialog* pFileOpen;
+
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+        IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+    if (SUCCEEDED(hr)) {
+        DWORD dwOptions;
+        if (SUCCEEDED(pFileOpen->GetOptions(&dwOptions))) {
+            pFileOpen->SetOptions(dwOptions | FOS_PICKFOLDERS);
+        }
+        hr = pFileOpen->Show(NULL);
+
+        if (SUCCEEDED(hr)) {
+            IShellItem* pItem;
+            hr = pFileOpen->GetResult(&pItem);
+            if (SUCCEEDED(hr)) {
+                PWSTR pszFilePath;
+                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                if (SUCCEEDED(hr)) {
+                    std::wstring ws(pszFilePath);
+                    folderPath = std::string(ws.begin(), ws.end());
+                    CoTaskMemFree(pszFilePath);
+                }
+                pItem->Release();
+            }
+        }
+        pFileOpen->Release();
+    }
+    return folderPath;
 }

@@ -11,7 +11,7 @@ struct MeshCollider_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "MeshCollider";
         ci.fullName = "MeshCollider";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(MeshCollider);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

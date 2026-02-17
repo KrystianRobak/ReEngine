@@ -73,22 +73,18 @@ protected:
 
     bool RenderWindowTopBar()
     {
-        // Check if window is docked
         ImGuiWindow* window = ImGui::GetCurrentWindow();
         if (window && window->DockId != 0)
         {
-            // If docked → still allow minimize behavior,
-            // but DO NOT show close/minimize buttons.
+
             if (minimized)
             {
-                // Keep titlebar visible but content hidden
                 return false;
             }
 
-            return true; // Render content normally
+            return true;
         }
 
-        // --- Undocked: Show Minimize & Close Buttons ---
         ImGui::SameLine(ImGui::GetWindowWidth() - 60);
 
         if (ImGui::Button("-"))
@@ -116,19 +112,15 @@ protected:
 
         ImGui::Text(label);
 
-        // 1. Determine Display Name
         std::string displayName = "Empty";
         if (!propertyValue.empty()) {
             displayName = std::filesystem::path(propertyValue).stem().string();
         }
 
-        // 2. Icon Button
         ImTextureID iconID = (void*)(intptr_t)icons[iconType]->id;
 
-        // Style the button
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0)); // Transparent background
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
         if (ImGui::ImageButton(iconID, ImVec2(64, 64))) {
-            // Optional: Click to highlight in browser
             if (!propertyValue.empty()) {
                 Event e(Events::Editor::FileBrowser::LOCATE_FILE);
                 e.SetParam<std::string>("PATH", propertyValue);
@@ -137,7 +129,6 @@ protected:
         }
         ImGui::PopStyleColor();
 
-        // 3. Drag & Drop Target
         if (ImGui::BeginDragDropTarget()) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payloadType)) {
                 std::string payloadData = static_cast<const char*>(payload->Data);
@@ -145,7 +136,6 @@ protected:
                 if (splitPos != std::string::npos) {
                     std::string path = payloadData.substr(splitPos + 1);
 
-                    // Only update if actually different
                     if (propertyValue != path) {
                         propertyValue = path;
                         valueChanged = true;
@@ -157,7 +147,6 @@ protected:
 
         ImGui::SameLine();
 
-        // 4. Info & Controls Group
         ImGui::BeginGroup();
         {
             ImGui::TextWrapped("%s", displayName.c_str());

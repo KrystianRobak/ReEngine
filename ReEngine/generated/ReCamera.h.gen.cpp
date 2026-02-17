@@ -12,7 +12,7 @@ struct Camera_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "Camera";
         ci.fullName = "Camera";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(Camera);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

@@ -22,7 +22,6 @@
 #include "AnimGraph.h"
 #include "vaoutils.h"
 
-// Forward declare
 class Animation;
 struct AssimpNodeData;
 
@@ -31,7 +30,6 @@ public:
     AssetManager(ThreadPool* threadPool);
     ~AssetManager();
 
-    // --- API Implementation ---
     void DispatchUploads() override;
 
     std::shared_ptr<MeshResource> GetMesh(const std::string& path) override;
@@ -75,10 +73,8 @@ private:
     std::atomic<int> LastMaterialId{ 0 };
     std::atomic<int> lastTextureResourceId{ 0 };
 
-    // --- Internal Helpers ---
     void EnqueueUpload(std::function<void()> func);
 
-    // --- INTERNAL BINARY LOADERS ---
     std::shared_ptr<StaticMeshData> LoadBinaryStaticMesh(const std::string& path);
     std::shared_ptr<SkeletalMeshData> LoadBinarySkeletalMesh(const std::string& path);
 
@@ -86,7 +82,6 @@ private:
     std::unique_ptr<TextureLoadResult> LoadBinaryTexture(const std::string& path);
     std::shared_ptr<Animation> LoadBinaryAnimation(const std::string& path);
 
-    // --- TEMPLATE HELPERS ---
     template<typename T>
     void ReadVector(std::ifstream& in, std::vector<T>& vec) {
         uint32_t size = 0;
@@ -95,9 +90,7 @@ private:
         if (size > 0) in.read(reinterpret_cast<char*>(vec.data()), size * sizeof(T));
     }
 
-    // Helper to read the specific MeshData structure (verts, normals, bones, etc.)
     void ReadMeshData(std::ifstream& in, MeshData& mesh);
 
-    // Helper to read hierarchy
     void ReadSerializedNode(std::ifstream& in, AssimpNodeData& node);
 };

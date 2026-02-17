@@ -12,7 +12,7 @@ struct Transform_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "Transform";
         ci.fullName = "Transform";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(Transform);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;

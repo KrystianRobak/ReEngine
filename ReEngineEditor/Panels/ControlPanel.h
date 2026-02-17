@@ -19,5 +19,8 @@ private:
     std::shared_ptr<TextureResource> pauseIcon = nullptr;
     std::shared_ptr<TextureResource> recompileIcon = nullptr;
 	bool isPlaying = false;
+
+    void OnPackageGameClicked();
+    std::string OpenFolderDialog();
 };
 

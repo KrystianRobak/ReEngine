@@ -43,11 +43,8 @@ public:
 		id = inId;
 		transform = glm::mat4(1.0f);
 
-		// =============================================================
-		// 1. POSITIONS (Stride 32 | Time: Double | Value: 3x Double)
-		// =============================================================
 		numPositions = channel->mNumPositionKeys;
-		// DLL Stride is 32 bytes (8 Time + 24 Vector3d)
+
 		const size_t POS_STRIDE = 32;
 		const char* rawPosBase = reinterpret_cast<const char*>(channel->mPositionKeys);
 
@@ -55,27 +52,18 @@ public:
 		{
 			const char* keyPtr = rawPosBase + (i * POS_STRIDE);
 
-			// Time is at Offset 0 (Double)
 			double timeStamp = *reinterpret_cast<const double*>(keyPtr);
 
-			// Value is at Offset 8 (3 Doubles: x, y, z)
 			const float* vecPtr = reinterpret_cast<const float*>(keyPtr + 4);
 
 			KeyPosition data;
 			data.timeStamp = (float)timeStamp;
-			// Cast double -> float
+
 			data.position = glm::vec3((float)vecPtr[0], (float)vecPtr[1], (float)vecPtr[2]);
 
 			positions.push_back(data);
 		}
 
-		// =============================================================
-		// 2. ROTATIONS (Stride 32 | Time: Double | Value: 4x Float?? or Compressed?)
-		// =============================================================
-		// Note: If you confirmed Rotation Stride is 32, keep your existing logic.
-		// However, usually Double Quats need 40 bytes. 
-		// If your previous fix worked for Rotations, KEEP IT exactly as is.
-		// I will reprint your working Rotation logic here for completeness.
 		numRotations = channel->mNumRotationKeys;
 		const size_t ROT_STRIDE = 32;
 		const char* rawRotBase = reinterpret_cast<const char*>(channel->mRotationKeys);
@@ -85,8 +73,6 @@ public:
 			const char* keyPtr = rawRotBase + (i * ROT_STRIDE);
 			double timeStamp = *reinterpret_cast<const double*>(keyPtr);
 
-			// Reading as floats (your working fix)
-			// If this breaks later, try reading as doubles (offset 8), but let's trust your previous test.
 			float* valPtr = (float*)(keyPtr + 8);
 
 			KeyRotation data;
@@ -95,9 +81,6 @@ public:
 			rotations.push_back(data);
 		}
 
-		// =============================================================
-		// 3. SCALES (Stride 32 | Time: Double | Value: 3x Double)
-		// =============================================================
 		numScalings = channel->mNumScalingKeys;
 		const size_t SCL_STRIDE = 32;
 		const char* rawSclBase = reinterpret_cast<const char*>(channel->mScalingKeys);

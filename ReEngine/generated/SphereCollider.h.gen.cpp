@@ -12,7 +12,7 @@ struct SphereCollider_AutoRegister {
         Reflection::ClassInfo ci;
         ci.name = "SphereCollider";
         ci.fullName = "SphereCollider";
-        ci.module = "/Script/GeneratedModule";
+        ci.module = "ReEngine";
         ci.size = sizeof(SphereCollider);
         ci.category = Reflection::TypeCategory::Struct;
         ci.isClass = false;
