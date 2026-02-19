@@ -1,0 +1,11 @@
+{
+  "name": "Showcase",
+  "type": "Game",
+  "engine_path": "C:/Users/Krystian/Desktop/Nowyfolder/ReEngine/bin/Debug/ReEngineEditor.exe",
+  "editor_path": "C:/Users/Krystian/Desktop/Nowyfolder/ReEngine/bin/Debug/ReEngineEditor.exe",
+  "engine_source_path": "C:/Users/Krystian/Desktop/Nowyfolder/ReEngine",
+  "version": "1.0.0",
+  "": "",
+  "Renderer": "OpenGlRenderer",
+  "Physics": "Physics3D"
+}

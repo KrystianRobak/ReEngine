@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9E4771EE-72DF-4ACD-B71A-A0D582425C40}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Showcase</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <PropertyGroup>
+    <EngineRoot>C:/Users/Krystian/Desktop/Nowyfolder/ReEngine\</EngineRoot>
+    <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)intermediate\$(Configuration)\</IntDir>
+    <EngineIncludes>$(ProjectDir);$(EngineRoot)Libs\Include\assimp;$(EngineRoot)Libs\Include\GL;$(EngineRoot)Libs\Include\GLFW;$(EngineRoot)Libs\Include\glm;$(EngineRoot)Libs\Include;$(EngineRoot)ReEngine\Public;$(EngineRoot)ReEngineReflectionCore;$(EngineRoot)ReEngineCore;$(EngineRoot)ReEngine\Public\Engine\Components</EngineIncludes>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;REFLECTIONCORE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(EngineIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(EngineRoot)Libs\Lib\glfw;$(EngineRoot)Libs\Lib\assimp;$(EngineRoot)Libs\Lib\glew;$(EngineRoot)bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReflectionCore.lib;ReEngineCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+        "$(EngineRoot)Tools\PyhtonCodeGen\.venv\Scripts\python.exe" "$(EngineRoot)Tools\PyhtonCodeGen\CodeGen.py" --scan-dir "$(ProjectDir.TrimEnd('\'))" --out-dir "$(ProjectDir)generated" --name "GameModule" --ms-includes "$(EngineIncludes)"
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(EngineIncludes);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(EngineRoot)bin\Release;$(EngineRoot)Libs\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ReEngineCore.lib;ReflectionCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerEnvironment>PATH=$(EngineRoot)bin\Debug;%PATH%</LocalDebuggerEnvironment>
+    <LocalDebuggerCommand>$(EngineRoot)bin\Debug\ReEngineEditor.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>--game-dll="$(TargetPath)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\ImGuizmo.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imnodes.cpp" />
+
+    <ClCompile Include="Generated\AllGenerated.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imconfig.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\ImGuizmo.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_internal.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imnodes.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imnodes_internal.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imstb_textedit.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imstb_truetype.h" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Showcase.json" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

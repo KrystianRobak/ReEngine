@@ -34,6 +34,16 @@ enum MenuType
 	AnimationMenu
 };
 
+static constexpr const char* EVENT_COLLISION_BEGIN = "COLLISION_BEGIN";
+static constexpr const char* EVENT_COLLISION_END = "COLLISION_END";
+static constexpr const char* EVENT_TRIGGER_BEGIN = "TRIGGER_BEGIN";
+static constexpr const char* EVENT_TRIGGER_END = "TRIGGER_END";
+
+struct CollisionEventPayload {
+    Entity entityA;
+    Entity entityB;
+};
+
 using EventType = std::string_view;
 using ParamId = std::string_view;
 
@@ -107,6 +117,7 @@ namespace Events::Editor::StateMachineGraph {
 
 namespace Events::Editor::FileBrowser {
     constexpr inline EventType LOCATE_FILE = "Events::Editor::FileBrowser::LOCATE_FILE";
+    constexpr inline EventType SAVE_PREFAB = "Events::Editor::FileBrowser::SAVE_PREFAB";
 }
 
 namespace Events::Physics {

@@ -11,7 +11,7 @@ public:
     {
     }
 
-    void RenderVariable(const char* varName, const char* typeName, void* varPtr);
+    void RenderVariable(const char* varName, const char* typeName, void* varPtr, void* writeData, const char*);
 
     void OnInit() override;
 

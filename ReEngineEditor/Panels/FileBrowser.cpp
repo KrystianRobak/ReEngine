@@ -27,6 +27,18 @@ void FileBrowser::OnInit()
         FindFiles(currentPath);
         });
 
+    engineAPI->AddEventListener(Events::Editor::FileBrowser::SAVE_PREFAB, [this](Event& e) {
+        if (engineAPI->SaveEntityAsPrefab(e.GetParam<Entity>("entity"), this->currentPath + "/" + e.GetParam<std::string>("filename"))) {
+            std::cout << "[Editor] Saved Prefab to: " << e.GetParam<std::string>("filename") << std::endl;
+        }
+        FindFiles(currentPath);
+        });
+
+    engineAPI->AddEventListener(Events::Editor::FileBrowser::LOCATE_FILE, [this](Event& e) {
+        this->currentPath = e.GetParam<std::string>("PATH");
+        FindFiles(currentPath);
+        });
+
     FindFiles(".");
 }
 
@@ -193,7 +205,25 @@ void FileBrowser::Render() {
 
         if (ImGui::MenuItem("Create Scene"))
         {
-            // Scene creation logic...
+            std::string fileName = "NewScene.scene";
+            std::filesystem::path filePath = std::filesystem::path(currentPath) / fileName;
+            int counter = 1;
+            while (std::filesystem::exists(filePath)) {
+                fileName = "NewScene_" + std::to_string(counter++) + ".scene";
+                filePath = std::filesystem::path(currentPath) / fileName;
+            }
+
+            json j;
+            j["assets"] = json::array();
+            j["entities"] = json::array();
+            j["scene_name"] = filePath;
+            j["textures"] = json::array();
+            std::ofstream file(filePath, std::ios::out | std::ios::trunc);
+            if (file) {
+                file << j.dump(4);
+                file.close();
+            }
+            m_Dirty = true;
         }
 
         if (ImGui::MenuItem("Create Material"))

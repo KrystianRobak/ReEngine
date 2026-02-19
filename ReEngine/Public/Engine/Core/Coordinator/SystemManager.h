@@ -49,6 +49,23 @@ public:
         mSignatures.erase(typeName);
     }
 
+    void OnBeginSimulation()
+    {
+        for (auto& pair : mSystems)
+        {
+            pair.second->OnBeginSimulation();
+        }
+    }
+
+    void OnEndSimulation()
+    {
+        for (auto& pair : mSystems)
+        {
+            pair.second->OnEndSimulation();
+        }
+    }
+
+
     System* GetSystem(const std::string& typeName)
     {
         auto it = mSystems.find(typeName);

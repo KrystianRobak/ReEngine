@@ -1,4 +1,3 @@
-
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -54,11 +53,13 @@ public:
 
 			double timeStamp = *reinterpret_cast<const double*>(keyPtr);
 
-			const float* vecPtr = reinterpret_cast<const float*>(keyPtr + 4);
+			// FIX: double is 8 bytes, so the vec3 data starts at offset +8, not +4.
+			// Using +4 was reading mid-timestamp bytes as position data, causing
+			// corrupted/choppy positions on every frame.
+			const float* vecPtr = reinterpret_cast<const float*>(keyPtr + 8);
 
 			KeyPosition data;
 			data.timeStamp = (float)timeStamp;
-
 			data.position = glm::vec3((float)vecPtr[0], (float)vecPtr[1], (float)vecPtr[2]);
 
 			positions.push_back(data);
@@ -90,7 +91,7 @@ public:
 			const char* keyPtr = rawSclBase + (i * SCL_STRIDE);
 
 			double timeStamp = *reinterpret_cast<const double*>(keyPtr);
-			const float* vecPtr = reinterpret_cast<const float*>(keyPtr + 4);
+			const float* vecPtr = reinterpret_cast<const float*>(keyPtr + 8);
 
 			KeyScale data;
 			data.timeStamp = (float)timeStamp;
@@ -183,5 +184,3 @@ public:
 		return numScalings - 2;
 	}
 };
-
-

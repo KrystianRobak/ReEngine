@@ -158,8 +158,10 @@ protected:
 
             if (ImGui::Button("Find", ImVec2(60, 0))) {
                 if (!propertyValue.empty()) {
+                    std::string folderPath = std::filesystem::path(propertyValue).parent_path().string();
+
                     Event e(Events::Editor::FileBrowser::LOCATE_FILE);
-                    e.SetParam<std::string>("PATH", propertyValue);
+                    e.SetParam<std::string>("PATH", folderPath); // Send folder instead of file
                     engineAPI->SendEvent(e);
                 }
             }

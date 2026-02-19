@@ -33,6 +33,14 @@ public:
 
 	virtual void Update(float dt) = 0;
 
+	virtual void OnBeginSimulation()
+	{
+	}
+
+	virtual void OnEndSimulation()
+	{
+	}
+
 	void InjectCommander(std::shared_ptr<Commander> commander)
 	{
 		commander_ = commander;

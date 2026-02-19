@@ -286,6 +286,16 @@ public:
 		return mSystemManager->GetSystem(typeName);
 	}
 
+	void OnBeginSimulation()
+	{
+		mSystemManager->OnBeginSimulation();
+	}
+
+	void OnEndSimulation()
+	{
+		mSystemManager->OnEndSimulation();
+	}
+
 
 	void SetSystemSignature(const std::string& typeName, Signature signature) override
 	{
@@ -367,8 +377,9 @@ public:
 
 	void OpenScene(const std::string& path) override
 	{
-		mSceneManager->LoadScene(path, mEntityManager, this, true);
-
+		ClearScene();
+		ReScene* scene = mSceneManager->LoadScene(path, mEntityManager, this, true);
+		scene->SetPath(path);
 
 		SetSelectedEntity(MAX_ENTITIES + 1);
 	}

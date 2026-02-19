@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -11,32 +10,19 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{{ project_guid }}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>{{ project_name }}</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-
-    <OutDir>$(SolutionDir)bin\Debug\</OutDir>
-    <IntDir>$(SolutionDir)intermediate\Debug\</IntDir>
-    <TargetName>$(ProjectName)</TargetName>
-    <LocalDebuggerEnvironment>PATH={{ engine_path }};%PATH%</LocalDebuggerEnvironment>
-    <LocalDebuggerCommand>{{ editor_path }}</LocalDebuggerCommand>
-    <LocalDebuggerCommandArguments>--game-dll= $(TargetPath)</LocalDebuggerCommandArguments>
-    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>{% if project_type == 'Plugin' %}DynamicLibrary{% else %}Application{% endif %}</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -44,27 +30,13 @@
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
 
-  <Target Name="GenerateReflection" BeforeTargets="ClCompile">
-    <Message Text="Running reflection generation..." Importance="high" />
-    <Exec Command="python &quot;$(SolutionDir)\..\reflection_generator.py&quot; --config &quot;$(ProjectDir)reflection_config.json&quot;"
-          Condition="Exists('$(ProjectDir)reflection_config.json')" />
-  </Target>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)bin\Debug\</OutDir>
-    <IntDir>$(SolutionDir)intermediate\Debug\</IntDir>
-    <TargetName>$(ProjectName){% if project_type == 'Plugin' %}_d{% endif %}</TargetName>
-    <LocalDebuggerEnvironment>PATH={{ engine_path }}/bin/Debug;%PATH%</LocalDebuggerEnvironment>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)bin\Release\</OutDir>
-    <IntDir>$(SolutionDir)intermediate\Release\</IntDir>
-    <TargetName>$(ProjectName)</TargetName>
-    <LocalDebuggerEnvironment>PATH={{ engine_path }}/bin/Release;%PATH%</LocalDebuggerEnvironment>
+  <PropertyGroup>
+    <EngineRoot>{{ engine_source_path }}\</EngineRoot>
+    <OutDir>$(ProjectDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)intermediate\$(Configuration)\</IntDir>
+    <EngineIncludes>$(ProjectDir);$(EngineRoot)Libs\Include\assimp;$(EngineRoot)Libs\Include\GL;$(EngineRoot)Libs\Include\GLFW;$(EngineRoot)Libs\Include\glm;$(EngineRoot)Libs\Include;$(EngineRoot)ReEngine\Public;$(EngineRoot)ReEngineReflectionCore;$(EngineRoot)ReEngineCore;$(EngineRoot)ReEngine\Public\Engine\Components</EngineIncludes>
   </PropertyGroup>
 
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -73,31 +45,23 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>{{ engine_source_path }}\Libs\Include\assimp;{{ engine_source_path }}\Libs\Include\GL;{{ engine_source_path }}\Libs\Include\GLFW;{{ engine_source_path }}\Libs\Include\glm;{{ engine_source_path }}\Libs\Include;{{ engine_source_path }}\ReEngine\Public;{{ engine_source_path }}\ReEngineReflectionCore;{{ engine_source_path }}\ReEngine\Public\Engine;{{ engine_source_path }}\ReEngineCore;$(ProjectDir);{{ engine_source_path }}\ReEngine\Public\Engine\Components;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;REFLECTIONCORE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(EngineIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>{{ engine_source_path }}\Libs\Lib\glfw;{{ engine_source_path }}\Libs\Lib\assimp;{{ engine_source_path }}\Libs\Lib\glew;{{ engine_source_path }}\bin\Debug;%(AdditionalLibraryDirectories)
-      </AdditionalLibraryDirectories>
-      <AdditionalDependencies>
-      opengl32.lib;
-      glfw3.lib;
-      glew32.lib;
-      assimp-vc143-mtd.lib;
-      ReflectionCore.lib;
-      ReEngineCore.lib;
-      %(AdditionalDependencies)
-      </AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(EngineRoot)Libs\Lib\glfw;$(EngineRoot)Libs\Lib\assimp;$(EngineRoot)Libs\Lib\glew;$(EngineRoot)bin\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;glew32.lib;assimp-vc143-mtd.lib;ReflectionCore.lib;ReEngineCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>{{ engine_source_path }}\Tools\PyhtonCodeGen\.venv\Scripts\python.exe {{ engine_source_path }}\Tools\PyhtonCodeGen\CodeGen.py --scan-dir $(ProjectDir) --out-dir $(ProjectDir)generated\ --name "GameModule" --ms-includes "$(MyIncludes)"</Command>
+      <Command>
+        "$(EngineRoot)Tools\PyhtonCodeGen\.venv\Scripts\python.exe" "$(EngineRoot)Tools\PyhtonCodeGen\CodeGen.py" --scan-dir "$(ProjectDir.TrimEnd('\'))" --out-dir "$(ProjectDir)generated" --name "GameModule" --ms-includes "$(EngineIncludes)"
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
 
@@ -110,19 +74,8 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>
-        $(ProjectDir)Generated;
-        $(ProjectDir)Source;
-        {{ engine_path }}/include;
-        {{ engine_path }}\Libs\Include;
-        %(AdditionalIncludeDirectories)
-      </AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>
-        NDEBUG;
-        _CONSOLE;
-        ENGINE_RELEASE;
-        %(PreprocessorDefinitions)
-      </PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(EngineIncludes);$(ProjectDir)Source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -132,30 +85,50 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-        ReEngine.lib;
-        ReEditor.lib;
-        %(AdditionalDependencies)
-      </AdditionalDependencies>
-      <AdditionalLibraryDirectories>
-        {{ engine_path }}/lib/Release;
-        {{ engine_path }}\Libs\Lib;
-        %(AdditionalLibraryDirectories)
-      </AdditionalLibraryDirectories>
-      <ImportLibrary>$(OutDir)$(TargetName).lib</ImportLibrary>
+      <AdditionalLibraryDirectories>$(EngineRoot)bin\Release;$(EngineRoot)Libs\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ReEngineCore.lib;ReflectionCore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <PropertyGroup>
-    <MyIncludes>@(ClCompile->'%(AdditionalIncludeDirectories)')</MyIncludes>
-  </PropertyGroup>
-  <ItemGroup>
-    <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />
-  </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
-   <ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerEnvironment>PATH=$(EngineRoot)bin\Debug;%PATH%</LocalDebuggerEnvironment>
+    <LocalDebuggerCommand>$(EngineRoot)bin\Debug\ReEngineEditor.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>--game-dll=$(TargetDir)$(TargetName)$(TargetExt) </LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\ImGuizmo.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="$(EngineRoot)Libs\Include\imgui\imnodes.cpp" />
+
+    <ClCompile Include="Generated\AllGenerated.cpp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imconfig.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\ImGuizmo.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imgui_internal.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imnodes.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imnodes_internal.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imstb_textedit.h" />
+    <ClInclude Include="$(EngineRoot)Libs\Include\imgui\imstb_truetype.h" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="{{ project_name }}.json" />
   </ItemGroup>
-
-
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

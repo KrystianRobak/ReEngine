@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "imgui/imgui.h"
 #include "imgui/imnodes.h"
@@ -19,12 +19,12 @@ struct Pin
     int id;
     std::string label;
     ImNodesPinShape shape;
-	bool isUniform = false;
+    bool isUniform = false;
 
     enum Type { Input, Output } type;
     enum DataType { Float, Vec2, Vec3, Color } data_type = Float;
 
-    // Data storage � for now we�ll keep it simple
+    // Data storage � for now we�ll keep it simple
     std::variant<float, glm::vec2, glm::vec3, glm::vec4> value = 0.0f;
     template<typename T>
     T& Get() { return std::get<T>(value); }
@@ -79,9 +79,9 @@ inline std::string GetDefaultValueForInput(const Pin& pin)
     if (pin.label == "Metallic")   return "0.0";
     if (pin.label == "Roughness")  return "1.0";
     if (pin.label == "Normal")     return "vec3(0.5, 0.5, 1.0)";
-    if (pin.label == "WorldPosition") return "FragPos"; // Safe fallback
-
-    return "0.0"; // generic float fallback
+    if (pin.label == "WorldPosition") return "FragPos";
+    if (pin.label == "UVs")        return "TexCoords";
+    return "0.0";
 }
 
 struct BaseNode
@@ -91,10 +91,10 @@ struct BaseNode
     std::string title;
     ImVec2 position;
     std::vector<Pin> Inputpins;
-	std::vector<Pin> Outputpins;
+    std::vector<Pin> Outputpins;
     std::vector<Link> links;
-	ImVec4 color = ImVec4(1.0f, 0.5f, 0.2f, 1.0f);
-	ImVec4 titleColor = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+    ImVec4 color = ImVec4(1.0f, 0.5f, 0.2f, 1.0f);
+    ImVec4 titleColor = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
 
     // Virtual function for the unique UI part
     virtual void DrawNodeContents() = 0;
@@ -136,7 +136,7 @@ struct BaseNode
             ImNodes::EndInputAttribute();
         }
 
-        DrawNodeContents(); 
+        DrawNodeContents();
 
         for (const auto& pin : Outputpins)
         {
@@ -147,7 +147,7 @@ struct BaseNode
 
         ImNodes::EndNode();
 
-		ImNodes::PopColorStyle();
+        ImNodes::PopColorStyle();
         ImNodes::PopColorStyle();
     }
 
@@ -245,17 +245,31 @@ struct AdderNode : public BaseNode
         Outputpins[0].Set<float>(a + b);
     }
 
+    Pin::DataType ResolveType(const std::vector<Link>& links, std::vector<BaseNode*>& nodes)
+    {
+        Pin* a = FindLinkedPin(Inputpins[0].id, links, nodes);
+        Pin* b = FindLinkedPin(Inputpins[1].id, links, nodes);
+        return PromoteType(a ? a->data_type : Pin::Float,
+            b ? b->data_type : Pin::Float);
+    }
+
     std::string GenerateShaderCode(const std::vector<Link>& links, const std::vector<BaseNode*>& nodes) override
     {
+        // BUG FIX #2: The original code unconditionally emitted "float X = a + b;"
+        // regardless of the actual input types. If two vec3 colors were wired in, the
+        // output was "float X = vec3(...) + vec3(...);" — a GLSL type error that
+        // silently broke shader compilation the same way as Bug #1.
+        // Fix: resolve the promoted type from connected pins, exactly like AddNode does.
+        Pin::DataType t = ResolveType(links, (std::vector<BaseNode*>&)nodes);
+        std::string typeStr = GLSLType(t);
         std::string a = GetConnectedVariableName(Inputpins[0], links, nodes);
         std::string b = GetConnectedVariableName(Inputpins[1], links, nodes);
-        // Use the unique label for the output variable
-        return "    float " + Outputpins[0].label + " = " + a + " + " + b + ";\n";
+        return "    " + typeStr + " " + Outputpins[0].label + " = " + a + " + " + b + ";\n";
     }
 
     void DrawNodeContents() override
     {
-        ImGui::Text("Sum: %.2f", Outputpins[0].Get<float>());
+        ImGui::Text("Add (%s)", GLSLType(Outputpins[0].data_type));
     }
 
     json Serialize() const override
@@ -281,8 +295,8 @@ struct ConstantNode : public BaseNode
     {
         id = nodeId;
         title = "Constant";
-		color = ImVec4(0.4f, 0.8f, 0.4f, 1.0f);
-		titleColor = ImVec4(0.1f, 0.5f, 0.1f, 1.0f);
+        color = ImVec4(0.4f, 0.8f, 0.4f, 1.0f);
+        titleColor = ImVec4(0.1f, 0.5f, 0.1f, 1.0f);
         std::string outputLabel = "Const_V" + std::to_string(id);
         Outputpins.push_back({ id * 100 + 1, outputLabel, ImNodesPinShape_Circle, Pin::Output });
         Outputpins[0].Set<float>(1.0f);
@@ -335,7 +349,7 @@ struct TextureSampleNode : public BaseNode
     std::string texturePath;
     unsigned int textureId = 0;  // OpenGL texture handle (if loaded)
     bool textureLoaded = false;
-    AssetManagerApi* assetManager;
+    AssetManagerApi* assetManager = nullptr; // BUG FIX #4: was uninitialized — null-pointer crash in DrawNodeContents if Init() never called
     // Simulated outputs
     glm::vec4 colorValue = glm::vec4(1.0f);
     bool showChannels = true;
@@ -343,7 +357,7 @@ struct TextureSampleNode : public BaseNode
     void Init(AssetManagerApi* am)
     {
         assetManager = am;
-	}
+    }
 
     TextureSampleNode(int nodeId)
     {
@@ -357,15 +371,22 @@ struct TextureSampleNode : public BaseNode
 
         // Main Output
         std::string outputLabel = "Tex_S" + std::to_string(id);
-        Outputpins.push_back({ id * 100 + 2, outputLabel, ImNodesPinShape_Circle, Pin::Output }); // RGB (the vec4)
+        // BUG FIX #1: data_type was omitted, defaulting to Pin::Float.
+        // GenerateShaderCode emits "vec4 Tex_S<id> = texture(...)" — the GLSL type IS
+        // vec4. OutputNode::ResolveInput uses data_type to decide whether to apply
+        // ".rgb"/".r" swizzles. With Float, no swizzle was applied, so scalar inputs
+        // (Metallic, Roughness) got code like "gPosition.a = Tex_S5;" — assigning
+        // vec4 to float — a GLSL compile error. The program compiled to ID 0,
+        // glUseProgram(0) ran during the GBuffer pass, the attachments were never
+        // written, and the lighting pass read WorldPos=(0,0,0) for those entities,
+        // producing incorrect shadow lookups on all material-shaded geometry.
+        Outputpins.push_back({ id * 100 + 2, outputLabel, ImNodesPinShape_Circle, Pin::Output, Pin::Color }); // vec4
 
-        // --- FIX START --- 
-        // Use unique names for channels so they don't collide in GLSL
-        Outputpins.push_back({ id * 100 + 3, outputLabel + "_R",    ImNodesPinShape_Circle, Pin::Output });
-        Outputpins.push_back({ id * 100 + 4, outputLabel + "_G",    ImNodesPinShape_Circle, Pin::Output });
-        Outputpins.push_back({ id * 100 + 5, outputLabel + "_B",    ImNodesPinShape_Circle, Pin::Output });
-        Outputpins.push_back({ id * 100 + 6, outputLabel + "_A",    ImNodesPinShape_Circle, Pin::Output });
-        // --- FIX END ---
+        // Channel outputs: correctly typed as Float (each is a scalar component)
+        Outputpins.push_back({ id * 100 + 3, outputLabel + "_R", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+        Outputpins.push_back({ id * 100 + 4, outputLabel + "_G", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+        Outputpins.push_back({ id * 100 + 5, outputLabel + "_B", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
+        Outputpins.push_back({ id * 100 + 6, outputLabel + "_A", ImNodesPinShape_Circle, Pin::Output, Pin::Float });
 
         // Set initial outputs
         Outputpins[0].Set<glm::vec4>(colorValue);
@@ -380,6 +401,15 @@ struct TextureSampleNode : public BaseNode
         // --------------------------
         // Texture Picker (with Thumbnail)
         // --------------------------
+        // BUG FIX #4 (continued): Guard against null assetManager.
+        // TextureSampleNode::assetManager was uninitialized (no default value) and
+        // Init() is only called on editor-constructed nodes, not on deserialized ones.
+        // Calling GetCachedTexturesPaths() through a garbage pointer is a crash.
+        if (!assetManager) {
+            ImGui::TextDisabled("[Asset manager not initialized]");
+            return;
+        }
+
         ImGui::Text("Texture:");
         ImGui::SameLine();
 
@@ -568,15 +598,22 @@ struct OutputNode : public BaseNode
         color = ImVec4(0.8f, 0.3f, 0.2f, 1.0f);
         titleColor = ImVec4(0.9f, 0.4f, 0.3f, 1.0f);
 
-        // Inputs: 
-        // 0:Pos, 1:Color, 2:Emissive, 3:Opacity, 4:Metallic, 5:Roughness, 6:Normal
-        Inputpins.push_back({ id * 100 + 0, "WorldPosition", ImNodesPinShape_Circle, Pin::Input });
+        // BUG FIX #5: WorldPosition pin used offset 0 (id * 100 + 0 = id * 100).
+        // While that doesn't cause a numerical collision, it is unsafe in UpdatePinIds
+        // (localIndex = pin.id % 100 = 0 would alias with any other "base" id).
+        // More importantly, GenerateShaderCode completely ignores this pin and always
+        // hardcodes "gPosition.rgb = FragPos;" — so any connection was silently dropped.
+        // Changed to offset 7 (one past Normal) to make the ID scheme consistent, and
+        // the pin is now visually marked "(not yet implemented)" so users know it's a
+        // placeholder for future world-position offset support.
+        // Inputs: 1:Color, 2:Emissive, 3:Opacity, 4:Metallic, 5:Roughness, 6:Normal, 7:WorldPosition(NYI)
         Inputpins.push_back({ id * 100 + 1, "BaseColor", ImNodesPinShape_Circle, Pin::Input });
         Inputpins.push_back({ id * 100 + 2, "Emissive",  ImNodesPinShape_Circle, Pin::Input });
         Inputpins.push_back({ id * 100 + 3, "Opacity",   ImNodesPinShape_Circle, Pin::Input });
         Inputpins.push_back({ id * 100 + 4, "Metallic",  ImNodesPinShape_Circle, Pin::Input });
         Inputpins.push_back({ id * 100 + 5, "Roughness", ImNodesPinShape_Circle, Pin::Input });
         Inputpins.push_back({ id * 100 + 6, "Normal",    ImNodesPinShape_Circle, Pin::Input });
+        Inputpins.push_back({ id * 100 + 7, "WorldPos (NYI)", ImNodesPinShape_CircleFilled, Pin::Input });
     }
 
     void DrawNodeContents() override
@@ -586,7 +623,7 @@ struct OutputNode : public BaseNode
 
     void Evaluate(std::vector<Link>&, std::vector<BaseNode*>&) override
     {
-        // Output node does no math � just forwards into shader
+        // Output node does no math � just forwards into shader
     }
 
     // Helper to safely cast variables based on connection types
@@ -613,11 +650,13 @@ struct OutputNode : public BaseNode
         const std::vector<BaseNode*>& nodes) override
     {
         // 1. Fetch variable names with Auto-Swizzling
-        std::string baseColor = ResolveInput(1, links, nodes, "vec3");
-        std::string opacity = ResolveInput(3, links, nodes, "float");
-        std::string metallic = ResolveInput(4, links, nodes, "float");
-        std::string roughness = ResolveInput(5, links, nodes, "float");
-        std::string normalIn = ResolveInput(6, links, nodes, "vec3");
+        // Indices match Inputpins order after BUG FIX #5 (WorldPosition moved to last, NYI):
+        // 0=BaseColor, 1=Emissive, 2=Opacity, 3=Metallic, 4=Roughness, 5=Normal, 6=WorldPos(NYI)
+        std::string baseColor = ResolveInput(0, links, nodes, "vec3");
+        std::string opacity = ResolveInput(2, links, nodes, "float");
+        std::string metallic = ResolveInput(3, links, nodes, "float");
+        std::string roughness = ResolveInput(4, links, nodes, "float");
+        std::string normalIn = ResolveInput(5, links, nodes, "vec3");
 
         std::string code;
 
@@ -663,110 +702,14 @@ struct OutputNode : public BaseNode
     }
 };
 
-struct AddNode : public BaseNode
-{
-    AddNode(int nodeId)
-    {
-        id = nodeId;
-        title = "Add";
-        color = ImVec4(0.45f, 0.75f, 0.45f, 1.0f);
-        titleColor = ImVec4(0.15f, 0.45f, 0.15f, 1.0f);
 
-        Inputpins.push_back({ id * 100 + 1, "A", ImNodesPinShape_Circle, Pin::Input, Pin::Float });
-        Inputpins.push_back({ id * 100 + 2, "B", ImNodesPinShape_Circle, Pin::Input, Pin::Float });
+// BUG FIX #3: AddNode was a duplicate struct that also serialized as "type":"AddNode".
+// Material::Deserialize always created AdderNode for that key — this struct was
+// unreachable from disk, making it dead code. Having two structs with the same
+// serialization string is a silent correctness trap; removed. AdderNode (now
+// corrected with proper type-promotion by Bug Fix #2) is the single canonical Add node.
+// Any editor code that called AddNode<AddNode>() should call AddNode<AdderNode>() instead.
 
-        // Output � initially float, may change dynamically
-        std::string outLabel = "Add_R" + std::to_string(id);
-        Outputpins.push_back({ id * 100 + 3, outLabel, ImNodesPinShape_Circle, Pin::Output, Pin::Float });
-    }
-
-    // Detect connected pin type
-    Pin::DataType ResolveType(const std::vector<Link>& links, std::vector<BaseNode*>& nodes)
-    {
-        Pin* a = FindLinkedPin(Inputpins[0].id, links, nodes);
-        Pin* b = FindLinkedPin(Inputpins[1].id, links, nodes);
-
-        Pin::DataType tA = a ? a->data_type : Inputpins[0].data_type;
-        Pin::DataType tB = b ? b->data_type : Inputpins[1].data_type;
-
-        return (tA > tB) ? tA : tB; // promote smaller ? larger
-    }
-
-    void Evaluate(std::vector<Link>& links, std::vector<BaseNode*>& nodes) override
-    {
-        Pin::DataType outType = ResolveType(links, nodes);
-
-        if (outType == Pin::Float)
-        {
-            float a = GetConnectedValue<float>(Inputpins[0], links, nodes);
-            float b = GetConnectedValue<float>(Inputpins[1], links, nodes);
-            Outputpins[0].Set<float>(a + b);
-        }
-        else if (outType == Pin::Vec2)
-        {
-            glm::vec2 a = GetConnectedValue<glm::vec2>(Inputpins[0], links, nodes);
-            glm::vec2 b = GetConnectedValue<glm::vec2>(Inputpins[1], links, nodes);
-            Outputpins[0].Set<glm::vec2>(a + b);
-        }
-        else if (outType == Pin::Vec3)
-        {
-            glm::vec3 a = GetConnectedValue<glm::vec3>(Inputpins[0], links, nodes);
-            glm::vec3 b = GetConnectedValue<glm::vec3>(Inputpins[1], links, nodes);
-            Outputpins[0].Set<glm::vec3>(a + b);
-        }
-        else // Vec4
-        {
-            glm::vec4 a = GetConnectedValue<glm::vec4>(Inputpins[0], links, nodes);
-            glm::vec4 b = GetConnectedValue<glm::vec4>(Inputpins[1], links, nodes);
-            Outputpins[0].Set<glm::vec4>(a + b);
-        }
-
-        Outputpins[0].data_type = outType;
-    }
-
-    std::string GenerateShaderCode(const std::vector<Link>& links,
-        const std::vector<BaseNode*>& nodes) override
-    {
-        Pin::DataType dtype = ResolveType(links, (std::vector<BaseNode*>&)nodes);
-
-        std::string typeStr = GLSLType(dtype);
-        std::string a = GetConnectedVariableName(Inputpins[0], links, nodes);
-        std::string b = GetConnectedVariableName(Inputpins[1], links, nodes);
-
-        return "    " + typeStr + " " + Outputpins[0].label + " = " + a + " + " + b + ";\n";
-    }
-
-    template<typename T>
-    T GetConnectedValue(const Pin& pin,
-        const std::vector<Link>& links,
-        std::vector<BaseNode*>& nodes)
-    {
-        if (Pin* p = FindLinkedPin(pin.id, links, nodes))
-            return p->Get<T>();
-        return T{ 0 };
-    }
-
-    void DrawNodeContents() override
-    {
-        ImGui::Text("Add (%s)", GLSLType(Outputpins[0].data_type));
-    }
-
-    json Serialize() const override
-    {
-        json j;
-        j["type"] = "AddNode";
-        j["id"] = id;
-        j["position"] = { position.x, position.y };
-        return j;
-    }
-
-    void Deserialize(const json& data) override
-    {
-        id = data["id"];
-        position = ImVec2(data["position"][0], data["position"][1]);
-        UpdatePinIds();
-    }
-};
 
 struct ConstantVec2Node : public BaseNode
 {

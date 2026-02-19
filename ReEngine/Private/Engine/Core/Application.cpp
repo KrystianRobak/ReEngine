@@ -445,6 +445,10 @@ void Application::SwapAllBuffersAndNotify() noexcept
 
 			coordinator->SendEvent(Events::Application::CAMERA_CHANGED);
 			m_AppState.store(ApplicationState::Play);
+
+			coordinator->OnBeginSimulation();
+
+
 			GetLayerManager()->AddLayerThreadSafe<GameUILayer>();
 		}
 		else if (current == ApplicationState::Play && pending == ApplicationState::Editor)
@@ -455,6 +459,7 @@ void Application::SwapAllBuffersAndNotify() noexcept
 			coordinator->ExitPlayMode();
 			m_AppState.store(ApplicationState::Editor);
 			GetLayerManager()->RemoveLayer<GameUILayer>();
+			coordinator->OnEndSimulation();
 		}
 		else
 		{

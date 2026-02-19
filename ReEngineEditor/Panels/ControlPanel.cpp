@@ -2,6 +2,7 @@
 #include "GamePackager.h"
 #include <windows.h>
 #include <shobjidl.h>
+#include "ReScene.h"
 
 inline const char* GetMenuType(const MenuType menu) {
     switch (menu)
@@ -49,7 +50,7 @@ void ControlPanel::Render()
 
         if (ImGui::ImageButton("recompileButton",(void*)(intptr_t)recompileIcon->id, ImVec2(20, 20)))
         {
-			engineAPI->SaveScene("Assets/Scenes/AutoSaveScene.json");
+			engineAPI->SaveScene(engineAPI->GetCurrentScene()->GetPath());
         }
         ImGui::SameLine();
         if (ImGui::Button("Hot Reload DLL")) {

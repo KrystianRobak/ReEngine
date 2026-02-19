@@ -56,7 +56,7 @@ const Reflection::ClassInfo* FindReflectedType(const char* typeName)
     return nullptr;
 }
 
-void PropertyPanel::RenderVariable(const char* varName, const char* typeName, void* varPtr)
+void PropertyPanel::RenderVariable(const char* varName, const char* typeName, void* varPtr, void* writeData, const char* name)
 {
     ImGui::PushID(varPtr); // Ensure ImGui IDs are unique per variable memory address
 
@@ -70,28 +70,51 @@ void PropertyPanel::RenderVariable(const char* varName, const char* typeName, vo
     else if (strcmp(typeName, "bool") == 0) {
         ImGui::Checkbox(varName, (bool*)varPtr);
     }
-    // 2. --- Math Types ---
     else if (strcmp(typeName, "glm::vec<3, float>") == 0 || strcmp(typeName, "glm::vec3") == 0) {
         ImGui::DragFloat3(varName, (float*)varPtr, 0.1f);
     }
     else if (strcmp(typeName, "glm::vec<4, float>") == 0 || strcmp(typeName, "glm::vec4") == 0) {
         ImGui::DragFloat4(varName, (float*)varPtr, 0.1f);
     }
-    // Handle Rotation specifically (Quaternions are hard to edit raw)
     else if (strcmp(typeName, "glm::qua<float>") == 0 || strcmp(typeName, "glm::quat") == 0) {
         DrawQuatAsEuler(varName, *(glm::quat*)varPtr);
     }
-    // 3. --- Strings / Assets ---
     else if (strcmp(typeName, "std::string") == 0 || strcmp(typeName, "std::basic_string<char>") == 0) {
         std::string* strPtr = (std::string*)varPtr;
-        static char buf[256];
-        strncpy_s(buf, strPtr->c_str(), 256);
-        if (ImGui::InputText(varName, buf, 256)) {
-            *strPtr = std::string(buf);
+
+        // 1. Static Mesh Asset
+        if (strcmp(name, "StaticMesh") == 0 && strcmp(varName, "AssetPath") == 0) {
+            if (DrawAssetSlot(varName, *strPtr, "ASSET_STATIC_MESH", FileType::StaticMesh)) {
+                // FORCE UPDATE: Clear the resource handle so the System re-fetches it next frame
+                ((StaticMesh*)writeData)->MeshResource = engineAPI->GetAssetManager()->GetMesh(*strPtr);
+                //engineAPI->MarkEntityDirty(entity, componentInfo->name);
+            }
         }
-        // Note: You can re-add your specific Asset Slot logic here if needed
+        // 2. Skeletal Mesh Asset
+        else if (strcmp(name, "SkeletalMeshComponent") == 0 && strcmp(varName, "AssetPath") == 0) {
+            if (DrawAssetSlot(varName, *strPtr, "ASSET_SKELETAL_MESH", FileType::SkeletalMesh)) {
+                // FORCE UPDATE
+                ((SkeletalMeshComponent*)writeData)->MeshResource = engineAPI->GetAssetManager()->GetMesh(*strPtr);
+                //engineAPI->MarkEntityDirty(entity, componentInfo->name);
+            }
+        }
+        // 3. Animation Graph (State Machine)
+        else if (strcmp(name, "StateMachine") == 0 && strcmp(varName, "GraphAssetPath") == 0) {
+            if (DrawAssetSlot(varName, *strPtr, "ASSET_ANIMATION", FileType::Animation)) {
+                // FORCE UPDATE
+                ((StateMachine*)writeData)->GraphResource = engineAPI->GetAssetManager()->GetAnimationGraph(*strPtr);
+                //engineAPI->MarkEntityDirty(entity, componentInfo->name);
+            }
+        }
+        // 4. Fallback for generic strings
+        else {
+            static char buf[256];
+            strncpy_s(buf, strPtr->c_str(), 256);
+            if (ImGui::InputText(varName, buf, 256)) {
+                *strPtr = std::string(buf);
+            }
+        }
     }
-    // 4. --- RECURSIVE REFLECTION (The Fix) ---
     else
     {
         // Check if this unknown type is actually another Reflected Component/Struct
@@ -110,7 +133,7 @@ void PropertyPanel::RenderVariable(const char* varName, const char* typeName, vo
                     void* childPtr = (char*)varPtr + childVar.offset;
 
                     // RECURSE!
-                    RenderVariable(childVar.name, childVar.type->name, childPtr);
+                    RenderVariable(childVar.name, childVar.type->name, childPtr, writeData, name);
                 }
                 ImGui::TreePop();
             }
@@ -184,10 +207,8 @@ void PropertyPanel::Render()
                 {
                     engineAPI->AddComponent(entity, name);
 
-                    // --- NEW LOGIC START: Auto-Link MeshCollider and StaticMesh ---
                     std::string compName = name;
 
-                    // Case 1: We just added a MeshCollider. Check if there is a StaticMesh to grab data from.
                     if (compName == "MeshCollider")
                     {
                         if (engineAPI->HasComponent(entity, "StaticMesh"))
@@ -202,7 +223,6 @@ void PropertyPanel::Render()
                             }
                         }
                     }
-                    // Case 2: We just added a StaticMesh. Check if there is a MeshCollider waiting for data.
                     else if (compName == "StaticMesh")
                     {
                         if (engineAPI->HasComponent(entity, "MeshCollider"))
@@ -210,8 +230,6 @@ void PropertyPanel::Render()
                             auto* meshCol = (MeshCollider*)engineAPI->GetComponentForWrite(entity, "MeshCollider");
                             auto* staticMesh = (StaticMesh*)engineAPI->GetComponent(entity, "StaticMesh");
 
-                            // Note: A new StaticMesh usually has no Resource yet (AssetPath is empty), 
-                            // so this might be null, but we check anyway.
                             if (meshCol && staticMesh && staticMesh->MeshResource && staticMesh->MeshResource->cpuMesh)
                             {
                                 meshCol->meshData = staticMesh->MeshResource->cpuMesh;
@@ -219,7 +237,6 @@ void PropertyPanel::Render()
                             }
                         }
                     }
-                    // --- NEW LOGIC END ---
                 }
             }, true);
 
@@ -238,14 +255,11 @@ void PropertyPanel::Render()
 
     for (auto componentInfo : Components)
     {
-        // Skip checking nested structs at the top level, we only want actual Components
-        // (Assuming your ECS stores TypeIDs. If Transform is just a struct, GetComponentType might return 0 or fail,
-        // make sure only "Real" components pass this check).
+
         if (signature.test(engineAPI->GetComponentType(componentInfo->name)))
         {
             if (ImGui::CollapsingHeader(componentInfo->name, ImGuiTreeNodeFlags_DefaultOpen))
             {
-                // Get Write Data (Assuming we want to edit)
                 void* data = engineAPI->GetComponentForWrite(entity, componentInfo->name);
 
                 if (data)
@@ -254,8 +268,7 @@ void PropertyPanel::Render()
                     {
                         void* varPtr = (char*)data + variable.offset;
 
-                        // Call the new recursive function
-                        RenderVariable(variable.name, variable.type->name, varPtr);
+                        RenderVariable(variable.name, variable.type->name, varPtr, data, componentInfo->name);
                     }
                 }
             }

@@ -72,7 +72,15 @@ public:
     {
     }
 
-    ~Material() = default;
+    ~Material()
+    {
+        // BUG FIX #3: m_Nodes holds raw owning pointers. Without a destructor every
+        // Material destruction (or material reload) leaks every node on the heap.
+        // RemoveNode() was erasing the pointer from the vector without deleting it —
+        // same leak on every editor edit. Fix both here.
+        for (auto* node : m_Nodes)
+            delete node;
+    }
 
     // --- Node management ---
     template<typename T, typename... Args>
@@ -95,11 +103,17 @@ public:
             [nodeId](BaseNode* n) {
                 return (n->id == nodeId);
             });
+        // BUG FIX #3 cont.: delete the removed nodes before erasing so we don't leak
+        for (auto jt = it; jt != m_Nodes.end(); ++jt)
+            delete* jt;
         m_Nodes.erase(it, m_Nodes.end());
     }
 
     void SetNodes(const std::vector<BaseNode*>& nodes)
     {
+        // Delete old nodes first so a graph reload doesn't leak the previous set
+        for (auto* node : m_Nodes)
+            delete node;
         m_Nodes = nodes;
         m_NextNodeID = 1;
         for (auto node : m_Nodes)
@@ -270,6 +284,26 @@ void main()
             "void main()\n"
             "{\n"
             + shaderBody +
+            // BUG FIX #1: The OutputNode in a visual node graph only controls artist
+            // data (albedo, roughness, metallic, normal map). It cannot know FragPos
+            // because that is a geometry interpolant, not a material property.
+            // If the node graph never writes gPosition.rgb, it stays as the GBuffer
+            // clear value (0,0,0). The deferred lighting pass then reads WorldPos as
+            // (0,0,0) for every material pixel, computes the wrong lightSpaceMatrix
+            // transform for shadow lookups, and shadows disappear on those surfaces.
+            //
+            // The fix: ALWAYS overwrite gPosition.rgb with FragPos AFTER the node graph
+            // body. gPosition.rgb MUST be world-space position; it is a GBuffer contract,
+            // not an artist parameter. Overwriting here is correct and cannot break
+            // anything the node graph legitimately produced.
+            //
+            // Similarly gNormal.a has no meaningful use in the lighting pass — we
+            // always write 1.0 so the alpha doesn't cause silent divide-by-zero or NaN
+            // in any future shader that reads that channel.
+            "\n"
+            "    // -- GBuffer geometry guarantee (not artist-controllable) --\n"
+            "    gPosition.rgb = FragPos;\n"
+            "    if (gNormal.a == 0.0) gNormal.a = 1.0;\n"
             "}\n";
 
         return result;
@@ -278,19 +312,39 @@ void main()
     std::string GenerateUniforms()
     {
         std::string result;
-        for (auto node : m_Nodes)
+
+        // BUG FIX #2: The old code iterated Inputpins but generated a sampler uniform
+        // INSIDE that loop for TextureSampleNode. If a TextureSampleNode has N input pins
+        // (e.g. UV coords, mip bias), it emitted the same "uniform sampler2D X_Tex;"
+        // N times, causing a GLSL compilation error (duplicate declaration).
+        // Fix: decide once per NODE whether it's a texture node or a uniform-pin node,
+        // then emit at most one declaration per node.
+
+        std::unordered_set<std::string> declaredSamplers; // guard against duplicates
+
+        for (auto* node : m_Nodes)
         {
-            for (auto& pin : node->Inputpins)
+            if (auto* texNode = dynamic_cast<TextureSampleNode*>(node))
             {
-                if (auto* texNode = dynamic_cast<TextureSampleNode*>(node))
+                // One sampler per TextureSampleNode, keyed by its output label
+                if (!texNode->Outputpins.empty())
                 {
                     std::string samplerName = texNode->Outputpins[0].label + "_Tex";
-                    result += "uniform sampler2D " + samplerName + ";\n";
+                    if (declaredSamplers.insert(samplerName).second)
+                        result += "uniform sampler2D " + samplerName + ";\n";
                 }
-                else if (pin.isUniform)
-                    result += "uniform vec4 " + pin.label + ";\n";
+            }
+            else
+            {
+                // For all other nodes, emit a vec4 uniform for each pin flagged as uniform
+                for (auto& pin : node->Inputpins)
+                {
+                    if (pin.isUniform)
+                        result += "uniform vec4 " + pin.label + ";\n";
+                }
             }
         }
+
         return result;
     }
 

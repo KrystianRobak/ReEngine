@@ -9,6 +9,7 @@
 #include "ProjectBuilder.h"
 #include "Logger.h"
 #include "json/json.hpp" // Include JSON to parse the config
+#include "GameView.h"
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -94,30 +95,35 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    // 6. Initialize ProjectBuilder
-    // This loads "stopa.dll" as the GameModule, and then internally looks for "stopa.json"
     LOGF_INFO("Runner starting project: %s using config %s", gameDllPath.c_str(), configFileName.c_str());
 
     ProjectBuilder builder(gameDllPath, engine, app);
     builder.ParseConfig();
 
-    // 7. Setup Standalone Viewport
-    //
-
-    // 8. Init Systems (Links the loaded Game DLL logic to the engine)
     app->InitSystems();
 
-    // 9. Load Starting Scene
     if (!startScene.empty()) {
-        // Ensure path separators are correct
         std::replace(startScene.begin(), startScene.end(), '\\', '/');
-        engine->OpenScene(startScene);
     }
 
-    // 10. Start Game Loop
     app->SetState(ApplicationState::Play);
     app->StartGameThreads();
-    app->CreateNewViewport("SceneViewport", 1920, 1080);
+
+
+    engine->AddEventListener(Events::Engine::LayerManager::INITIALIZED,
+        [app, &builder, engine, startScene](Event& e) {
+            ILayerManager* layerManager = app->GetLayerManager();
+
+            builder.SetLayerManager(layerManager);
+            builder.InjectLayerManager();
+
+            layerManager->AddLayer<GameLayer>();
+
+            engine->OpenScene(startScene);
+
+            app->GetCoordinatorEditor()->SendEvent(Events::Application::CAMERA_CHANGED);
+        });
+
     while (app->IsRunning()) {
         app->CoordinationLoop();
     }

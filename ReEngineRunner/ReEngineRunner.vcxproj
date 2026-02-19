@@ -135,7 +135,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Libs\Include\imgui\imgui.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\Libs\Include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="ReEngineRunner.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Libs\Include\imgui\imconfig.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imgui_internal.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\Libs\Include\imgui\imstb_truetype.h" />
+    <ClInclude Include="GameView.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

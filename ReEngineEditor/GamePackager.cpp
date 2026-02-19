@@ -2,7 +2,7 @@
 #include "Logger.h"
 #include <fstream>
 #include <iostream>
-#include <windows.h> // For ShellExecute
+#include <windows.h>
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -11,18 +11,16 @@ void GamePackager::PackageGame(const std::string& buildName, const std::string& 
     fs::path destDir = fs::path(destinationPath) / buildName;
 
     try {
-        // 1. Setup Destination
+
         if (fs::exists(destDir)) fs::remove_all(destDir);
         fs::create_directories(destDir);
         fs::create_directories(destDir / "Systems");
 
-        // 2. Find and Load Project Config
         fs::path sourceConfigPath = "";
         json projectConfig;
 
         for (const auto& entry : fs::directory_iterator(fs::current_path())) {
             std::string filename = entry.path().filename().string();
-            // Skip hotreload temp files
             if (filename.find("hotreload") != std::string::npos) continue;
 
             if (entry.path().extension() == ".json") {
@@ -47,7 +45,6 @@ void GamePackager::PackageGame(const std::string& buildName, const std::string& 
 
         LOGF_INFO("Found Config: %s", sourceConfigPath.string().c_str());
 
-        // 3. Extract Paths
         std::string engineExePath = projectConfig["engine_path"];
         fs::path engineBinDir = fs::path(engineExePath).parent_path();
 
@@ -56,16 +53,13 @@ void GamePackager::PackageGame(const std::string& buildName, const std::string& 
             return;
         }
 
-        // 4. Copy Engine Binaries & Runner
         CopyBinaries(destDir, engineBinDir, projectConfig);
 
-        // --- NEW: Copy Game DLL from Project's bin/Debug ---
         if (projectConfig.contains("name")) {
             std::string gameName = projectConfig["name"];
             std::string gameDllName = gameName + ".dll";
             std::string gamePdbName = gameName + ".pdb";
 
-            // Assuming structure: ProjectRoot/bin/Debug/Game.dll
             fs::path projectBinDir = fs::current_path() / "bin" / "Debug";
             fs::path gameDllSrc = projectBinDir / gameDllName;
             fs::path gameDllDest = destDir / gameDllName;
@@ -74,7 +68,6 @@ void GamePackager::PackageGame(const std::string& buildName, const std::string& 
                 fs::copy_file(gameDllSrc, gameDllDest, fs::copy_options::overwrite_existing);
                 LOGF_INFO("Copied Game DLL: %s", gameDllName.c_str());
 
-                // Optional: Copy PDB for debugging
                 fs::path pdbSrc = projectBinDir / gamePdbName;
                 if (fs::exists(pdbSrc)) {
                     fs::copy_file(pdbSrc, destDir / gamePdbName, fs::copy_options::overwrite_existing);
@@ -82,29 +75,50 @@ void GamePackager::PackageGame(const std::string& buildName, const std::string& 
             }
             else {
                 LOGF_ERROR("Could not find Game DLL at: %s", gameDllSrc.string().c_str());
-                // Fallback check: maybe it's in the root?
                 if (fs::exists(fs::current_path() / gameDllName)) {
                     fs::copy_file(fs::current_path() / gameDllName, gameDllDest, fs::copy_options::overwrite_existing);
                     LOGF_WARN("Found Game DLL in root folder instead of bin/Debug.");
                 }
             }
         }
-        // ----------------------------------------------------
 
-        // 5. Copy Content
         fs::path destContent = destDir / "Content";
-        CopyContent(destContent);
+        CopyContent(destContent, "Content");
 
-        // 6. Copy & Sanitize Project Config
+        destContent = destDir / "shaders";
+        CopyContent(destContent, "shaders");
+
         fs::path destConfigPath = destDir / sourceConfigPath.filename();
         fs::copy_file(sourceConfigPath, destConfigPath, fs::copy_options::overwrite_existing);
         SanitizeSingleFile(destConfigPath);
 
-        // 7. Create Game.ini
         std::ofstream ini(destDir / "Game.ini");
         ini << "Config=" << sourceConfigPath.filename().string() << "\n";
-        ini << "StartScene=Content/Scenes/AutoSaveScene.json";
+
+        std::string startScene = "Content/Scenes/AutoSaveScene.json";
+
+        if (projectConfig.contains("EntryScene")) {
+            if (projectConfig["EntryScene"].is_string()) {
+                std::string entryVal = projectConfig["EntryScene"].get<std::string>();
+
+                if (!entryVal.empty()) {
+                    std::replace(entryVal.begin(), entryVal.end(), '\\', '/');
+                    size_t pos = entryVal.find("Content/");
+                    if (pos != std::string::npos) {
+                        startScene = entryVal.substr(pos);
+                    }
+                    else {
+                        startScene = entryVal;
+                    }
+                }
+            }
+        }
+
+        ini << "StartScene=" << "Content/Scenes/" + startScene;
         ini.close();
+
+        LOGF_INFO("Packaging Complete! Start Scene: %s", startScene.c_str());
+        ShellExecuteA(NULL, "open", destDir.string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
 
         LOGF_INFO("Packaging Complete! Output: %s", destDir.string().c_str());
         ShellExecuteA(NULL, "open", destDir.string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
@@ -120,7 +134,6 @@ void GamePackager::CopyBinaries(const fs::path& dest, const fs::path& engineBinD
 
     LOGF_INFO("Copying binaries from: %s", engineBinDir.string().c_str());
 
-    // --- A. Core Engine DLLs ---
     std::vector<std::string> coreBinaries = {
         "ReEngine.dll",
         "ReEngineCore.dll",
@@ -148,11 +161,8 @@ void GamePackager::CopyBinaries(const fs::path& dest, const fs::path& engineBinD
         }
     }
 
-    // --- B. The Runner Executable ---
-    // We assume ReEngineRunner.exe is in the same folder as ReEngineEditor.exe
     fs::path runnerSrc = engineBinDir / "ReEngineRunner.exe";
 
-    // We rename it to the Project Name (e.g., stopa.exe)
     std::string gameName = "Game";
     if (config.contains("name")) gameName = config["name"];
     fs::path runnerDest = dest / (gameName + ".exe");
@@ -165,7 +175,6 @@ void GamePackager::CopyBinaries(const fs::path& dest, const fs::path& engineBinD
         LOGF_ERROR("ReEngineRunner.exe not found at %s. Please build the Runner project!", runnerSrc.string().c_str());
     }
 
-    // --- C. Dynamic Modules (Systems) ---
     auto CopyModule = [&](const std::string& moduleName) {
         std::string dllName = moduleName + ".dll";
         fs::path src = systemsSourceDir / dllName;
@@ -188,13 +197,24 @@ void GamePackager::CopyBinaries(const fs::path& dest, const fs::path& engineBinD
     }
 }
 
-// ... (CopyContent, SanitizeJson, SanitizeSingleFile, SanitizeProjectFiles remain exactly as before) ...
-void GamePackager::CopyContent(const fs::path& dest) {
-    fs::path src = fs::current_path() / "Content";
+void GamePackager::CopyContent(const fs::path& dest, std::string sourceFolderName) {
+    fs::path src = fs::current_path() / sourceFolderName;
+
     if (fs::exists(src)) {
-        fs::copy(src, dest, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+        LOGF_INFO("Copying Shaders from: %s", src.string().c_str());
+        try {
+            fs::create_directories(dest);
+            fs::copy(src, dest, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+        }
+        catch (std::filesystem::filesystem_error& e) {
+            LOGF_ERROR("Failed to copy shaders: %s", e.what());
+        }
+    }
+    else {
+        LOGF_WARN("Shaders folder not found at %s. (Skipping)", src.string().c_str());
     }
 }
+
 
 void GamePackager::SanitizeJson(json& j) {
     if (j.is_string()) {
