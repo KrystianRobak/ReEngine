@@ -24,21 +24,22 @@ public:
 
     static bool SaveAnimation(const std::string& path, const SerializedAnimation& data);
 
-    static std::pair<AssetType,std::string> ImportAndCookFile(const std::string& sourcePath, const std::string& destDir);
+    static std::pair<AssetType, std::string> ImportAndCookFile(const std::string& sourcePath, const std::string& destDir);
 
     static bool ImportTexture(const std::string& source, const std::string& dest);
 
 private:
     // Internal Importers
     static std::shared_ptr<StaticMeshData> ImportStaticMeshAssimp(const std::string& path);
+
+    // FIX: Added scene-based overload so ImportAndCookFile can reuse the already-loaded
+    // scene instead of loading the file a second time with different flags.
     static std::shared_ptr<SkeletalMeshData> ImportSkeletalMeshAssimp(const std::string& path);
+    static std::shared_ptr<SkeletalMeshData> ImportSkeletalMeshFromScene(const aiScene* scene, const std::string& path);
 
     // Helpers
-    static MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData* data);
+    static MeshData ProcessMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData* data = nullptr);
     static void ProcessSkeletalMesh(aiMesh* mesh, const aiScene* scene, SkeletalMeshData& outData);
-    // --- UPDATED: Takes scene to extract RootNode ---
     static SerializedAnimation ProcessAnimation(const aiAnimation* anim, const aiScene* scene);
-
-    // --- NEW: Helper to extract node hierarchy ---
     static void ConvertAssimpNode(const aiNode* src, SerializedNode& dst);
 };
