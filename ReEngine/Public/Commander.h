@@ -4,6 +4,7 @@
 #include "RenderCommand.h"
 #include <vector>
 #include <memory>
+#include <mutex>
 
 
 class ENGINE_API Commander
@@ -12,10 +13,15 @@ private:
 
 	std::shared_ptr<std::vector<RenderCommand>> CommandQueueWrite;
 	std::shared_ptr<std::vector<RenderCommand>> CommandQueueRead;
-
+	mutable std::mutex CommandQueueMutex;
 
 
 public:
+	Commander() = default;
+	Commander(const Commander&) = delete;
+	Commander& operator=(const Commander&) = delete;
+	Commander(Commander&&) = delete;
+	Commander& operator=(Commander&&) = delete;
 
 	void Init(int SizeOfCommandQueue) {
 		CommandQueueWrite = std::make_shared<std::vector<RenderCommand>>();
@@ -25,26 +31,11 @@ public:
 		CommandQueueWrite->reserve(SizeOfCommandQueue);
 	}
 
-	Commander operator=(const Commander& newCommander)
-	{
-		if (this == &newCommander)
-		{
-			return *this;
-		}
-
-
-
-		this->CommandQueueRead = newCommander.CommandQueueRead;
-		this->CommandQueueWrite = newCommander.CommandQueueWrite;
-
-
-		return *this;
-
-	}
 	void IssueCommand(RenderCommand command);
 
 	const std::vector<RenderCommand>& ConsumeRenderCommands()
 	{
+		std::scoped_lock<std::mutex> lock(CommandQueueMutex);
 		// Swap so Write becomes Read
 		CommandQueueRead.swap(CommandQueueWrite);
 
@@ -55,4 +46,3 @@ public:
 		return *CommandQueueRead;
 	}
 };
-

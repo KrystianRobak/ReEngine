@@ -182,7 +182,7 @@ static void ExtractBoneWeightForVertices(
     {
         std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
 
-        // Always search by name — the loop counter has nothing to do with the map position.
+        // Always search by name â€” the loop counter has nothing to do with the map position.
         int boneID = -1;
         for (unsigned int i = 0; i < skeletalMesh->boneInfoMap.size(); i++) {
             if (skeletalMesh->boneInfoMap[i].name == boneName) {
@@ -191,7 +191,7 @@ static void ExtractBoneWeightForVertices(
             }
         }
 
-        // Not found — register it now. boneID is the actual new index, not boneIndex.
+        // Not found â€” register it now. boneID is the actual new index, not boneIndex.
         if (boneID == -1) {
             BoneProps newProp;
             newProp.name = boneName;
@@ -221,6 +221,17 @@ static void ExtractBoneWeightForVertices(
             }
         }
     }
+
+    for (size_t v = 0; v < weights_all.size(); ++v)
+    {
+        float sum = 0.0f;
+        for (int i = 0; i < 4; ++i) {
+            if (boneIDs_all[v][i] >= 0) sum += weights_all[v][i];
+        }
+        if (sum > 0.0f) {
+            weights_all[v] /= sum;
+        }
+    }
 }
 
 // --- MAIN IMPORT LOGIC ---
@@ -244,7 +255,7 @@ std::pair<AssetType, std::string> AssetSerializer::ImportAndCookFile(const std::
             // The original code called ImportSkeletalMeshAssimp() separately, which
             // re-opened the file WITHOUT aiProcess_PopulateArmatureData. That flag
             // restructures the node hierarchy, so the animation rootNode tree and the
-            // mesh bone hierarchy ended up being different objects — causing permanent
+            // mesh bone hierarchy ended up being different objects â€” causing permanent
             // bone name mismatches at runtime and broken skeletal animation.
             const aiScene* scene = importer.ReadFile(sourcePath,
                 aiProcess_Triangulate |
@@ -444,7 +455,7 @@ SerializedAnimation AssetSerializer::ProcessAnimation(const aiAnimation* anim, c
             }
             else {
                 std::cerr << "[Animation] Invalid quaternion in channel " << boneAnim.name
-                    << " at key " << k << " — using identity\n";
+                    << " at key " << k << " â€” using identity\n";
                 boneAnim.rotations.push_back({ time, glm::quat(1.0f, 0.0f, 0.0f, 0.0f) });
             }
         }
@@ -454,6 +465,11 @@ SerializedAnimation AssetSerializer::ProcessAnimation(const aiAnimation* anim, c
             glm::vec3 val = Vec3FromAssimp(channel->mScalingKeys[k].mValue);
             boneAnim.scales.push_back({ time, val });
         }
+
+        auto sortByTime = [](auto& a, auto& b) { return a.first < b.first; };
+        std::sort(boneAnim.positions.begin(), boneAnim.positions.end(), sortByTime);
+        std::sort(boneAnim.rotations.begin(), boneAnim.rotations.end(), sortByTime);
+        std::sort(boneAnim.scales.begin(), boneAnim.scales.end(), sortByTime);
 
         outAnim.channels.push_back(boneAnim);
     }
@@ -498,7 +514,7 @@ std::shared_ptr<SkeletalMeshData> AssetSerializer::ImportSkeletalMeshAssimp(cons
     importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
     importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, 1.0f);
 
-    // FIX: Removed AI_CONFIG_PP_RVC_FLAGS for normals/tangents — that config only
+    // FIX: Removed AI_CONFIG_PP_RVC_FLAGS for normals/tangents â€” that config only
     // takes effect if aiProcess_RemoveComponent is in the flags list, which it was
     // not. Dead config removed to avoid confusion.
     const aiScene* scene = importer.ReadFile(path,

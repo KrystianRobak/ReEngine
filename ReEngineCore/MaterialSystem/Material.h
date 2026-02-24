@@ -76,7 +76,7 @@ public:
     {
         // BUG FIX #3: m_Nodes holds raw owning pointers. Without a destructor every
         // Material destruction (or material reload) leaks every node on the heap.
-        // RemoveNode() was erasing the pointer from the vector without deleting it —
+        // RemoveNode() was erasing the pointer from the vector without deleting it â€”
         // same leak on every editor edit. Fix both here.
         for (auto* node : m_Nodes)
             delete node;
@@ -218,7 +218,7 @@ out mat3 TBN;
 
 uniform mat4 view;
 uniform mat4 projection;
-const int MAX_BONES = 200;
+const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBones[MAX_BONES];
 uniform bool uIsAnimated;
@@ -229,17 +229,14 @@ void main()
     if (uIsAnimated) 
     {
         mat4 BoneTransform = mat4(0.0);
-        float totalWeight = 0.0;
         for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
         {
             int id = aBoneIDs[i];
             float w = aWeights[i];
             if (id < 0 || id >= MAX_BONES || w <= 0.0) continue;
             BoneTransform += finalBones[id] * w;
-            totalWeight += w;
         }
-        if (totalWeight == 0.0f) BoneTransform = mat4(1.0f);
-        else BoneTransform = BoneTransform / totalWeight;
+        if (BoneTransform == mat4(0.0)) BoneTransform = mat4(1.0);
         totalModelMatrix = aInstanceMatrix * BoneTransform;
     }
     else
@@ -297,7 +294,7 @@ void main()
             // not an artist parameter. Overwriting here is correct and cannot break
             // anything the node graph legitimately produced.
             //
-            // Similarly gNormal.a has no meaningful use in the lighting pass — we
+            // Similarly gNormal.a has no meaningful use in the lighting pass â€” we
             // always write 1.0 so the alpha doesn't cause silent divide-by-zero or NaN
             // in any future shader that reads that channel.
             "\n"

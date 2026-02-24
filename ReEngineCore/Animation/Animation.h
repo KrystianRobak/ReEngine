@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <vector>
 #include <map>
@@ -29,20 +29,20 @@ static void extractBoneWeightForVertices(std::vector<glm::ivec4>& boneIDs_all, s
 
 	for (unsigned int boneIndex = 0; boneIndex < numBones; ++boneIndex)
 	{
-		int boneID = -1;
 		std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
-		if (boneIndex >= skeletalMesh->boneInfoMap.size()) {
-			skeletalMesh->boneInfoMap.push_back({ boneName, aiMatrix4x4ToGlm(&mesh->mBones[boneIndex]->mOffsetMatrix) });
-			boneID = boneIndex;
-			skeletalMesh->boneCount++;
-		}
-		else {
-			for (unsigned int i = 0; i < skeletalMesh->boneInfoMap.size(); i++) {
-				if (skeletalMesh->boneInfoMap[i].name == boneName) {
-					boneID = i;
-					break;
-				}
+		int boneID = -1;
+
+		for (unsigned int i = 0; i < skeletalMesh->boneInfoMap.size(); i++) {
+			if (skeletalMesh->boneInfoMap[i].name == boneName) {
+				boneID = (int)i;
+				break;
 			}
+		}
+
+		if (boneID == -1) {
+			skeletalMesh->boneInfoMap.push_back({ boneName, aiMatrix4x4ToGlm(&mesh->mBones[boneIndex]->mOffsetMatrix) });
+			boneID = (int)skeletalMesh->boneInfoMap.size() - 1;
+			skeletalMesh->boneCount++;
 		}
 		assert(boneID != -1);
 
@@ -64,6 +64,17 @@ static void extractBoneWeightForVertices(std::vector<glm::ivec4>& boneIDs_all, s
 					break;
 				}
 			}
+		}
+	}
+
+	for (size_t v = 0; v < weights_all.size(); ++v)
+	{
+		float sum = 0.0f;
+		for (int i = 0; i < 4; ++i) {
+			if (boneIDs_all[v][i] >= 0) sum += weights_all[v][i];
+		}
+		if (sum > 0.0f) {
+			weights_all[v] /= sum;
 		}
 	}
 }
@@ -100,7 +111,7 @@ public:
 	Animation(const std::string& animationPath, aiScene* scene)
 	{
 		generateBoneTree(&rootNode, scene->mRootNode);
-		// Reset all root transformations
+		
 		rootNode.transformation = glm::mat4(1.0f);
 	}
 
@@ -207,3 +218,5 @@ private:
 		}
 	}
 };
+
+

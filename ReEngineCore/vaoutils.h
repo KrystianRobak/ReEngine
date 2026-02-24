@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 
 #include "GL/glew.h"
@@ -12,7 +12,7 @@
 
 struct GPUBuffers {
 	unsigned int VAO;
-	std::vector<unsigned int> VBOs; // Store all VBO IDs (positions, normals, etc.)
+	std::vector<unsigned int> VBOs; 
 	unsigned int EBO;
 };
 
@@ -26,21 +26,21 @@ inline void computeTangentBasis(
 	for (size_t i = 0; i < vertices.size() - 2; i += 3)
 	{
 
-		// Shortcuts for vertices
+		
 		glm::vec3& v0 = vertices[i + 0];
 		glm::vec3& v1 = vertices[i + 1];
 		glm::vec3& v2 = vertices[i + 2];
 
-		// Shortcuts for UVs
+		
 		glm::vec2& uv0 = uvs[i + 0];
 		glm::vec2& uv1 = uvs[i + 1];
 		glm::vec2& uv2 = uvs[i + 2];
 
-		// Edges of the triangle : position delta
+		
 		glm::vec3 deltaPos1 = v1 - v0;
 		glm::vec3 deltaPos2 = v2 - v0;
 
-		// UV delta
+		
 		glm::vec2 deltaUV1 = uv1 - uv0;
 		glm::vec2 deltaUV2 = uv2 - uv0;
 
@@ -48,13 +48,13 @@ inline void computeTangentBasis(
 		glm::vec3 tangent = (deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r;
 		glm::vec3 bitangent = (deltaPos2 * deltaUV1.x - deltaPos1 * deltaUV2.x) * r;
 
-		// Set the same tangent for all three vertices of the triangle.
-		// They will be merged later, in vboindexer.cpp
+		
+		
 		tangents.push_back(tangent);
 		tangents.push_back(tangent);
 		tangents.push_back(tangent);
 
-		// Same thing for bitangents
+		
 		bitangents.push_back(bitangent);
 		bitangents.push_back(bitangent);
 		bitangents.push_back(bitangent);
@@ -80,12 +80,12 @@ inline GPUBuffers generateBuffer(MeshData& mesh)
 {
 	GPUBuffers buffers;
 
-	// 1. Create VAO
+	
 	glGenVertexArrays(1, &buffers.VAO);
 	glBindVertexArray(buffers.VAO);
 
-	// 2. Generate VBOs and store their IDs
-	// Note: generateAttribute returns the bufferID, we now save it!
+	
+	
 	buffers.VBOs.push_back(generateAttribute(0, 3, mesh.vertices, false));
 
 	if (mesh.Normals.size() > 0)
@@ -97,7 +97,7 @@ inline GPUBuffers generateBuffer(MeshData& mesh)
 	{
 		buffers.VBOs.push_back(generateAttribute(2, 2, mesh.TexCoords, false));
 
-		// Logic to handle Tangents
+		
 		std::vector<glm::vec3> tangents;
 		std::vector<glm::vec3> bitangents;
 
@@ -121,12 +121,12 @@ inline GPUBuffers generateBuffer(MeshData& mesh)
 		buffers.VBOs.push_back(generateAttribute(6, 4, mesh.weights, false));
 	}
 
-	// 3. Create EBO (Index Buffer)
+	
 	glGenBuffers(1, &buffers.EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers.EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(unsigned int), mesh.indices.data(), GL_STATIC_DRAW);
 
-	// Unbind VAO to prevent accidental modification
+	
 	glBindVertexArray(0);
 
 	return buffers;
@@ -149,3 +149,5 @@ inline void generateDepthMap(unsigned int& depthMap, unsigned int& FBO, unsigned
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+

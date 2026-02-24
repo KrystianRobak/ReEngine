@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <cmath>
 
 struct KeyPosition
 {
@@ -24,10 +25,15 @@ struct KeyScale
 
 inline float getScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime)
 {
-	float scaleFactor = 0.0f;
-	float midWayLength = animationTime - lastTimeStamp;
+	if (!std::isfinite(lastTimeStamp) || !std::isfinite(nextTimeStamp) || !std::isfinite(animationTime))
+		return 0.0f;
 	float framesDiff = nextTimeStamp - lastTimeStamp;
-	scaleFactor = midWayLength / framesDiff;
+	if (framesDiff <= 0.0f)
+		return 0.0f;
+	float midWayLength = animationTime - lastTimeStamp;
+	float scaleFactor = midWayLength / framesDiff;
+	if (scaleFactor < 0.0f) scaleFactor = 0.0f;
+	else if (scaleFactor > 1.0f) scaleFactor = 1.0f;
 	return scaleFactor;
 }
 
@@ -42,7 +48,10 @@ inline glm::mat4 interpolatePosition(float animationTime, KeyPosition from, KeyP
 inline glm::mat4 interpolateRotation(float animationTime, KeyRotation from, KeyRotation to)
 {
 	float scaleFactor = getScaleFactor(from.timeStamp, to.timeStamp, animationTime);
-	glm::quat finalRotation = glm::slerp(from.orientation, to.orientation, scaleFactor);
+	glm::quat fromN = glm::normalize(from.orientation);
+	glm::quat toN = glm::normalize(to.orientation);
+	if (glm::dot(fromN, toN) < 0.0f) toN = -toN;
+	glm::quat finalRotation = glm::slerp(fromN, toN, scaleFactor);
 	finalRotation = glm::normalize(finalRotation);
 	return glm::toMat4(finalRotation);
 }

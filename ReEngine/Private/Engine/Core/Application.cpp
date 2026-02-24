@@ -130,64 +130,54 @@ void Application::Update()
 		if (inputManager) inputManager->Update(dt);
 
 		auto assetManager = coordinator->GetAssetManager();
-		auto systems = Reflection::Registry::Instance().GetAllSystems();
-		for (auto system : systems)
+		auto RenderSystem = coordinator->GetSystem("RenderOpenGL");
+		if (RenderSystem)
 		{
-			if (std::strcmp(system->fullName, "RenderOpenGL") == 0)
+			for (Entity entity : RenderSystem->GetEntities())
 			{
-				auto RenderSystem = coordinator->GetSystem(system->fullName);
-				for (Entity entity : RenderSystem->GetEntities())
+				if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
 				{
-					if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("StaticMesh")))
-					{
-						auto t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
-						auto sm = static_cast<StaticMesh*>(coordinator->GetComponent(entity, "StaticMesh"));
-						if (!t || !sm) continue;
+					auto t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
+					auto sm = static_cast<StaticMesh*>(coordinator->GetComponent(entity, "StaticMesh"));
+					if (!t || !sm) continue;
 
-						if (!sm->MeshResource && !sm->AssetPath.empty()) {
-							sm->MeshResource = assetManager->GetMesh(sm->AssetPath);
-						}
-
-						RenderPrimitive p;
-						p.ModelMatrix = ReCamera::GetModelMatrix(*t);
-						p.Entity = entity;
-						p.MaterialId = (sm->MaterialId == -1) ? 1200 : sm->MaterialId;
-						p.Mesh = sm->MeshResource;
-
-						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
+					if (!sm->MeshResource && !sm->AssetPath.empty()) {
+						sm->MeshResource = assetManager->GetMesh(sm->AssetPath);
 					}
-					if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("SkeletalMeshComponent")))
-					{
-						auto t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
-						auto smc = static_cast<SkeletalMeshComponent*>(coordinator->GetComponent(entity, "SkeletalMeshComponent"));
-						if (!t || !smc) continue;
 
-						if (!smc->MeshResource && !smc->AssetPath.empty()) {
-							smc->MeshResource = assetManager->GetSkeletalMesh(smc->AssetPath);
-						}
+					RenderPrimitive p;
+					p.ModelMatrix = ReCamera::GetModelMatrix(*t);
+					p.Entity = entity;
+					p.MaterialId = (sm->MaterialId == -1) ? 1200 : sm->MaterialId;
+					p.Mesh = sm->MeshResource;
 
-						RenderPrimitive p;
-						p.ModelMatrix = ReCamera::GetModelMatrix(*t);
-						p.Entity = entity;
-						p.MaterialId = (smc->MaterialId == -1) ? 1200 : smc->MaterialId;
-						p.Mesh = smc->MeshResource;
-						p.FinalBoneMatrices = smc->FinalBoneMatrices;
+					window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
+				}
+				if (coordinator->GetEntitySignature(entity).test(coordinator->GetComponentType("SkeletalMeshComponent")))
+				{
+					auto t = static_cast<Transform*>(coordinator->GetComponent(entity, "Transform"));
+					auto smc = static_cast<SkeletalMeshComponent*>(coordinator->GetComponent(entity, "SkeletalMeshComponent"));
+					if (!t || !smc) continue;
 
-						window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
+					if (!smc->MeshResource && !smc->AssetPath.empty()) {
+						smc->MeshResource = assetManager->GetSkeletalMesh(smc->AssetPath);
 					}
+
+					RenderPrimitive p;
+					p.ModelMatrix = ReCamera::GetModelMatrix(*t);
+					p.Entity = entity;
+					p.MaterialId = (smc->MaterialId == -1) ? 1200 : smc->MaterialId;
+					p.Mesh = smc->MeshResource;
+					p.FinalBoneMatrices = smc->FinalBoneMatrices;
+
+					window->viewports["SceneViewport"]->GetCommander()->IssueCommand({ 1200, p });
 				}
 			}
-			else if (std::strcmp(system->fullName, "Physics3D") == 0)
-			{
-				continue;
-			}
-			else
-			{
-				if (m_AppState == ApplicationState::Play)
-				{
-					systemGraph->Execute(dt);
-				}
-			}
+		}
+
+		if (m_AppState == ApplicationState::Play)
+		{
+			systemGraph->Execute(dt);
 		}
 
 		coordinator->GetEpochManager()->IncrementGameEpoch();

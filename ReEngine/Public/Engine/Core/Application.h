@@ -160,7 +160,7 @@ private:
 	const int mSyncThreadCount = 2;
 	bool HasRenderUpdateThreadFinished = false;
 
-	const float targetFrameDuration = 1.0f / 60.0f;
+	const float targetFrameDuration = 1.0f / 2240.0f;
 	float frameTimeAccumulator = 0.0f;
 	int frameCount = 0;
 	std::chrono::steady_clock::time_point frameStartTime;

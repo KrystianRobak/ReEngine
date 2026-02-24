@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
 #include "TextureData.h"
 
-// Pure CPU Data Container
+
 struct MeshData {
     MeshData() = default;
 
@@ -19,10 +19,11 @@ struct MeshData {
 
     std::vector<uint32_t> indices;
 
-    // AABB for this specific submesh (useful for precise culling)
+    
     glm::vec3 aabbMin{ 0.0f };
     glm::vec3 aabbMax{ 0.0f };
 
-    // Material slot index for this submesh
+    
     int materialIndex = 0;
 };
+

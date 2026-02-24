@@ -1,7 +1,8 @@
-#include "AssetManager.h"
+﻿#include "AssetManager.h"
 #include <GL/glew.h>
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 #include "Animation/Animation.h"
 #include "Animation/AssimpNodeData.h"
 
@@ -35,9 +36,9 @@ void AssetManager::shutdown() {
     textureCache.clear();
 }
 
-// -----------------------------------------------------------------------
-//  HELPER: Recursive Node Read
-// -----------------------------------------------------------------------
+
+
+
 void AssetManager::ReadSerializedNode(std::ifstream& in, AssimpNodeData& node) {
     uint32_t nameLen;
     in.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
@@ -59,9 +60,9 @@ void AssetManager::ReadSerializedNode(std::ifstream& in, AssimpNodeData& node) {
     }
 }
 
-// -----------------------------------------------------------------------
-//  HELPER: Read Mesh Data
-// -----------------------------------------------------------------------
+
+
+
 void AssetManager::ReadMeshData(std::ifstream& in, MeshData& mesh) {
     in.read(reinterpret_cast<char*>(&mesh.materialIndex), sizeof(int));
     in.read(reinterpret_cast<char*>(&mesh.aabbMin), sizeof(glm::vec3));
@@ -77,9 +78,9 @@ void AssetManager::ReadMeshData(std::ifstream& in, MeshData& mesh) {
     ReadVector(in, mesh.indices);
 }
 
-// -----------------------------------------------------------------------
-//  UPLOAD SYSTEM
-// -----------------------------------------------------------------------
+
+
+
 
 void AssetManager::EnqueueUpload(std::function<void()> func) {
     std::lock_guard<std::mutex> lock(uploadMutex);
@@ -99,9 +100,9 @@ void AssetManager::DispatchUploads() {
     }
 }
 
-// -----------------------------------------------------------------------
-//  MESH LOADING
-// -----------------------------------------------------------------------
+
+
+
 
 std::shared_ptr<MeshResource> AssetManager::CreateManualMesh(const std::string& name, std::shared_ptr<StaticMeshData> data) {
     std::lock_guard<std::mutex> lock(assetMutex);
@@ -210,9 +211,9 @@ std::shared_ptr<MeshResource> AssetManager::GetSkeletalMesh(const std::string& p
     return resource;
 }
 
-// -----------------------------------------------------------------------
-//  BINARY LOADERS
-// -----------------------------------------------------------------------
+
+
+
 
 std::shared_ptr<StaticMeshData> AssetManager::LoadBinaryStaticMesh(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
@@ -300,16 +301,16 @@ std::shared_ptr<Animation> AssetManager::LoadBinaryAnimation(const std::string& 
     animation->SetDuration(duration);
     animation->SetTicksPerSecond(tps);
 
-    // FIX: Animation name was read into a local variable `n` and discarded.
-    // It is now stored on the animation object. Without this, any code that
-    // identifies animations by their internal name would always see an empty string.
+    
+    
+    
     uint32_t nameLen;
     in.read(reinterpret_cast<char*>(&nameLen), sizeof(uint32_t));
     if (nameLen > 0) {
         std::string animName;
         animName.resize(nameLen);
         in.read(&animName[0], nameLen);
-        //animation->SetName(animName);
+        
     }
 
     uint32_t numChannels;
@@ -332,6 +333,11 @@ std::shared_ptr<Animation> AssetManager::LoadBinaryAnimation(const std::string& 
         for (auto& p : positions) {
             in.read(reinterpret_cast<char*>(&p.timeStamp), sizeof(float));
             in.read(reinterpret_cast<char*>(&p.position), sizeof(glm::vec3));
+            if (!std::isfinite(p.timeStamp) ||
+                !std::isfinite(p.position.x) || !std::isfinite(p.position.y) || !std::isfinite(p.position.z)) {
+                p.timeStamp = 0.0f;
+                p.position = glm::vec3(0.0f);
+            }
         }
 
         uint32_t numRot;
@@ -340,6 +346,15 @@ std::shared_ptr<Animation> AssetManager::LoadBinaryAnimation(const std::string& 
         for (auto& r : rotations) {
             in.read(reinterpret_cast<char*>(&r.timeStamp), sizeof(float));
             in.read(reinterpret_cast<char*>(&r.orientation), sizeof(glm::quat));
+            if (!std::isfinite(r.timeStamp) ||
+                !std::isfinite(r.orientation.w) || !std::isfinite(r.orientation.x) ||
+                !std::isfinite(r.orientation.y) || !std::isfinite(r.orientation.z)) {
+                r.timeStamp = 0.0f;
+                r.orientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+            }
+            else {
+                r.orientation = glm::normalize(r.orientation);
+            }
         }
 
         uint32_t numScl;
@@ -348,6 +363,11 @@ std::shared_ptr<Animation> AssetManager::LoadBinaryAnimation(const std::string& 
         for (auto& s : scales) {
             in.read(reinterpret_cast<char*>(&s.timeStamp), sizeof(float));
             in.read(reinterpret_cast<char*>(&s.scale), sizeof(glm::vec3));
+            if (!std::isfinite(s.timeStamp) ||
+                !std::isfinite(s.scale.x) || !std::isfinite(s.scale.y) || !std::isfinite(s.scale.z)) {
+                s.timeStamp = 0.0f;
+                s.scale = glm::vec3(1.0f);
+            }
         }
 
         animation->AddBone(Bone(boneName, -1, positions, rotations, scales));
@@ -360,9 +380,9 @@ std::shared_ptr<Animation> AssetManager::LoadBinaryAnimation(const std::string& 
     return animation;
 }
 
-// -----------------------------------------------------------------------
-//  TEXTURE
-// -----------------------------------------------------------------------
+
+
+
 
 std::unique_ptr<AssetManager::TextureLoadResult> AssetManager::LoadBinaryTexture(const std::string& path) {
     std::ifstream in(path, std::ios::binary);
@@ -399,7 +419,6 @@ std::shared_ptr<TextureResource> AssetManager::GetTexture(const std::string& raw
     pool->submit(JobType::Background, [this, path, resource]() {
         std::shared_ptr<TextureLoadResult> texData = LoadBinaryTexture(path);
         if (!texData) {
-            std::cerr << "[AssetManager] Failed to load cooked texture: " << path << "\n";
             return;
         }
 
@@ -421,9 +440,9 @@ std::shared_ptr<TextureResource> AssetManager::GetTexture(const std::string& raw
     return resource;
 }
 
-// -----------------------------------------------------------------------
-//  UTILITIES
-// -----------------------------------------------------------------------
+
+
+
 
 void AssetManager::addMaterial(int id, CompiledMaterial material) { materials[id] = material; }
 CompiledMaterial* AssetManager::GetMaterial(int id) { return materials.count(id) ? &materials[id] : nullptr; }
@@ -501,19 +520,19 @@ std::shared_ptr<Animation> AssetManager::GetAnimation(const std::string& rawPath
 
     std::lock_guard<std::mutex> lock(assetMutex);
 
-    // FIX: Do NOT call LoadIntermediateBones on a cached animation.
-    // LoadIntermediateBones mutates the Animation by appending new BoneProps entries
-    // and re-assigning IDs. Calling it on every cache hit means the shared animation
-    // object grows its bone list every frame and the ID mapping becomes corrupted,
-    // causing wrong offset matrices to be applied to every bone after the first call.
-    // The correct time to call LoadIntermediateBones is once, right after first load.
+    
+    
+    
+    
+    
+    
     if (animationCache.find(path) != animationCache.end()) {
         return animationCache[path];
     }
 
     auto anim = LoadBinaryAnimation(path);
     if (anim) {
-        // Apply intermediate bones exactly once, when the animation is first loaded.
+        
         if (skeletalData) {
             anim->LoadIntermediateBones(skeletalData);
         }
@@ -525,3 +544,5 @@ std::shared_ptr<Animation> AssetManager::GetAnimation(const std::string& rawPath
 
     return anim;
 }
+
+
