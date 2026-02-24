@@ -399,7 +399,6 @@ class ReflectionGenerator:
         f.write(f"static {class_name}_AutoRegister _{class_name.lower()}_autoreg;\n\n")
 
     def _emit_function_invoker(self, f, class_name, func):
-        # ... (this function remains the same) ...
         func_name = func["name"]
         params = func["params"]
         ret = func["return_type"]
@@ -423,7 +422,6 @@ class ReflectionGenerator:
         f.write("}\n\n")
 
     def generate_master_include(self, output_dir: str):
-        # ... (this function remains the same) ...
         import networkx as nx
 
         cpp_files = [f for f in os.listdir(output_dir) if f.endswith(".gen.cpp")]

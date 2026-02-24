@@ -248,9 +248,6 @@
     <ClInclude Include="RenderCommand.h">
       <Filter>Source Files\Public\Engine\Commands\RenderCommands</Filter>
     </ClInclude>
-    <ClInclude Include="Sprite.h">
-      <Filter>Source Files\Public\Engine\Components\ReFold\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="..\Libs\Include\imgui\imconfig.h">
       <Filter>Source Files\ImGui</Filter>
     </ClInclude>

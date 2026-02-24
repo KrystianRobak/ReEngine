@@ -233,7 +233,6 @@
     <ClInclude Include="Public\Engine\Core\Coordinator\SystemManager.h" />
     <ClInclude Include="Public\Engine\Core\WindowManager.h" />
     <ClInclude Include="SphereCollider.h" />
-    <ClInclude Include="Sprite.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(ProjectDir)generated\AllGenerated.cpp" />
