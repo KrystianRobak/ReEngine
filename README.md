@@ -4,6 +4,8 @@ Custom C++20 game engine and editor developed as an engineering thesis project.
 
 The repository contains a Windows-only runtime built around an ECS coordinator, a reflection-driven editor, a DLL-based system/plugin model, an OpenGL renderer, and PhysX-based 3D physics. The codebase is split into engine core projects and separately compiled runtime systems loaded from configuration at startup.
 
+ReEngine Systems can be found here: https://github.com/KrystianRobak/ReEngineSystems
+
 ## What It Contains
 
 - ECS-style runtime with `Coordinator`, component storage, entity signatures, and system registration.
