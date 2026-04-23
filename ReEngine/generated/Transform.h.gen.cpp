@@ -26,7 +26,8 @@ struct Transform_AutoRegister {
                 "position", "public",
                 false,
                 offsetof(Transform, position),
-                vType
+                vType,
+                "glm, ::, vec3, (, 0.0f, )"
             };
             Transform_Variables.push_back(std::move(rv));
         }
@@ -36,7 +37,8 @@ struct Transform_AutoRegister {
                 "rotation", "public",
                 false,
                 offsetof(Transform, rotation),
-                vType
+                vType,
+                "glm, ::, quat, (, 1.0f, 0.0f, 0.0f, 0.0f, )"
             };
             Transform_Variables.push_back(std::move(rv));
         }
@@ -46,7 +48,8 @@ struct Transform_AutoRegister {
                 "scale", "public",
                 false,
                 offsetof(Transform, scale),
-                vType
+                vType,
+                "glm, ::, vec3, (, 1.0f, )"
             };
             Transform_Variables.push_back(std::move(rv));
         }

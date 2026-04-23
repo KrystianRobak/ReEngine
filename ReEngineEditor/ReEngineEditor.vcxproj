@@ -131,14 +131,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\ragberr\Desktop\Inżynierka\ReEngine\Libs\Include;%(AdditionalIncludeDirectories);E:\Inżynierka\ReEngine\ReEngineReflectionCore;E:\Inżynierka\ReEngine\ReEngineReflectionCore</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Libs\Include;$(SolutionDir)\Libs\Include\stb;$(SolutionDir)\Libs\Include\glm;$(SolutionDir)\Libs\Include\assimp;$(SolutionDir)\Libs\Include\GL;$(SolutionDir)\Libs\Include\GLFW;$(SolutionDir)\ReEngine\Public;$(SolutionDir)\Libs\Include\psyhx;$(SolutionDir)\ReEngineEditor;%(AdditionalIncludeDirectories);$(SolutionDir)\ReEngineReflectionCore;$(SolutionDir)\ReEngineCore;$(SolutionDir)\ReEngine\Public\Engine\Components</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\ragberr\Desktop\Inżynierka\ReEngine\Libs\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)\Libs\Lib\glfw;$(SolutionDir)\Libs\Lib\assimp;$(SolutionDir)\Libs\Lib\glew;$(SolutionDir)\Libs\Lib\physx;$(SolutionDir)\Libs\Lib\ReEngine;$(SolutionDir)bin\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

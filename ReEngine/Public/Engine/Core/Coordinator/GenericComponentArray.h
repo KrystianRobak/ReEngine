@@ -48,15 +48,9 @@ public:
         mEntityToIndexMap[entity] = newIndex;
         mIndexToEntityMap[newIndex] = entity;
 
-        auto currentWriteBuffer = writeBufferPtr.load();
+        EnsureCapacity(newIndex);
 
-        // Ensure both buffers are big enough
-        if ((newIndex + 1) * mComponentSize > currentWriteBuffer->size()) {
-            mComponentData.resize((newIndex + 20) * mComponentSize);
-            if (mIsDoubleBuffered) {
-                mComponentDataSecond.resize((newIndex + 1) * mComponentSize);
-            }
-        }
+        auto currentWriteBuffer = writeBufferPtr.load();
 
         // 1. Write to WRITE buffer (Standard Update)
         memcpy(&((*currentWriteBuffer)[newIndex * mComponentSize]), componentData, mComponentSize);
@@ -70,7 +64,7 @@ public:
         }
 
         // Mark as dirty (still needed to track future updates)
-        mDirtyEntities.insert(entity);
+        MarkDirty(entity);
 
         ++mSize;
     }
@@ -81,12 +75,13 @@ public:
             "Updating non-existent component.");
 
         size_t index = mEntityToIndexMap[entity];
+        EnsureCapacity(index);
         auto currentWriteBuffer = writeBufferPtr.load();
 
         memcpy(&((*currentWriteBuffer)[index * mComponentSize]), componentData, mComponentSize);
 
         // Mark as dirty
-        mDirtyEntities.insert(entity);
+        MarkDirty(entity);
     }
 
     void RemoveData(Entity entity)
@@ -115,7 +110,7 @@ public:
         --mSize;
 
         // Mark the moved entity as dirty (since its data was shifted)
-        mDirtyEntities.insert(entityOfLastElement);
+        MarkDirty(entityOfLastElement);
     }
 
     void* GetDataForWrite(Entity entity)
@@ -123,7 +118,7 @@ public:
         assert(mEntityToIndexMap.find(entity) != mEntityToIndexMap.end() &&
             "Retrieving non-existent component for write.");
 
-        mDirtyEntities.insert(entity);
+        MarkDirty(entity);
 
         auto currentWriteBuffer = writeBufferPtr.load();
         return &((*currentWriteBuffer)[mEntityToIndexMap[entity] * mComponentSize]);
@@ -157,11 +152,10 @@ public:
             auto* readBuffer = readBufferPtr.load();
             auto* writeBuffer = writeBufferPtr.load();
 
-            // Ensure buffers are the same size. This is critical.
-            if (readBuffer->size() != writeBuffer->size())
-            {
-                readBuffer->resize(writeBuffer->size());
-            }
+            // Ensure buffers are the same size. Grow smaller to match larger, never shrink.
+            size_t maxSize = std::max(readBuffer->size(), writeBuffer->size());
+            if (readBuffer->size() < maxSize) readBuffer->resize(maxSize);
+            if (writeBuffer->size() < maxSize) writeBuffer->resize(maxSize);
 
             size_t dirtyCount = mDirtyEntities.size();
 
@@ -225,6 +219,7 @@ public:
 
     void MarkDirty(Entity entity)
     {
+        if (!mIsDoubleBuffered) return;
         if (mEntityToIndexMap.find(entity) != mEntityToIndexMap.end())
         {
             mDirtyEntities.insert(entity);
@@ -240,6 +235,23 @@ public:
     }
 
 private:
+    void EnsureCapacity(size_t index)
+    {
+        size_t requiredBytes = (index + 1) * mComponentSize;
+        if (mComponentData.size() >= requiredBytes &&
+            (!mIsDoubleBuffered || mComponentDataSecond.size() >= requiredBytes))
+        {
+            return;
+        }
+
+        size_t targetSize = std::max(requiredBytes, (index + 20) * mComponentSize);
+        mComponentData.resize(targetSize);
+        if (mIsDoubleBuffered)
+        {
+            mComponentDataSecond.resize(targetSize);
+        }
+    }
+
     size_t mComponentSize;
     bool mIsDoubleBuffered;
     std::vector<char> mComponentData;        // Buffer A
